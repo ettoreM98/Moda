@@ -126,12 +126,10 @@
     </section>
 
     <script>
-        // --- CONFIGURAZIONE SUPABASE ---
         const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-        // --- GESTIONE INTERFACCIA ---
         let imgIdx = 0;
         const imgs = document.querySelectorAll('.visual-side img');
         setInterval(() => {
@@ -151,7 +149,6 @@
             d.innerText = msg; d.style.display = 'block';
         }
 
-        // --- FUNZIONE REGISTRAZIONE CORAZZATA ---
         async function faiRegistrazione() {
             const n = document.getElementById('r-nome').value.trim();
             const c = document.getElementById('r-cognome').value.trim();
@@ -159,45 +156,26 @@
             const e = document.getElementById('r-email').value.trim();
             const p = document.getElementById('r-pass').value;
 
-            // 1. Controllo Campi Vuoti e Lunghezza
             if(!n || !c || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI OBBLIGATORI.");
-            if(n.length < 2 || c.length < 2) return mostraErrore("NOME E COGNOME DEVONO AVERE ALMENO 2 LETTERE.");
-
-            // 2. Validazione E-mail
+            
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(e)) return mostraErrore("FORMATO E-MAIL NON VALIDO. CONTROLLA @ O PUNTI.");
+            if (!emailRegex.test(e)) return mostraErrore("FORMATO E-MAIL NON VALIDO.");
 
-            // 3. Controllo Età (Minimo 16 anni)
-            const dataNascita = new Date(d);
-            const oggi = new Date();
-            let eta = oggi.getFullYear() - dataNascita.getFullYear();
-            if (oggi.getMonth() < dataNascita.getMonth() || (oggi.getMonth() === dataNascita.getMonth() && oggi.getDate() < dataNascita.getDate())) eta--;
-            if (eta < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI PER ISCRIVERTI.");
+            const age = new Date().getFullYear() - new Date(d).getFullYear();
+            if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI.");
 
-            // 4. Tentativo di Registrazione
             try {
                 const { error } = await sb.auth.signUp({
-                    email: e, 
-                    password: p,
-                    options: { 
-                        data: { first_name: n, last_name: c },
-                        emailRedirectTo: window.location.origin 
-                    }
+                    email: e, password: p,
+                    options: { data: { first_name: n, last_name: c }, emailRedirectTo: window.location.origin }
                 });
-
-                if (error) {
-                    mostraErrore("ERRORE SISTEMA: " + error.message.toUpperCase());
-                } else {
-                    alert("PROFILO CREATO! ORA CONTROLLA LA TUA E-MAIL PER CONFERMARE (ANCHE NELLO SPAM).");
-                    vaiA('login');
-                }
+                if (error) mostraErrore("ERRORE: " + error.message.toUpperCase());
+                else { alert("PROFILO CREATO! CONTROLLA LA TUA E-MAIL."); vaiA('login'); }
             } catch (err) {
-                mostraErrore("ERRORE DI CARICAMENTO: CONTROLLA LA CONNESSIONE O LE CHIAVI API.");
-                console.error("Dettaglio errore:", err);
+                mostraErrore("ERRORE TECNICO DI CARICAMENTO.");
             }
         }
 
-        // --- LOGIN ---
         async function faiLogin() {
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
@@ -206,14 +184,13 @@
             else location.reload();
         }
 
-        // --- FEED ---
         async function caricaFeed() {
             const { data } = await sb.from('posts').select('*').order('created_at', { ascending: false });
             if(data) {
                 document.getElementById('feed').innerHTML = data.map(p => `
                     <div class="mb-24 border-b border-zinc-900 pb-12">
-                        <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-4">BY ${p.user_email.split('@')[0]}</p>
-                        ${p.image_url ? `<img src="${p.image_url}" class="w-full grayscale hover:grayscale-0 transition-all duration-1000 mb-6 shadow-2xl">` : ''}
+                        <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-4">BY ${p.user_email ? p.user_email.split('@')[0] : 'ARCHIVIO'}</p>
+                        ${p.image_url ? `<img src="${p.image_url}" class="w-full grayscale hover:grayscale-0 transition-all duration-1000 mb-6">` : ''}
                         <p class="serif text-4xl italic">"${p.content}"</p>
                     </div>
                 `).join('');
