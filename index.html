@@ -9,100 +9,112 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@100;300;400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; margin: 0; }
         .serif { font-family: 'Playfair Display', serif; }
         .hidden { display: none !important; }
         
-        /* Griglia Immagini Sfondo */
-        .bg-grid {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 2px; z-index: -1; opacity: 0.4;
+        /* Layout Foto Sfondo - Posizionate per non essere coperte */
+        .photo-bg {
+            position: fixed; width: 250px; height: 350px; 
+            z-index: 1; filter: grayscale(100%); 
+            transition: filter 0.8s ease, transform 0.8s ease;
+            object-fit: cover; border: 1px solid rgba(255,255,255,0.1);
         }
-        .bg-grid img {
-            width: 100%; height: 100%; object-fit: cover;
-            filter: grayscale(100%); transition: filter 1s ease, transform 1s ease;
-        }
-        .bg-grid img:hover { filter: grayscale(0%); transform: scale(1.05); }
+        .photo-bg:hover { filter: grayscale(0%); transform: scale(1.02); z-index: 10; }
 
-        /* Form elegante */
+        /* Posizioni specifiche per visibilità totale */
+        .img-1 { top: 5%; left: 5%; }
+        .img-2 { top: 5%; right: 5%; }
+        .img-3 { bottom: 5%; left: 5%; }
+        .img-4 { bottom: 5%; right: 5%; }
+
+        /* Form Centrale - Più stretto e pulito */
         .glass-box {
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 60px; border-radius: 2px;
+            position: relative; z-index: 20;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            padding: 50px; width: 100%; max-width: 450px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .btn-white {
             background: #fff; color: #000; padding: 18px;
-            font-weight: 300; text-transform: uppercase; width: 100%;
-            cursor: pointer; font-size: 11px; letter-spacing: 4px;
-            transition: 0.4s;
+            font-weight: 400; text-transform: uppercase; width: 100%;
+            cursor: pointer; font-size: 11px; letter-spacing: 3px;
+            transition: 0.3s; margin-top: 20px;
         }
         .btn-white:hover { background: #000; color: #fff; border: 1px solid #fff; }
         
+        /* Input distanziati e ampi */
         input {
-            background: transparent; border-bottom: 1px solid #333;
-            padding: 16px 0; color: #fff; width: 100%; outline: none;
-            margin-bottom: 30px; font-size: 13px; letter-spacing: 1px;
-            transition: border-color 0.3s;
+            background: transparent; border-bottom: 1px solid #222;
+            padding: 18px 0; color: #fff; width: 100%; outline: none;
+            margin-bottom: 35px; font-size: 13px; letter-spacing: 1px;
         }
         input:focus { border-color: #fff; }
-        .error-msg { color: #ff4444; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; display: none; }
+        
+        .label-small { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
-    <div class="bg-grid">
-        <img src="https://images.unsplash.com/photo-1539109132314-347752418b35?q=80&w=1000">
-        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1000">
-        <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1000">
-        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000">
-    </div>
+    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500" class="photo-bg img-1" alt="Fashion 1">
+    <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=500" class="photo-bg img-2" alt="Fashion 2">
+    <img src="https://images.unsplash.com/photo-1539109132314-347752418b35?w=500" class="photo-bg img-3" alt="Fashion 3">
+    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500" class="photo-bg img-4" alt="Fashion 4">
 
-    <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="serif text-8xl mb-16 italic tracking-tighter opacity-90">Hawenishland</h1>
+    <section class="min-h-screen flex flex-col items-center justify-center p-6 relative">
+        <h1 class="serif text-7xl mb-12 italic tracking-tighter z-20">Hawenishland</h1>
         
-        <div class="w-full max-w-lg glass-box">
-            <div id="error-display" class="error-msg"></div>
+        <div class="glass-box shadow-2xl">
+            <div id="error-display" class="text-red-500 text-[10px] uppercase mb-6 hidden"></div>
 
-            <div id="login-form" class="space-y-6">
-                <input type="email" id="l-email" placeholder="EMAIL ADDRESS">
+            <div id="login-form">
+                <input type="email" id="l-email" placeholder="EMAIL">
                 <input type="password" id="l-pass" placeholder="PASSWORD">
-                <button onclick="faiLogin()" class="btn-white">Entra nell'Archivio</button>
-                <div class="pt-8">
-                    <button onclick="vaiA('signup')" class="text-[10px] text-zinc-400 uppercase tracking-[4px] hover:text-white transition italic">Iscriviti</button>
+                <button onclick="faiLogin()" class="btn-white">Entra</button>
+                <div class="mt-10">
+                    <button onclick="vaiA('signup')" class="text-[10px] text-zinc-500 uppercase tracking-[3px] hover:text-white transition italic">Iscriviti</button>
                 </div>
             </div>
 
             <div id="signup-form" class="hidden text-left">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="r-nome" placeholder="NOME">
-                    <input type="text" id="r-cognome" placeholder="COGNOME">
+                <div class="grid grid-cols-2 gap-8 mb-4">
+                    <div>
+                        <span class="label-small">Nome</span>
+                        <input type="text" id="r-nome" placeholder="ES. MARCO">
+                    </div>
+                    <div>
+                        <span class="label-small">Cognome</span>
+                        <input type="text" id="r-cognome" placeholder="ES. ROSSI">
+                    </div>
                 </div>
-                <p class="text-[9px] text-zinc-500 mb-2 uppercase tracking-[3px]">Data di Nascita</p>
-                <input type="date" id="r-nascita" style="color: #666">
-                <input type="email" id="r-email" placeholder="EMAIL">
-                <input type="password" id="r-pass" placeholder="PASSWORD (MIN 8 CARATTERI)">
-                <button onclick="faiRegistrazione()" class="btn-white mt-4">Crea Profilo</button>
-                <button onclick="vaiA('login')" class="text-[10px] text-zinc-400 uppercase tracking-[4px] hover:text-white block mt-10 text-center italic">Hai già un account? Accedi</button>
+                
+                <span class="label-small">Data di Nascita (Min. 16 anni)</span>
+                <input type="date" id="r-nascita" style="color-scheme: dark;">
+
+                <span class="label-small">Credenziali</span>
+                <input type="email" id="r-email" placeholder="IL TUO INDIRIZZO EMAIL">
+                <input type="password" id="r-pass" placeholder="PASSWORD (MIN. 8 CARATTERI)">
+                
+                <button onclick="faiRegistrazione()" class="btn-white">Crea Profilo</button>
+                <button onclick="vaiA('login')" class="text-[10px] text-zinc-500 uppercase tracking-[3px] hover:text-white block mt-12 text-center italic">Hai già un account? Accedi</button>
             </div>
 
             <div class="mt-12 pt-8 border-t border-white/5">
-                <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 w-full text-[9px] uppercase tracking-[4px] text-zinc-500 hover:text-white transition">
+                <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 w-full text-[9px] uppercase tracking-[3px] text-zinc-600 hover:text-white transition">
                     <i data-lucide="github" class="w-4 h-4"></i> GitHub Accesso
                 </button>
             </div>
         </div>
     </section>
 
-    <section id="app-screen" class="hidden">
-        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/80 backdrop-blur-md p-6 z-50 flex justify-between items-center px-12">
+    <section id="app-screen" class="hidden min-h-screen bg-black z-50 relative">
+        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/95 p-6 flex justify-between items-center px-12 z-[100]">
             <span class="serif text-3xl italic">Hawenishland</span>
             <button onclick="esci()" class="text-[10px] border border-zinc-800 px-6 py-2 uppercase tracking-[2px] hover:bg-white hover:text-black transition">Logout</button>
         </nav>
-        <main class="pt-40 max-w-2xl mx-auto px-6">
-            <div id="feed" class="space-y-24"></div>
-        </main>
+        <main class="pt-40 max-w-xl mx-auto px-6" id="feed"></main>
     </section>
 
     <script>
@@ -119,11 +131,8 @@
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-            if (error) {
-                const err = document.getElementById('error-display');
-                err.innerText = "ACCESSO NEGATO: DATI ERRATI";
-                err.style.display = 'block';
-            } else location.reload();
+            if (error) alert("Accesso fallito: controlla i dati.");
+            else location.reload();
         }
 
         async function faiRegistrazione() {
@@ -134,7 +143,7 @@
             const p = document.getElementById('r-pass').value;
 
             const age = new Date().getFullYear() - new Date(d).getFullYear();
-            if (age < 16) { alert("Accesso limitato ai maggiori di 16 anni"); return; }
+            if (age < 16) { alert("Devi avere almeno 16 anni."); return; }
 
             const res = await sb.auth.signUp({
                 email: e, password: p,
@@ -142,16 +151,16 @@
             });
 
             if (res.error) alert(res.error.message);
-            else { alert("Richiesta inviata. Conferma l'email per attivare il profilo."); vaiA('login'); }
+            else { alert("Controlla l'email per confermare l'iscrizione."); vaiA('login'); }
         }
 
         async function caricaFeed() {
             const { data } = await sb.from('posts').select('*, likes(count), comments(*)').order('created_at', { ascending: false });
             document.getElementById('feed').innerHTML = data.map(p => `
-                <div class="post-card pb-20 border-b border-zinc-900">
-                    <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-8">Archivio // ${p.user_email.split('@')[0]}</p>
-                    ${p.image_url ? `<img src="${p.image_url}" class="bw-photo w-full mb-10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-1000">` : ''}
-                    <p class="serif text-4xl italic leading-tight text-zinc-200">"${p.content}"</p>
+                <div class="mb-24 border-b border-zinc-900 pb-12">
+                    <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-6">Archivio // ${p.user_email.split('@')[0]}</p>
+                    ${p.image_url ? `<img src="${p.image_url}" class="w-full mb-8 shadow-2xl grayscale hover:grayscale-0 transition-all duration-1000">` : ''}
+                    <p class="serif text-4xl italic leading-snug">"${p.content}"</p>
                 </div>
             `).join('');
             lucide.createIcons();
@@ -161,6 +170,7 @@
             const { data: { user } } = await sb.auth.getUser();
             if (user) { 
                 document.getElementById('auth-screen').classList.add('hidden'); 
+                document.querySelectorAll('.photo-bg').forEach(el => el.classList.add('hidden'));
                 document.getElementById('app-screen').classList.remove('hidden'); 
                 caricaFeed(); 
             }
