@@ -18,7 +18,7 @@
         .visual-side { flex: 1; position: relative; overflow: hidden; display: none; background: #000; }
         @media (min-width: 768px) { .visual-side { display: block; } }
 
-        /* FOTO INTERATTIVE */
+        /* FOTO INTERATTIVE CON FIX Z-INDEX */
         .visual-side img {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; filter: grayscale(100%); opacity: 0;
@@ -91,11 +91,11 @@
                 <div class="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="input-label">Nome</label>
-                        <input type="text" id="r-nome">
+                        <input type="text" id="r-nome" placeholder="ES. MARCO">
                     </div>
                     <div>
                         <label class="input-label">Cognome</label>
-                        <input type="text" id="r-cognome">
+                        <input type="text" id="r-cognome" placeholder="ES. ROSSI">
                     </div>
                 </div>
                 <div class="input-group">
@@ -104,7 +104,7 @@
                 </div>
                 <div class="input-group">
                     <label class="input-label">Indirizzo Email</label>
-                    <input type="email" id="r-email">
+                    <input type="email" id="r-email" placeholder="EMAIL@ESEMPIO.IT">
                 </div>
                 <div class="input-group">
                     <label class="input-label">Password (Min. 8 caratteri)</label>
@@ -149,7 +149,7 @@
             d.innerText = msg; d.style.display = 'block';
         }
 
-        // --- FUNZIONE REGISTRAZIONE ---
+        // --- NUOVA FUNZIONE REGISTRAZIONE CORAZZATA ---
         async function faiRegistrazione() {
             const n = document.getElementById('r-nome').value.trim();
             const c = document.getElementById('r-cognome').value.trim();
@@ -157,51 +157,52 @@
             const e = document.getElementById('r-email').value.trim();
             const p = document.getElementById('r-pass').value;
 
+            // 1. Controllo Campi Vuoti e Lunghezza
             if(!n || !c || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI OBBLIGATORI.");
+            if(n.length < 2 || c.length < 2) return mostraErrore("NOME E COGNOME DEVONO AVERE ALMENO 2 LETTERE.");
 
+            // 2. Validazione E-mail
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(e)) return mostraErrore("FORMATO E-MAIL NON VALIDO.");
+            if (!emailRegex.test(e)) return mostraErrore("FORMATO E-MAIL NON VALIDO. CONTROLLA @ O PUNTI.");
 
+            // 3. Controllo Età (Minimo 16 anni)
             const dataNascita = new Date(d);
             const oggi = new Date();
             let eta = oggi.getFullYear() - dataNascita.getFullYear();
             if (oggi.getMonth() < dataNascita.getMonth() || (oggi.getMonth() === dataNascita.getMonth() && oggi.getDate() < dataNascita.getDate())) eta--;
-
             if (eta < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI PER ISCRIVERTI.");
 
+            // 4. Tentativo di Registrazione con FIX per SAFARI
             try {
                 const { error } = await sb.auth.signUp({
-                    email: e, password: p,
-                    options: { data: { first_name: n, last_name: c }, emailRedirectTo: window.location.origin }
+                    email: e, 
+                    password: p,
+                    options: { 
+                        data: { first_name: n, last_name: c },
+                        // FIX: Rimanda all'indirizzo esatto attuale per evitare blocchi di rete
+                        emailRedirectTo: window.location.href 
+                    }
                 });
 
                 if (error) {
-                    mostraErrore("ERRORE: " + error.message.toUpperCase());
+                    mostraErrore("ERRORE SISTEMA: " + error.message.toUpperCase());
                 } else {
-                    alert("PROFILO CREATO! ORA CONTROLLA LA TUA E-MAIL PER CONFERMARE (ANCHE NELLO SPAM).");
+                    alert("PROFILO CREATO! CONTROLLA LA TUA E-MAIL PER CONFERMARE (ANCHE NELLO SPAM).");
                     vaiA('login');
                 }
             } catch (err) {
-                mostraErrore("ERRORE TECNICO: CONTROLLA LA TUA CONNESSIONE.");
+                mostraErrore("ERRORE DI CARICAMENTO: LA RETE O IL DOMINIO NON SONO PRONTI.");
+                console.error("Dettagli errore:", err);
             }
         }
 
-        // --- LOGIN E SESSIONE ---
+        // --- LOGIN ---
         async function faiLogin() {
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
             if (error) mostraErrore("E-MAIL O PASSWORD NON VALIDE.");
             else location.reload();
-        }
-
-        async function check() {
-            const { data: { user } } = await sb.auth.getUser();
-            if (user) { 
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('app-screen').classList.remove('hidden'); 
-                caricaFeed(); 
-            }
         }
 
         async function caricaFeed() {
@@ -214,6 +215,15 @@
                         <p class="serif text-4xl italic">"${p.content}"</p>
                     </div>
                 `).join('');
+            }
+        }
+
+        async function check() {
+            const { data: { user } } = await sb.auth.getUser();
+            if (user) { 
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-screen').classList.remove('hidden'); 
+                caricaFeed(); 
             }
         }
 
