@@ -129,10 +129,16 @@
 </div>
 
 <script>
-const WORKER_URL = "https://falling-field-c19e.ettore-serra98-193.workers.dev/"; 
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc";
-const sb = supabase.createClient(WORKER_URL, SB_KEY);
+// === CONFIGURAZIONE SUPABASE ===
+// URL del tuo progetto
+const SUPABASE_URL = "https://nqeuecpgvqexhpztpois.supabase.co";
 
+// Chiave ANON (pubblica, NON usare la service role sul frontend)
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc"; // <- SOSTITUISCI QUESTO VALORE [web:28][web:30]
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// === FUNZIONI UI ===
 function vaiA(m) {
     document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
     document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
@@ -150,6 +156,7 @@ function emailValida(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// === REGISTRAZIONE ===
 async function faiRegistrazione() {
     const e = document.getElementById('r-email').value.trim();
     const p = document.getElementById('r-pass').value;
@@ -182,46 +189,69 @@ async function faiRegistrazione() {
             email: e,
             password: p,
             options: {
-                data: { first_name: n, last_name: c, birthday: d },
+                 { first_name: n, last_name: c, birthday: d },
+                // Assicurati che questa origin sia presente in Site URL o Additional redirect URLs in Supabase [web:33][web:39]
                 emailRedirectTo: window.location.origin
             }
         });
 
-        if (error) mess(error.message, true);
-        else {
+        if (error) {
+            console.error(error);
+            mess(error.message || "Errore durante la registrazione.", true);
+        } else {
             mess("Controlla la tua mail per confermare.", false);
             setTimeout(() => vaiA('login'), 2000);
         }
-    } catch {
+    } catch (err) {
+        console.error(err);
         mess("Errore di connessione. Riprova più tardi.", true);
     }
 }
 
+// === LOGIN ===
 async function faiLogin() {
+    const email = document.getElementById('l-email').value.trim();
+    const password = document.getElementById('l-pass').value;
+
+    if (!email || !password) {
+        return mess("Inserisci email e password.", true);
+    }
+
     const { error } = await sb.auth.signInWithPassword({
-        email: document.getElementById('l-email').value,
-        password: document.getElementById('l-pass').value
+        email,
+        password
     });
 
-    if (error) mess(error.message, true);
-    else alert("Login effettuato.");
+    if (error) {
+        console.error(error);
+        mess(error.message || "Errore di login.", true);
+    } else {
+        alert("Login effettuato.");
+    }
 }
 
+// === RECUPERO PASSWORD ===
 async function recuperoPassword() {
     const email = prompt("Inserisci la tua email:");
     if (!email) return;
 
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
+        redirectTo: window.location.origin  // anche questa URL deve essere ammessa nelle impostazioni Supabase [web:39]
     });
 
-    if (error) alert(error.message);
-    else alert("Email di recupero inviata.");
+    if (error) {
+        console.error(error);
+        alert(error.message || "Errore nell'invio dell'email di recupero.");
+    } else {
+        alert("Email di recupero inviata.");
+    }
 }
 
+// === SLIDESHOW SFONDO ===
 let idx = 0;
 const imgs = document.querySelectorAll('.visual-side img');
 setInterval(() => {
+    if (!imgs.length) return;
     imgs[idx].classList.remove('active');
     idx = (idx + 1) % imgs.length;
     imgs[idx].classList.add('active');
