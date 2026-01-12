@@ -14,23 +14,22 @@
         .hidden { display: none !important; }
         .btn-white { background: #fff; color: #000; padding: 12px; font-weight: 600; text-transform: uppercase; width: 100%; transition: 0.3s; cursor: pointer; border: none; font-size: 9px; letter-spacing: 2px; }
         input { background: transparent; border: 1px solid #1a1a1a; padding: 12px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; font-size: 13px; }
-        input:focus { border-color: #fff; }
-        .error-msg { color: #ff4444; font-size: 10px; text-transform: uppercase; margin-bottom: 15px; border: 1px solid #441111; padding: 10px; display: none; }
+        .error-msg { color: #ff4444; font-size: 10px; text-transform: uppercase; margin-bottom: 15px; border: 1px solid #441111; padding: 10px; display: none; background: #1a0000; }
     </style>
 </head>
 <body>
 
     <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="serif text-6xl mb-12 italic tracking-tighter">Hawenisland</h1>
+        <h1 class="serif text-6xl mb-12 italic tracking-tighter text-white">Hawenisland</h1>
         
         <div class="w-full max-w-sm">
             <div id="error-display" class="error-msg"></div>
 
             <div id="login-form">
-                <input type="email" id="login-email" placeholder="Email (es: nome@mail.it)">
+                <input type="email" id="login-email" placeholder="Email">
                 <input type="password" id="login-pass" placeholder="Password">
-                <button onclick="login()" class="btn-white mb-4">Entra</button>
-                <button onclick="toggleForm('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition">Non sei registrato? Unisciti</button>
+                <button id="btn-login" class="btn-white mb-4">Entra</button>
+                <button onclick="toggleForm('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white">Non sei registrato? Unisciti</button>
             </div>
 
             <div id="signup-form" class="hidden">
@@ -40,13 +39,13 @@
                 <input type="date" id="reg-nascita">
                 <input type="email" id="reg-email" placeholder="Email">
                 <input type="password" id="reg-pass" placeholder="Password (Min. 6 caratteri)">
-                <button onclick="signup()" class="btn-white mb-4">Crea Account</button>
-                <button onclick="toggleForm('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition">Hai già un account? Accedi</button>
+                <button id="btn-signup" class="btn-white mb-4">Crea Account</button>
+                <button onclick="toggleForm('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white">Hai già un account? Accedi</button>
             </div>
 
-            <p onclick="forgotPassword()" class="text-[9px] text-zinc-500 uppercase cursor-pointer pt-6 hover:text-white">Recupera Password</p>
+            <p id="btn-forgot" class="text-[9px] text-zinc-500 uppercase cursor-pointer pt-6 hover:text-white">Recupera Password</p>
             <div class="py-6 text-zinc-800 text-[9px] tracking-[0.5em]">— GITHUB —</div>
-            <button onclick="loginGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
+            <button id="btn-github" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
                 <i data-lucide="github" class="w-4 h-4"></i>
                 <span class="font-semibold text-[9px] uppercase tracking-widest">GitHub Login</span>
             </button>
@@ -56,18 +55,18 @@
     <section id="app-screen" class="hidden">
         <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/90 p-6 z-50 flex justify-between items-center">
             <span class="serif text-2xl italic">Hawenisland</span>
-            <button onclick="logout()" class="text-[9px] border border-zinc-800 px-4 py-2 hover:bg-red-950">LOGOUT</button>
+            <button onclick="logout()" class="text-[9px] border border-zinc-800 px-4 py-2">LOGOUT</button>
         </nav>
         <main class="pt-40 text-center">
-            <p class="serif text-4xl italic">Benvenuto nell'archivio, <span id="user-display-name"></span>.</p>
+            <p class="serif text-4xl italic">Benvenuto, <span id="user-name"></span>.</p>
         </main>
     </section>
 
     <script>
-        // CONFIGURAZIONE (NON CAMBIARE)
-        const URL = 'https://nqueucpgvqexhpztpois.supabase.co';
-        const KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
-        const supabase = window.supabase.createClient(URL, KEY);
+        // Configurazione presa dalle tue foto 34 e 38
+        const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+        const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
         function toggleForm(mode) {
             document.getElementById('login-form').classList.toggle('hidden', mode === 'signup');
@@ -83,30 +82,25 @@
 
         function hideError() { document.getElementById('error-display').style.display = 'none'; }
 
-        // --- LOGIN CON ERRORI SPECIFICI ---
-        async function login() {
+        // --- AZIONE LOGIN ---
+        document.getElementById('btn-login').onclick = async () => {
             hideError();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-pass').value;
 
-            if (!email.includes('@')) return showError("Inserisci un formato email valido");
+            if (!email.includes('@')) return showError("Inserisci un'email valida");
 
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
             if (error) {
-                // Messaggi richiesti da te
-                if (error.message.includes("Invalid login credentials")) {
-                    showError("E-mail o password sbagliati");
-                } else {
-                    showError("Utente non registrato");
-                }
+                if (error.message.includes("Invalid login credentials")) showError("E-mail o password sbagliati");
+                else showError("Utente non registrato");
             } else {
-                checkUser();
+                window.location.reload();
             }
-        }
+        };
 
-        // --- REGISTRAZIONE CON CONTROLLO ETÀ ---
-        async function signup() {
+        // --- AZIONE REGISTRAZIONE ---
+        document.getElementById('btn-signup').onclick = async () => {
             hideError();
             const nome = document.getElementById('reg-nome').value;
             const cognome = document.getElementById('reg-cognome').value;
@@ -114,40 +108,54 @@
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-pass').value;
 
-            if (!nome || !cognome || !nascita || !email || !password) return showError("Compila tutti i campi");
+            if (!nome || !nascita || !email || !password) return showError("Compila tutti i campi");
 
-            // Calcolo Età (Minimo 16 anni)
+            // Controllo 16 anni
             const oggi = new Date();
             const dataNascita = new Date(nascita);
             let eta = oggi.getFullYear() - dataNascita.getFullYear();
-            const m = oggi.getMonth() - dataNascita.getMonth();
-            if (m < 0 || (m === 0 && oggi.getDate() < dataNascita.getDate())) eta--;
+            if (oggi.getMonth() < dataNascita.getMonth() || (oggi.getMonth() === dataNascita.getMonth() && oggi.getDate() < dataNascita.getDate())) eta--;
 
-            if (eta < 16) return showError("Devi avere almeno 16 anni per unirti");
+            if (eta < 16) return showError("Devi avere almeno 16 anni");
 
             const { error } = await supabase.auth.signUp({
                 email, password,
-                options: { data: { first_name: nome, last_name: cognome, dob: nascita } }
+                options: { data: { first_name: nome, last_name: cognome } }
             });
 
             if (error) showError(error.message);
-            else alert("Registrazione completata! Controlla la tua email per confermare.");
-        }
+            else alert("Registrazione effettuata! Conferma l'email per accedere.");
+        };
 
-        async function loginGitHub() {
-            await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
-        }
+        // --- AZIONE GITHUB ---
+        document.getElementById('btn-github').onclick = async () => {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'github',
+                options: { redirectTo: window.location.origin }
+            });
+            if (error) showError("Errore GitHub: " + error.message);
+        };
+
+        // --- RECUPERO PASSWORD ---
+        document.getElementById('btn-forgot').onclick = async () => {
+            const email = document.getElementById('login-email').value;
+            if (!email) return showError("Inserisci l'email nel campo sopra");
+            const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+            if (error) showError(error.message);
+            else alert("Email di recupero inviata!");
+        };
 
         async function checkUser() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
-                document.getElementById('user-display-name').innerText = user.user_metadata.first_name || "Editor";
+                document.getElementById('user-name').innerText = user.user_metadata.first_name || "Utente";
             }
         }
 
-        async function logout() { await supabase.auth.signOut(); location.reload(); }
+        async function logout() { await supabase.auth.signOut(); window.location.reload(); }
+        
         lucide.createIcons();
         checkUser();
     </script>
