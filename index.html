@@ -6,67 +6,102 @@
     <title>HAWENISHLAND — Archivio Moda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@100;300;400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .serif { font-family: 'Playfair Display', serif; }
         .hidden { display: none !important; }
-        .btn-white { background: #fff; color: #000; padding: 14px; font-weight: 600; text-transform: uppercase; width: 100%; cursor: pointer; border: none; font-size: 10px; letter-spacing: 2px; transition: 0.3s; }
-        input, textarea { background: #080808; border: 1px solid #1a1a1a; padding: 14px; color: #fff; width: 100%; outline: none; margin-bottom: 12px; font-size: 14px; }
-        .error-msg { background: #2d0000; border: 1px solid #ff4444; color: #ff4444; padding: 12px; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; display: none; text-align: center; }
-        .post-card { border-bottom: 1px solid #111; padding: 50px 0; }
-        .bw-photo { filter: grayscale(100%); transition: filter 0.7s ease; }
-        .bw-photo:hover { filter: grayscale(0%); }
+        
+        /* Griglia Immagini Sfondo */
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 2px; z-index: -1; opacity: 0.4;
+        }
+        .bg-grid img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: grayscale(100%); transition: filter 1s ease, transform 1s ease;
+        }
+        .bg-grid img:hover { filter: grayscale(0%); transform: scale(1.05); }
+
+        /* Form elegante */
+        .glass-box {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 60px; border-radius: 2px;
+        }
+        .btn-white {
+            background: #fff; color: #000; padding: 18px;
+            font-weight: 300; text-transform: uppercase; width: 100%;
+            cursor: pointer; font-size: 11px; letter-spacing: 4px;
+            transition: 0.4s;
+        }
+        .btn-white:hover { background: #000; color: #fff; border: 1px solid #fff; }
+        
+        input {
+            background: transparent; border-bottom: 1px solid #333;
+            padding: 16px 0; color: #fff; width: 100%; outline: none;
+            margin-bottom: 30px; font-size: 13px; letter-spacing: 1px;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: #fff; }
+        .error-msg { color: #ff4444; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; display: none; }
     </style>
 </head>
 <body>
 
+    <div class="bg-grid">
+        <img src="https://images.unsplash.com/photo-1539109132314-347752418b35?q=80&w=1000">
+        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1000">
+        <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1000">
+        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000">
+    </div>
+
     <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="serif text-7xl mb-12 italic tracking-tighter">Hawenishland</h1>
-        <div class="w-full max-w-sm">
+        <h1 class="serif text-8xl mb-16 italic tracking-tighter opacity-90">Hawenishland</h1>
+        
+        <div class="w-full max-w-lg glass-box">
             <div id="error-display" class="error-msg"></div>
 
-            <div id="login-form">
-                <input type="email" id="l-email" placeholder="Email">
-                <input type="password" id="l-pass" placeholder="Password">
-                <button onclick="faiLogin()" class="btn-white mb-4">Entra</button>
-                <button onclick="vaiA('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition italic">Unisciti</button>
+            <div id="login-form" class="space-y-6">
+                <input type="email" id="l-email" placeholder="EMAIL ADDRESS">
+                <input type="password" id="l-pass" placeholder="PASSWORD">
+                <button onclick="faiLogin()" class="btn-white">Entra nell'Archivio</button>
+                <div class="pt-8">
+                    <button onclick="vaiA('signup')" class="text-[10px] text-zinc-400 uppercase tracking-[4px] hover:text-white transition italic">Iscriviti</button>
+                </div>
             </div>
 
             <div id="signup-form" class="hidden text-left">
-                <input type="text" id="r-nome" placeholder="Nome">
-                <input type="text" id="r-cognome" placeholder="Cognome">
-                <p class="text-[9px] text-zinc-500 mb-1 uppercase tracking-widest">Data di nascita (Min. 16 anni)</p>
-                <input type="date" id="r-nascita">
-                <input type="email" id="r-email" placeholder="Email">
-                <input type="password" id="r-pass" placeholder="Password (Min. 8 caratteri, 1 maiuscola, 1 numero, 1 simbolo)">
-                <button onclick="faiRegistrazione()" class="btn-white mb-4">Crea Account</button>
-                <button onclick="vaiA('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white block text-center italic">Accedi</button>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="r-nome" placeholder="NOME">
+                    <input type="text" id="r-cognome" placeholder="COGNOME">
+                </div>
+                <p class="text-[9px] text-zinc-500 mb-2 uppercase tracking-[3px]">Data di Nascita</p>
+                <input type="date" id="r-nascita" style="color: #666">
+                <input type="email" id="r-email" placeholder="EMAIL">
+                <input type="password" id="r-pass" placeholder="PASSWORD (MIN 8 CARATTERI)">
+                <button onclick="faiRegistrazione()" class="btn-white mt-4">Crea Profilo</button>
+                <button onclick="vaiA('login')" class="text-[10px] text-zinc-400 uppercase tracking-[4px] hover:text-white block mt-10 text-center italic">Hai già un account? Accedi</button>
             </div>
 
-            <div class="py-10 text-zinc-900 text-[10px] tracking-[0.5em] font-bold">— GITHUB —</div>
-            <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
-                <i data-lucide="github" class="w-4 h-4"></i>
-                <span class="font-semibold text-[10px] uppercase tracking-widest">GitHub Accesso</span>
-            </button>
+            <div class="mt-12 pt-8 border-t border-white/5">
+                <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 w-full text-[9px] uppercase tracking-[4px] text-zinc-500 hover:text-white transition">
+                    <i data-lucide="github" class="w-4 h-4"></i> GitHub Accesso
+                </button>
+            </div>
         </div>
     </section>
 
     <section id="app-screen" class="hidden">
-        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/90 p-4 z-50 flex justify-between items-center px-6">
-            <span class="serif text-2xl italic">Hawenishland</span>
-            <input type="text" id="cerca" oninput="caricaFeed()" placeholder="Cerca..." class="max-w-[150px] mb-0 py-1 px-4 text-[10px] bg-zinc-900 border-none rounded-full">
-            <button onclick="esci()" class="text-[9px] border border-zinc-800 px-4 py-2">LOGOUT</button>
+        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/80 backdrop-blur-md p-6 z-50 flex justify-between items-center px-12">
+            <span class="serif text-3xl italic">Hawenishland</span>
+            <button onclick="esci()" class="text-[10px] border border-zinc-800 px-6 py-2 uppercase tracking-[2px] hover:bg-white hover:text-black transition">Logout</button>
         </nav>
-
-        <main class="pt-32 max-w-xl mx-auto px-6 pb-20">
-            <div class="mb-16 border border-zinc-900 p-6">
-                <textarea id="p-testo" placeholder="Condividi la tua visione..." class="bg-transparent border-none text-xl serif italic h-24 p-0 mb-4 w-full"></textarea>
-                <input type="file" id="p-foto" accept="image/*" class="text-[10px] mb-4">
-                <button onclick="pubblicaPost()" id="btn-pub" class="btn-white">Pubblica</button>
-            </div>
-            <div id="feed" class="space-y-12"></div>
+        <main class="pt-40 max-w-2xl mx-auto px-6">
+            <div id="feed" class="space-y-24"></div>
         </main>
     </section>
 
@@ -78,49 +113,6 @@
         function vaiA(m) {
             document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
             document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-            document.getElementById('error-display').style.display = 'none';
-        }
-
-        function mostraErrore(msg) {
-            const d = document.getElementById('error-display');
-            d.innerText = msg;
-            d.style.display = 'block';
-        }
-
-        function passwordValida(pwd) {
-            const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};:'",.<>/?\\|]).{8,}$/;
-            return regex.test(pwd);
-        }
-
-        async function faiRegistrazione() {
-            const nome = document.getElementById('r-nome').value;
-            const nascita = document.getElementById('r-nascita').value;
-            const email = document.getElementById('r-email').value;
-            const pass = document.getElementById('r-pass').value;
-
-            if (!nome || !nascita || !email || !pass)
-                return mostraErrore("COMPILA TUTTI I CAMPI");
-
-            const age = new Date().getFullYear() - new Date(nascita).getFullYear();
-            if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI");
-
-            if (!passwordValida(pass))
-                return mostraErrore("PASSWORD NON SICURA: MIN. 8 CARATTERI, 1 MAIUSCOLA, 1 NUMERO, 1 SIMBOLO");
-
-            // Signup con logging diretto sullo schermo
-            const res = await sb.auth.signUp({
-                email,
-                password: pass,
-                options: { data: { first_name: nome } }
-            });
-
-            if (res.error) {
-                mostraErrore("ERROR: " + res.error.message);
-                console.log("Signup response:", res);
-            } else {
-                alert("Signup riuscito! Controlla la tua email (anche spam).");
-                vaiA('login');
-            }
         }
 
         async function faiLogin() {
@@ -128,64 +120,41 @@
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
             if (error) {
-                if (error.message.includes("Invalid login")) mostraErrore("E-MAIL O PASSWORD SBAGLIATI");
-                else mostraErrore("UTENTE NON REGISTRATO");
+                const err = document.getElementById('error-display');
+                err.innerText = "ACCESSO NEGATO: DATI ERRATI";
+                err.style.display = 'block';
             } else location.reload();
         }
 
-        async function faiGitHub() {
-            await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
-        }
+        async function faiRegistrazione() {
+            const n = document.getElementById('r-nome').value;
+            const c = document.getElementById('r-cognome').value;
+            const d = document.getElementById('r-nascita').value;
+            const e = document.getElementById('r-email').value;
+            const p = document.getElementById('r-pass').value;
 
-        async function pubblicaPost() {
-            const t = document.getElementById('p-testo').value;
-            const f = document.getElementById('p-foto').files[0];
-            const btn = document.getElementById('btn-pub');
-            const { data: { user } } = await sb.auth.getUser();
-            btn.disabled = true; btn.innerText = "CARICAMENTO...";
-            let url = null;
-            if (f) {
-                const name = `${Date.now()}-${f.name}`;
-                const { data } = await sb.storage.from('immagini').upload(name, f);
-                if (data) url = `${SB_URL}/storage/v1/object/public/immagini/${name}`;
-            }
-            await sb.from('posts').insert([{ content: t, user_email: user.email, image_url: url }]);
-            location.reload();
+            const age = new Date().getFullYear() - new Date(d).getFullYear();
+            if (age < 16) { alert("Accesso limitato ai maggiori di 16 anni"); return; }
+
+            const res = await sb.auth.signUp({
+                email: e, password: p,
+                options: { data: { first_name: n, last_name: c } }
+            });
+
+            if (res.error) alert(res.error.message);
+            else { alert("Richiesta inviata. Conferma l'email per attivare il profilo."); vaiA('login'); }
         }
 
         async function caricaFeed() {
-            const s = document.getElementById('cerca').value.toLowerCase();
             const { data } = await sb.from('posts').select('*, likes(count), comments(*)').order('created_at', { ascending: false });
-            const fil = data.filter(p => p.content.toLowerCase().includes(s) || p.user_email.toLowerCase().includes(s));
-            document.getElementById('feed').innerHTML = fil.map(p => `
-                <div class="post-card">
-                    <p class="text-[9px] text-zinc-600 mb-4 uppercase tracking-widest">BY ${p.user_email}</p>
-                    ${p.image_url ? `<img src="${p.image_url}" class="bw-photo w-full mb-6 shadow-2xl">` : ''}
-                    <p class="serif text-3xl italic mb-6">"${p.content}"</p>
-                    <div class="flex gap-6 border-t border-zinc-900 pt-4">
-                        <button onclick="mettiLike(${p.id})" class="text-[10px] flex items-center gap-2"><i data-lucide="heart" class="w-4 h-4"></i> ${p.likes[0].count}</button>
-                        <div class="text-[10px] text-zinc-500 uppercase flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4"></i> ${p.comments.length} Commenti</div>
-                    </div>
-                    <div class="mt-4 space-y-2">
-                        ${p.comments.map(c => `<div class="p-2 bg-zinc-900 text-[10px]"><b>${c.user_email.split('@')[0]}</b>: ${c.content}</div>`).join('')}
-                        <input type="text" placeholder="Commenta..." onkeydown="if(event.key==='Enter') inviaCommento(${p.id}, this.value)" class="text-[10px] mt-2">
-                    </div>
+            document.getElementById('feed').innerHTML = data.map(p => `
+                <div class="post-card pb-20 border-b border-zinc-900">
+                    <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-8">Archivio // ${p.user_email.split('@')[0]}</p>
+                    ${p.image_url ? `<img src="${p.image_url}" class="bw-photo w-full mb-10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-1000">` : ''}
+                    <p class="serif text-4xl italic leading-tight text-zinc-200">"${p.content}"</p>
                 </div>
             `).join('');
             lucide.createIcons();
-        }
-
-        async function mettiLike(id) {
-            const { data: { user } } = await sb.auth.getUser();
-            await sb.from('likes').insert([{ post_id: id, user_email: user.email }]);
-            caricaFeed();
-        }
-
-        async function inviaCommento(id, t) {
-            const { data: { user } } = await sb.auth.getUser();
-            if (!t) return;
-            await sb.from('comments').insert([{ post_id: id, user_email: user.email, content: t }]);
-            caricaFeed();
         }
 
         async function check() {
@@ -198,6 +167,8 @@
         }
 
         function esci() { sb.auth.signOut().then(() => location.reload()); }
+        function faiGitHub() { sb.auth.signInWithOAuth({ provider: 'github' }); }
+        
         lucide.createIcons();
         check();
     </script>
