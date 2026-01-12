@@ -51,7 +51,7 @@
         #msg-box{
             display:none; padding:12px; border:1px solid #333;
             font-size:11px; text-transform:uppercase;
-            margin-bottom:20px; text-align:center
+            margin-bottom:20px; text-align:center; word-break:break-word;
         }
         .link-small{
             text-align:center; margin-top:20px;
@@ -177,26 +177,26 @@ async function faiRegistrazione() {
         return mess("Devi avere almeno 16 anni.", true);
 
     try {
-        const { error } = await sb.auth.signUp({
+        const { data, error } = await sb.auth.signUp({
             email: e,
             password: p,
             options: {
                 data: { first_name: n, last_name: c, birthday: d },
-                // URL pubblico del tuo sito
                 emailRedirectTo: 'https://www.hawenishland.it/login'
             }
         });
 
-        console.log(error); // Mostra errore completo nella console
         if (error) {
-            mess(error.message || "Errore generico", true);
+            // Mostra errore completo nella pagina
+            mess("Errore: " + JSON.stringify(error), true);
+            console.error(error);
         } else {
             mess("Controlla la tua mail per confermare.", false);
             setTimeout(() => vaiA('login'), 2000);
         }
     } catch (e) {
+        mess("Errore di connessione: " + e.message, true);
         console.error(e);
-        mess("Errore di connessione. Riprova più tardi.", true);
     }
 }
 
@@ -218,8 +218,8 @@ async function recuperoPassword() {
         redirectTo: 'https://www.hawenishland.it/login'
     });
 
-    if (error) alert(error.message);
-    else alert("Email di recupero inviata.");
+    if (error) mess("Errore recupero password: " + JSON.stringify(error), true);
+    else mess("Email di recupero inviata.", false);
 }
 
 let idx = 0;
