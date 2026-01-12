@@ -2,37 +2,193 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>DEBUG HAWENISHLAND</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWENISHLAND — Archivio Moda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; }
+        .serif { font-family: 'Playfair Display', serif; }
+        .hidden { display: none !important; }
+        .btn-white { background: #fff; color: #000; padding: 14px; font-weight: 600; text-transform: uppercase; width: 100%; cursor: pointer; border: none; font-size: 10px; letter-spacing: 2px; }
+        input, textarea { background: #080808; border: 1px solid #1a1a1a; padding: 14px; color: #fff; width: 100%; outline: none; margin-bottom: 12px; font-size: 14px; }
+        .error-msg { background: #2d0000; border: 1px solid #ff4444; color: #ff4444; padding: 12px; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; display: none; text-align: center; }
+        /* L'EFFETTO BIANCO E NERO CHE SI COLORA */
+        .bw-photo { filter: grayscale(100%); transition: 0.8s ease; }
+        .bw-photo:hover { filter: grayscale(0%); }
+    </style>
 </head>
-<body style="background:#000; color:#fff; text-align:center; padding:50px; font-family:sans-serif;">
+<body>
 
-    <h1 id="titolo">SISTEMA ATTIVO</h1>
-    
-    <div style="border:1px solid #333; padding:20px; margin:20px auto; max-width:300px;">
-        <button id="btn-test" style="padding:15px; width:100%; cursor:pointer;">PROVA CLICCA QUI</button>
-        <p id="stato" style="font-size:12px; margin-top:10px; color:gray;">Controllo Supabase...</p>
-    </div>
+    <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="serif text-7xl mb-12 italic tracking-tighter">Hawenishland</h1>
+        <div class="w-full max-w-sm">
+            <div id="error-display" class="error-msg"></div>
+
+            <div id="login-form">
+                <input type="email" id="login-email" placeholder="Email">
+                <input type="password" id="login-pass" placeholder="Password">
+                <button onclick="handleLogin()" class="btn-white mb-4">Entra</button>
+                <button onclick="toggleAuth('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition italic">Unisciti all'Archivio</button>
+            </div>
+
+            <div id="signup-form" class="hidden text-left">
+                <input type="text" id="reg-nome" placeholder="Nome">
+                <input type="text" id="reg-cognome" placeholder="Cognome">
+                <p class="text-[9px] text-zinc-500 mb-1 uppercase tracking-widest">Data di nascita (Min. 16 anni)</p>
+                <input type="date" id="reg-nascita">
+                <input type="email" id="reg-email" placeholder="Email">
+                <input type="password" id="reg-pass" placeholder="Password">
+                <button onclick="handleSignup()" class="btn-white mb-4">Registrati</button>
+                <button onclick="toggleAuth('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white block text-center italic">Hai già un account? Accedi</button>
+            </div>
+
+            <div class="py-10 text-zinc-900 text-[10px] tracking-[0.5em] font-bold">— GITHUB —</div>
+            <button onclick="loginGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
+                <i data-lucide="github" class="w-4 h-4"></i>
+                <span class="font-semibold text-[10px] uppercase tracking-widest">GitHub Login</span>
+            </button>
+        </div>
+    </section>
+
+    <section id="app-screen" class="hidden">
+        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/90 p-4 z-50 flex justify-between items-center px-6">
+            <span class="serif text-2xl italic">Hawenishland</span>
+            <input type="text" id="search-input" oninput="loadPosts()" placeholder="Cerca..." class="max-w-[150px] mb-0 py-1 px-4 text-[10px] bg-zinc-900 border-none rounded-full">
+            <button onclick="logout()" class="text-[9px] border border-zinc-800 px-4 py-2">LOGOUT</button>
+        </nav>
+
+        <main class="pt-32 max-w-xl mx-auto px-6 pb-20">
+            <div class="mb-16 border border-zinc-900 p-6">
+                <textarea id="post-text" placeholder="Scrivi la tua visione..." class="bg-transparent border-none text-xl serif italic h-24 p-0 mb-4 w-full"></textarea>
+                <input type="file" id="post-file" accept="image/*" class="text-[10px] mb-4">
+                <button onclick="publishPost()" id="btn-publish" class="btn-white">Pubblica</button>
+            </div>
+            <div id="feed" class="space-y-12"></div>
+        </main>
+    </section>
 
     <script>
-        // Test di caricamento Supabase
-        window.onload = function() {
-            const stato = document.getElementById('stato');
-            if (typeof window.supabase !== 'undefined') {
-                stato.innerText = "SUPABASE CARICATO CORRETTAMENTE";
-                stato.style.color = "green";
-            } else {
-                stato.innerText = "ERRORE: SUPABASE NON CARICATO";
-                stato.style.color = "red";
-            }
-        };
+        const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+        const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        // Test del Pulsante senza funzioni esterne
-        document.getElementById('btn-test').onclick = function() {
-            alert("Il pulsante funziona! Se vedi questo messaggio, il problema è nella configurazione del login.");
-            this.style.background = "green";
-            this.innerText = "FUNZIONA";
-        };
+        function toggleAuth(mode) {
+            document.getElementById('login-form').classList.toggle('hidden', mode === 'signup');
+            document.getElementById('signup-form').classList.toggle('hidden', mode === 'login');
+            document.getElementById('error-display').style.display = 'none';
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('error-display');
+            err.innerText = msg;
+            err.style.display = 'block';
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+            if(!email || !password) return showError("E-mail o password mancanti");
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                if (error.message.includes("Invalid login credentials")) showError("E-mail o password sbagliati");
+                else showError("Utente non registrato o email non confermata");
+            } else location.reload();
+        }
+
+        async function handleSignup() {
+            const nome = document.getElementById('reg-nome').value;
+            const nascita = document.getElementById('reg-nascita').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-pass').value;
+
+            if(!nome || !nascita || !email || !password) return showError("Compila tutti i campi");
+
+            const age = new Date().getFullYear() - new Date(nascita).getFullYear();
+            if (age < 16) return showError("Devi avere almeno 16 anni per unirti");
+
+            const { error } = await supabase.auth.signUp({
+                email, password, options: { data: { first_name: nome } }
+            });
+
+            if (error) showError(error.message);
+            else { 
+                alert("CONTROLLA LA TUA E-MAIL PER CONFERMARE L'ISCRIZIONE (ANCHE NELLO SPAM)"); 
+                toggleAuth('login'); 
+            }
+        }
+
+        async function loginGitHub() {
+            await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });
+        }
+
+        async function publishPost() {
+            const text = document.getElementById('post-text').value;
+            const file = document.getElementById('post-file').files[0];
+            const btn = document.getElementById('btn-publish');
+            const { data: { user } } = await supabase.auth.getUser();
+
+            btn.disabled = true; btn.innerText = "CARICAMENTO...";
+            let imageUrl = null;
+            if (file) {
+                const fileName = `${Date.now()}-${file.name}`;
+                const { data } = await supabase.storage.from('immagini').upload(fileName, file);
+                if (data) imageUrl = `${SB_URL}/storage/v1/object/public/immagini/${fileName}`;
+            }
+            await supabase.from('posts').insert([{ content: text, user_email: user.email, image_url: imageUrl }]);
+            location.reload();
+        }
+
+        async function loadPosts() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const { data } = await supabase.from('posts').select('*, likes(count), comments(*)').order('created_at', { ascending: false });
+            const filtered = data.filter(p => p.content.toLowerCase().includes(search) || p.user_email.toLowerCase().includes(search));
+            
+            document.getElementById('feed').innerHTML = filtered.map(p => `
+                <div class="post-card">
+                    <p class="text-[9px] text-zinc-600 mb-4 uppercase tracking-widest">Editor: ${p.user_email}</p>
+                    ${p.image_url ? `<img src="${p.image_url}" class="bw-photo w-full mb-6">` : ''}
+                    <p class="serif text-3xl italic mb-6">"${p.content}"</p>
+                    <div class="flex gap-6 border-t border-zinc-900 pt-4">
+                        <button onclick="addLike(${p.id})" class="text-[10px] uppercase flex items-center gap-2 hover:text-red-500"><i data-lucide="heart" class="w-4 h-4"></i> ${p.likes[0].count}</button>
+                        <div class="text-[10px] text-zinc-500 uppercase flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4"></i> ${p.comments.length} Commenti</div>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                        ${p.comments.map(c => `<div class="p-2 bg-zinc-900 text-[10px]"><b>${c.user_email.split('@')[0]}</b>: ${c.content}</div>`).join('')}
+                        <input type="text" placeholder="Commenta..." onkeydown="if(event.key==='Enter') sendComment(${p.id}, this.value)" class="text-[10px] mt-2">
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function addLike(postId) {
+            const { data: { user } } = await supabase.auth.getUser();
+            await supabase.from('likes').insert([{ post_id: postId, user_email: user.email }]);
+            loadPosts();
+        }
+
+        async function sendComment(postId, text) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if(!text) return;
+            await supabase.from('comments').insert([{ post_id: postId, user_email: user.email, content: text }]);
+            loadPosts();
+        }
+
+        async function checkSession() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                loadPosts();
+            }
+        }
+
+        function logout() { supabase.auth.signOut().then(() => location.reload()); }
+        lucide.createIcons();
+        checkSession();
     </script>
 </body>
 </html>
