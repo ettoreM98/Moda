@@ -1,172 +1,219 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>HAWENISHLAND — Debug Supabase</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWENISHLAND — Archivio Moda</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" defer></script>
 
-<style>
-  body{background:#0a0a0a;color:#fff;font-family:Inter,system-ui;min-height:100vh;margin:0;padding:24px}
-  .box{background:#0f0f0f;border:1px solid #222;padding:18px;border-radius:10px;margin-bottom:18px}
-  button{background:#fff;color:#000;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-  button.warn{background:#ffdd57}
-  pre{white-space:pre-wrap;word-break:break-word;font-size:13px}
-  .small{font-size:13px;color:#bbb}
-  input{padding:8px;border-radius:6px;border:1px solid #333;background:transparent;color:#fff;width:100%}
-  label{display:block;margin-bottom:6px;color:#aaa;font-size:12px}
-  .grid{display:grid;gap:10px}
-</style>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body { background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif; overflow:hidden; margin:0; height:100vh }
+        .serif { font-family:'Playfair Display',serif }
+        .hidden { display:none!important }
+        .split-layout { display:flex; height:100vh }
+        .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
+        @media (min-width:768px){ .visual-side{display:block} }
+
+        .visual-side img{
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            object-fit:cover; filter:grayscale(100%); opacity:0;
+            transition:opacity 1.5s ease, filter .8s ease; z-index:0
+        }
+        .visual-side img.active{ opacity:1; z-index:1 }
+        .visual-side img:hover{ filter:grayscale(0%); cursor:crosshair }
+
+        .form-side{
+            flex:1; display:flex; flex-direction:column; justify-content:center;
+            padding:60px; background:#0a0a0a; max-width:600px; margin:auto
+        }
+        .input-group{ margin-bottom:25px }
+        .input-label{
+            display:block; font-size:10px; text-transform:uppercase;
+            letter-spacing:2px; color:#555; margin-bottom:8px
+        }
+        input{
+            background:transparent; border-bottom:1px solid #222;
+            padding:10px 0; color:#fff; width:100%; outline:none; font-size:14px
+        }
+        input:focus{ border-bottom-color:#fff }
+
+        .btn-white{
+            background:#fff; color:#000; padding:18px;
+            font-weight:500; text-transform:uppercase; width:100%;
+            cursor:pointer; border:1px solid #fff; transition:.3s; margin-top:10px
+        }
+        .btn-white:hover{ background:#000; color:#fff }
+
+        #msg-box{
+            display:none; padding:12px; border:1px solid #333;
+            font-size:11px; text-transform:uppercase;
+            margin-bottom:20px; text-align:center
+        }
+        .link-small{
+            text-align:center; margin-top:20px;
+            font-size:10px; color:#555; cursor:pointer;
+            text-transform:uppercase; letter-spacing:1px
+        }
+    </style>
 </head>
+
 <body>
 
-<h1 style="font-family:Playfair Display,serif;font-size:28px;margin-bottom:12px">hawenishland — debug supabase</h1>
-
-<div class="box">
-  <div class="small">Info attuali:</div>
-  <ul class="small" id="info-list">
-    <li>site: <b id="site-origin">loading...</b></li>
-    <li>supabase url: <b id="sb-url">loading...</b></li>
-  </ul>
-</div>
-
-<div class="box">
-  <div class="small" style="margin-bottom:8px">Form di test (usalo solo per debug; verrà creato un account di prova)</div>
-  <div class="grid">
-    <input id="t-nome" placeholder="nome (es: debug)" value="test">
-    <input id="t-cognome" placeholder="cognome (es: user)" value="debug">
-    <input id="t-email" placeholder="email" value="">
-    <input id="t-pass" placeholder="password (min 8)" value="password123">
-    <div style="display:flex;gap:8px">
-      <button id="btn-js">Test signUp (supabase-js)</button>
-      <button id="btn-fetch" class="warn">Test signUp (raw fetch)</button>
+<div id="auth-container" class="split-layout">
+    <div class="visual-side">
+        <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
+        <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="btn-toggle-proxy">Rendi DNS-only (istruzioni)</button>
-      <button id="btn-clear">Pulisci output</button>
-    </div>
-  </div>
-</div>
 
-<div class="box">
-  <div class="small" style="margin-bottom:8px">Output debug</div>
-  <pre id="debug-output">Qui appariranno i risultati dei test. Fai il test e copia QUI l'output intero.</pre>
+    <div class="form-side">
+        <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
+        <div id="msg-box"></div>
+
+        <!-- LOGIN -->
+        <div id="login-form">
+            <div class="input-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="l-email">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="l-pass">
+            </div>
+            <button onclick="faiLogin()" class="btn-white">Entra</button>
+            <p onclick="vaiA('signup')" class="link-small">
+                Non hai un account? <b>Iscriviti</b>
+            </p>
+        </div>
+
+        <!-- SIGNUP -->
+        <div id="signup-form" class="hidden">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="input-label">Nome</label>
+                    <input type="text" id="r-nome">
+                </div>
+                <div>
+                    <label class="input-label">Cognome</label>
+                    <input type="text" id="r-cognome">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Data di Nascita</label>
+                <input type="date" id="r-nascita" style="color-scheme:dark">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="r-email">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="r-pass">
+            </div>
+
+            <button onclick="faiRegistrazione()" class="btn-white">
+                Invia Richiesta
+            </button>
+
+            <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
+        </div>
+    </div>
 </div>
 
 <script>
-/* CONFIG — sostituisci la tua anon key qui */
-const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co'; // tua SB_URL (lascia com'è se è quello)
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc'; // sostituisci con la tua anon key
+const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
-/* informazioni pagina */
-document.getElementById('site-origin').innerText = window.location.origin;
-document.getElementById('sb-url').innerText = SB_URL;
-
-/* helper output */
-function out(t){
-  const el = document.getElementById('debug-output');
-  el.innerText = typeof t === 'string' ? t : JSON.stringify(t, null, 2);
+function vaiA(m) {
+    document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
+    document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
+    document.getElementById('msg-box').style.display = 'none';
 }
 
-/* riempi email di debug con timestamp per evitare "email già esistente" */
-document.getElementById('t-email').value = 'debug+' + Date.now() + '@hawenishland.test';
+function mess(t, err=false) {
+    const b = document.getElementById('msg-box');
+    b.innerText = t;
+    b.style.display = 'block';
+    b.style.color = err ? '#ff4444' : '#44ff44';
+}
 
-/* bottone supabase-js signUp */
-document.getElementById('btn-js').addEventListener('click', async () => {
-  out('Eseguo signUp con supabase-js… (attendi)');
-  const nome = document.getElementById('t-nome').value.trim();
-  const cognome = document.getElementById('t-cognome').value.trim();
-  const email = document.getElementById('t-email').value.trim();
-  const pass = document.getElementById('t-pass').value;
-  try {
-    const res = await sb.auth.signUp({
-      email,
-      password: pass,
-      options: {
-        data: { first_name: nome, last_name: cognome },
-        emailRedirectTo: window.location.origin + '/login'
-      }
+function emailValida(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function faiRegistrazione() {
+    const e = document.getElementById('r-email').value.trim();
+    const p = document.getElementById('r-pass').value;
+    const n = document.getElementById('r-nome').value.trim();
+    const c = document.getElementById('r-cognome').value.trim();
+    const d = document.getElementById('r-nascita').value;
+
+    if (!e || !p || !n || !c || !d)
+        return mess("Compila tutti i campi.", true);
+
+    if (!emailValida(e))
+        return mess("Email non valida.", true);
+
+    if (p.length < 8)
+        return mess("Password minimo 8 caratteri.", true);
+
+    const nascita = new Date(d);
+    const oggi = new Date();
+    let eta = oggi.getFullYear() - nascita.getFullYear();
+    if (
+        oggi.getMonth() < nascita.getMonth() ||
+        (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())
+    ) eta--;
+
+    if (eta < 16)
+        return mess("Devi avere almeno 16 anni.", true);
+
+    try {
+        const { error } = await sb.auth.signUp({
+            email: e,
+            password: p,
+            options: {
+                data: { first_name: n, last_name: c, birthday: d },
+                emailRedirectTo: window.location.origin
+            }
+        });
+
+        if (error) {
+            mess(error.message, true);
+        } else {
+            mess("Controlla la tua mail per confermare.", false);
+            setTimeout(() => vaiA('login'), 2000);
+        }
+    } catch {
+        mess("Errore di connessione. Riprova più tardi.", true);
+    }
+}
+
+async function faiLogin() {
+    const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById('l-email').value,
+        password: document.getElementById('l-pass').value
     });
-    out({note: 'risposta supabase-js', res});
-    console.log('supabase-js res', res);
-  } catch(e){
-    out({note:'errore try/catch supabase-js', message: e.message || e, stack: e.stack || null});
-    console.error(e);
-  }
-});
 
-/* bottone raw fetch (mostra dettagli della richiesta) */
-document.getElementById('btn-fetch').addEventListener('click', async () => {
-  out('Eseguo fetch raw POST su /auth/v1/signup… (attendi)');
-  const email = document.getElementById('t-email').value.trim();
-  const pass = document.getElementById('t-pass').value;
-  const payload = { email, password: pass };
-  const url = SB_URL.replace(/\/$/, '') + '/auth/v1/signup';
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SB_KEY,
-        // Authorization header intentionally omitted (supabase-js uses apikey)
-        'X-Client-Info': 'debug-client'
-      },
-      body: JSON.stringify(payload),
-      mode: 'cors',
-      credentials: 'omit'
-    });
-    const text = await resp.text();
-    const info = {
-      note: 'risposta raw fetch',
-      url,
-      status: resp.status,
-      ok: resp.ok,
-      statusText: resp.statusText,
-      headers: {},
-      bodyTextSample: text.slice(0, 2000)
-    };
-    // proviamo a leggere alcuni header (se consentiti)
-    resp.headers.forEach((v,k) => info.headers[k]=v);
-    out(info);
-    console.log('raw fetch resp', info);
-  } catch (err) {
-    // Network / CORS / proxy errors arrivano qui (Status 0)
-    out({ note: 'errore fetch (probabile CORS/proxy)', message: err.message || err.toString(), stack: err.stack || null });
-    console.error(err);
-  }
-});
+    if (error) mess(error.message, true);
+    else alert("Login effettuato.");
+}
 
-/* suggerimento per proxy toggle (istruzioni rapide) */
-document.getElementById('btn-toggle-proxy').addEventListener('click', () => {
-  const msg = [
-    'ISTRUZIONI RAPIDE — verifica se è Cloudflare a bloccare:',
-    '1) Apri Cloudflare → Domains → hawenishland.it → DNS',
-    '2) Imposta entrambi i record su "DNS only" (clicca la nuvola arancione per farla diventare grigia)',
-    '3) Salva e riprova il Test signUp (btn “Test signUp (supabase-js)”)',
-    '',
-    'Se con "DNS only" la registrazione funziona, allora il proxy/Firewall Cloudflare sta bloccando le POST verso Supabase.',
-    'In tal caso rimetti proxy arancione e verifica Firewall → Events per regole bloccanti o disattiva temporaneamente WAF/Bot Fight mode.'
-  ].join('\\n');
-  alert(msg);
-});
-
-/* pulisci output */
-document.getElementById('btn-clear').addEventListener('click', () => out(''));
-
-/* test di reachability iniziale */
-(async function initialCheck(){
-  out('Verifico GET su /auth/v1 (ping supabase) …');
-  const url = SB_URL.replace(/\/$/, '') + '/auth/v1';
-  try {
-    const r = await fetch(url, { method:'GET', mode:'cors', credentials:'omit' });
-    out({note:'GET /auth/v1', url, status: r.status, ok: r.ok});
-  } catch(e) {
-    out({note:'GET /auth/v1 errore', message: e.message || e.toString()});
-  }
-})();
+let idx = 0;
+const imgs = document.querySelectorAll('.visual-side img');
+setInterval(() => {
+    imgs[idx].classList.remove('active');
+    idx = (idx + 1) % imgs.length;
+    imgs[idx].classList.add('active');
+}, 5000);
 </script>
+
 </body>
 </html>
