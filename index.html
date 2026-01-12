@@ -3,164 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAWENISHLAND — Archive of Elegance</title>
+    <title>HAWENISLAND — Fashion Social</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@200;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --bg: #050505; --accent: #ffffff; --border: #1a1a1a; }
-        body { background-color: var(--bg); color: #e5e5e5; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; }
         .serif { font-family: 'Playfair Display', serif; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
         .hidden { display: none !important; }
-        input { background: transparent; border: 1px solid var(--border); padding: 12px; color: white; outline: none; transition: 0.3s; }
-        input:focus { border-color: #555; }
-        .btn-main { background: white; color: black; padding: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
-        .btn-main:hover { opacity: 0.8; }
-        .glass { background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
-        .post-card { border: 1px solid var(--border); margin-bottom: 40px; background: #080808; }
+        .btn-white { background: #fff; color: #000; padding: 12px; font-weight: 600; text-transform: uppercase; width: 100%; transition: 0.3s; cursor: pointer; border: none; font-size: 9px; letter-spacing: 2px; }
+        input, textarea { background: transparent; border: 1px solid #1a1a1a; padding: 12px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; font-size: 13px; }
+        .post-card { border-bottom: 1px solid #111; padding: 40px 0; }
+        .comment-box { background: #080808; padding: 10px; margin-top: 10px; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6">
-        <h1 class="serif text-6xl mb-12 tracking-tighter italic">Hawenisland</h1>
-        <div class="w-full max-w-sm space-y-4">
-            <div id="login-box" class="space-y-4">
-                <input type="email" placeholder="Email" class="w-full">
-                <input type="password" placeholder="Password" class="w-full">
-                <button onclick="login()" class="w-full btn-main">Entra nell'Atelier</button>
-                <p class="text-center text-xs text-zinc-500 uppercase mono mt-4">
-                    Non hai un account? <span onclick="toggleAuth()" class="text-white cursor-pointer underline">Registrati</span>
-                </p>
+    <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="serif text-6xl mb-12 italic tracking-tighter">Hawenisland</h1>
+        <div class="w-full max-w-sm space-y-2">
+            <input type="email" id="auth-email" placeholder="Email">
+            <input type="password" id="auth-password" placeholder="Password">
+            <div class="flex gap-2">
+                <button onclick="handleEmailAuth('login')" class="btn-white">Entra</button>
+                <button onclick="handleEmailAuth('signup')" class="btn-white bg-zinc-900 text-white">Unisciti</button>
             </div>
-            <div id="register-box" class="space-y-4 hidden">
-                <input type="text" placeholder="Nome Utente" class="w-full">
-                <input type="email" placeholder="Email" class="w-full">
-                <input type="password" placeholder="Password" class="w-full">
-                <button onclick="login()" class="w-full btn-main">Crea Account</button>
-                <p class="text-center text-xs text-zinc-500 uppercase mono mt-4">
-                    Hai già un account? <span onclick="toggleAuth()" class="text-white cursor-pointer underline">Accedi</span>
-                </p>
-            </div>
+            <p onclick="forgotPassword()" class="text-[9px] text-zinc-500 uppercase cursor-pointer pt-2">Recupera Password</p>
+            <div class="py-4 text-zinc-800 text-[9px] tracking-widest">— GITHUB —</div>
+            <button onclick="loginGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition duration-500">
+                <i data-lucide="github" class="w-4 h-4"></i>
+                <span class="font-semibold text-[9px] uppercase tracking-widest">GitHub Login</span>
+            </button>
         </div>
     </section>
 
     <section id="app-screen" class="hidden">
-        <nav class="glass fixed top-0 w-full z-50 px-6 py-4">
-            <div class="max-w-5xl mx-auto flex justify-between items-center">
-                <span class="serif text-2xl tracking-tighter">Hawenisland</span>
-                <div class="flex items-center gap-6">
-                    <div class="relative hidden md:block">
-                        <input type="text" id="search-bar" onkeyup="searchUsers()" placeholder="Cerca account..." class="py-1 px-4 text-xs w-64 rounded-full bg-zinc-900 border-none">
-                        <div id="search-results" class="absolute top-10 left-0 w-full bg-black border border-zinc-800 hidden p-2 text-xs"></div>
-                    </div>
-                    <i data-lucide="plus-circle" onclick="togglePostModal()" class="w-6 h-6 cursor-pointer"></i>
-                    <i data-lucide="user" class="w-6 h-6 cursor-pointer"></i>
-                </div>
-            </div>
+        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/90 backdrop-blur-md p-4 z-50 flex justify-between items-center">
+            <span class="serif text-xl italic">Hawenisland</span>
+            <input type="text" id="search-bar" oninput="loadPosts()" placeholder="Cerca post o utenti..." class="max-w-[150px] mb-0 py-1 px-3 text-[10px] bg-zinc-900 border-none rounded-full">
+            <button onclick="logout()" class="text-[9px] border border-zinc-900 px-3 py-1">LOGOUT</button>
         </nav>
 
-        <main class="pt-28 pb-20 px-4 max-w-xl mx-auto">
-            <div id="feed">
-                <article class="post-card">
-                    <div class="p-4 flex items-center justify-between border-b border-zinc-900">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-zinc-800"></div>
-                            <span class="text-xs font-semibold mono">@vogue_archive</span>
-                        </div>
-                        <button onclick="follow(this)" class="text-[10px] border border-zinc-700 px-3 py-1 uppercase mono">Segui</button>
-                    </div>
-                    <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800" class="w-full grayscale hover:grayscale-0 transition duration-700">
-                    <div class="p-4 space-y-2">
-                        <p class="serif italic text-lg">"L'estetica del silenzio."</p>
-                        <div class="flex gap-4 text-zinc-500">
-                            <i data-lucide="heart" class="w-5 h-5 cursor-pointer"></i>
-                            <i data-lucide="message-circle" class="w-5 h-5 cursor-pointer"></i>
-                        </div>
-                    </div>
-                </article>
+        <main class="pt-24 max-w-xl mx-auto px-6 pb-20">
+            <div class="mb-12 border border-zinc-900 p-5">
+                <textarea id="post-text" placeholder="Cosa c'è di nuovo nella moda?" class="border-none text-lg serif italic h-20"></textarea>
+                <input type="file" id="post-image" accept="image/*" class="text-[9px] mb-4">
+                <button onclick="publish()" id="publish-btn" class="btn-white">Pubblica</button>
             </div>
-        </main>
 
-        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white text-black px-8 py-3 rounded-full flex gap-10 shadow-2xl z-50">
-            <i data-lucide="home" class="w-5 h-5 cursor-pointer"></i>
-            <i data-lucide="search" class="w-5 h-5 md:hidden cursor-pointer"></i>
-            <i data-lucide="log-out" onclick="location.reload()" class="w-5 h-5 cursor-pointer text-red-600"></i>
-        </div>
+            <div id="feed" class="space-y-4"></div>
+        </main>
     </section>
 
-    <div id="post-modal" class="fixed inset-0 bg-black/90 z-[100] hidden flex items-center justify-center p-6">
-        <div class="w-full max-w-md bg-zinc-900 p-8 border border-zinc-800">
-            <h2 class="serif text-2xl mb-6">Nuova Creazione</h2>
-            <textarea id="post-text" placeholder="Cosa hai in mente?" class="w-full bg-transparent border border-zinc-800 p-4 h-32 outline-none mb-4"></textarea>
-            <div class="flex gap-4">
-                <button onclick="addPost()" class="flex-1 btn-main text-sm">Pubblica</button>
-                <button onclick="togglePostModal()" class="flex-1 border border-zinc-700 text-xs uppercase mono">Annulla</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        lucide.createIcons();
+        const URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+        const KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
+        const supabase = window.supabase.createClient(URL, KEY);
 
-        function toggleAuth() {
-            document.getElementById('login-box').classList.toggle('hidden');
-            document.getElementById('register-box').classList.toggle('hidden');
+        // --- AUTH LOGIC ---
+        async function handleEmailAuth(type) {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const { error } = type === 'login' 
+                ? await supabase.auth.signInWithPassword({ email, password })
+                : await supabase.auth.signUp({ email, password });
+            if (error) alert(error.message); else checkUser();
         }
 
-        function login() {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            window.scrollTo(0,0);
-        }
-
-        function togglePostModal() {
-            document.getElementById('post-modal').classList.toggle('hidden');
-        }
-
-        function addPost() {
-            const text = document.getElementById('post-text').value;
-            if(!text) return;
-            
-            const feed = document.getElementById('feed');
-            const newPost = `
-                <article class="post-card animate-pulse">
-                    <div class="p-4 flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-zinc-700"></div>
-                        <span class="text-xs font-semibold mono">@tu_utente</span>
-                    </div>
-                    <div class="p-8 bg-zinc-900 text-center">
-                         <p class="serif italic text-xl">"${text}"</p>
-                    </div>
-                    <div class="p-4 flex gap-4 text-zinc-500 border-t border-zinc-900">
-                        <i data-lucide="heart" class="w-5 h-5"></i>
-                        <span class="text-[10px] mono">APPENA PUBBLICATO</span>
-                    </div>
-                </article>
-            `;
-            feed.insertAdjacentHTML('afterbegin', newPost);
-            document.getElementById('post-text').value = "";
-            togglePostModal();
-            lucide.createIcons();
-        }
-
-        function searchUsers() {
-            const results = document.getElementById('search-results');
-            const val = document.getElementById('search-bar').value;
-            if(val.length > 2) {
-                results.classList.remove('hidden');
-                results.innerHTML = `<div class="p-2 hover:bg-zinc-900 cursor-pointer">@${val}_studio</div>`;
-            } else {
-                results.classList.add('hidden');
+        async function loginGitHub() { await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } }); }
+        
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                loadPosts();
             }
         }
 
-        function follow(btn) {
-            btn.innerText = btn.innerText === "SEGUI" ? "SEGUITO" : "SEGUI";
-            btn.classList.toggle('bg-white');
-            btn.classList.toggle('text-black');
+        // --- SOCIAL LOGIC ---
+        async function publish() {
+            const content = document.getElementById('post-text').value;
+            const fileInput = document.getElementById('post-image');
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!content) return;
+
+            let imageUrl = null;
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const fileName = `${Date.now()}-${file.name}`;
+                const { data } = await supabase.storage.from('immagini').upload(fileName, file);
+                if (data) imageUrl = `${URL}/storage/v1/object/public/immagini/${fileName}`;
+            }
+
+            await supabase.from('posts').insert([{ content, user_email: user.email, image_url: imageUrl }]);
+            location.reload();
         }
+
+        async function loadPosts() {
+            const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+            let query = supabase.from('posts').select('*, likes(count), comments(*)').order('created_at', { ascending: false });
+            
+            const { data } = await query;
+            const filtered = data.filter(p => p.content.toLowerCase().includes(searchTerm) || p.user_email.toLowerCase().includes(searchTerm));
+
+            document.getElementById('feed').innerHTML = filtered.map(p => `
+                <div class="post-card">
+                    <p class="text-[9px] text-zinc-600 mb-4">BY ${p.user_email}</p>
+                    ${p.image_url ? `<img src="${p.image_url}" class="w-full mb-6 grayscale hover:grayscale-0 transition duration-500">` : ''}
+                    <p class="serif text-2xl italic mb-6">"${p.content}"</p>
+                    
+                    <div class="flex gap-6 items-center border-t border-zinc-900 pt-4">
+                        <button onclick="likePost(${p.id})" class="flex items-center gap-2 text-[10px] uppercase">
+                            <i data-lucide="heart" class="w-4 h-4"></i> ${p.likes[0].count}
+                        </button>
+                        <div class="text-[10px] uppercase flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4"></i> ${p.comments.length}</div>
+                    </div>
+
+                    <div class="mt-4 space-y-2">
+                        ${p.comments.map(c => `<div class="comment-box"><b class="text-[9px]">${c.user_email.split('@')[0]}</b>: ${c.content}</div>`).join('')}
+                        <input type="text" placeholder="Scrivi un commento..." onkeydown="if(event.key==='Enter') addComment(${p.id}, this.value)" class="text-[10px] mt-2 py-1">
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function likePost(postId) {
+            const { data: { user } } = await supabase.auth.getUser();
+            await supabase.from('likes').insert([{ post_id: postId, user_email: user.email }]);
+            loadPosts();
+        }
+
+        async function addComment(postId, text) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!text) return;
+            await supabase.from('comments').insert([{ post_id: postId, user_email: user.email, content: text }]);
+            loadPosts();
+        }
+
+        async function logout() { await supabase.auth.signOut(); location.reload(); }
+        checkUser();
     </script>
 </body>
 </html>
