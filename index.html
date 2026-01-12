@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HAWENISHLAND — Archivio Moda</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
 
     <style>
         body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
@@ -26,6 +28,7 @@
 
 <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
     <h1 class="serif text-7xl mb-12 italic tracking-tighter">Hawenishland</h1>
+
     <div class="w-full max-w-sm">
         <div id="error-display" class="error-msg"></div>
 
@@ -33,7 +36,7 @@
             <input type="email" id="l-email" placeholder="Email">
             <input type="password" id="l-pass" placeholder="Password">
             <button onclick="faiLogin()" class="btn-white mb-4">Entra</button>
-            <button onclick="vaiA('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition italic">Unisciti</button>
+            <button onclick="vaiA('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest italic">Unisciti</button>
         </div>
 
         <div id="signup-form" class="hidden text-left">
@@ -44,10 +47,11 @@
             <input type="email" id="r-email" placeholder="Email">
             <input type="password" id="r-pass" placeholder="Password (Min. 6 caratteri)">
             <button onclick="faiRegistrazione()" class="btn-white mb-4">Crea Account</button>
-            <button onclick="vaiA('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white block text-center italic">Accedi</button>
+            <button onclick="vaiA('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest italic block text-center">Accedi</button>
         </div>
 
         <div class="py-10 text-zinc-900 text-[10px] tracking-[0.5em] font-bold">— GITHUB —</div>
+
         <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
             <i data-lucide="github" class="w-4 h-4"></i>
             <span class="font-semibold text-[10px] uppercase tracking-widest">GitHub Accesso</span>
@@ -73,81 +77,90 @@
 </section>
 
 <script>
-    const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
-    const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
+/* ================= SUPABASE ================= */
 
-    const supabaseJs = supabase;
-    const supabase = supabaseJs.createClient(SB_URL, SB_KEY);
+const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
 
-    function vaiA(m) {
-        document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
-        document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-        document.getElementById('error-display').style.display = 'none';
-    }
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-    function mostraErrore(msg) {
-        const d = document.getElementById('error-display');
-        d.innerText = msg;
-        d.style.display = 'block';
-    }
+/* ================= UI ================= */
 
-    async function faiLogin() {
-        const e = document.getElementById('l-email').value;
-        const p = document.getElementById('l-pass').value;
-        const { error } = await supabase.auth.signInWithPassword({ email: e, password: p });
-        if (error) mostraErrore("E-MAIL O PASSWORD SBAGLIATI");
-        else check();
-    }
+function vaiA(m) {
+    document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
+    document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
+    document.getElementById('error-display').style.display = 'none';
+}
 
-    async function faiRegistrazione() {
-        const n = document.getElementById('r-nome').value;
-        const d = document.getElementById('r-nascita').value;
-        const e = document.getElementById('r-email').value;
-        const p = document.getElementById('r-pass').value;
+function mostraErrore(msg) {
+    const d = document.getElementById('error-display');
+    d.innerText = msg;
+    d.style.display = 'block';
+}
 
-        if (!n || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI");
-        const age = new Date().getFullYear() - new Date(d).getFullYear();
-        if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI");
+/* ================= AUTH ================= */
 
-        const { error } = await supabase.auth.signUp({
-            email: e,
-            password: p,
-            options: { data: { first_name: n } }
-        });
+async function faiLogin() {
+    const email = document.getElementById('l-email').value;
+    const pass  = document.getElementById('l-pass').value;
 
-        if (error) mostraErrore(error.message.toUpperCase());
-        else {
-            alert("CONTROLLA LA TUA E-MAIL PER CONFERMARE L'ISCRIZIONE");
-            vaiA('login');
-        }
-    }
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) mostraErrore("E-MAIL O PASSWORD SBAGLIATI");
+}
 
-    async function faiGitHub() {
-        await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: { redirectTo: window.location.href }
-        });
-    }
+async function faiRegistrazione() {
+    const nome = document.getElementById('r-nome').value;
+    const nascita = document.getElementById('r-nascita').value;
+    const email = document.getElementById('r-email').value;
+    const pass = document.getElementById('r-pass').value;
 
-    async function check() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            caricaFeed();
-        }
-    }
+    if (!nome || !nascita || !email || !pass)
+        return mostraErrore("COMPILA TUTTI I CAMPI");
 
-    supabase.auth.onAuthStateChange((_e, session) => {
-        if (session) check();
+    const age = new Date().getFullYear() - new Date(nascita).getFullYear();
+    if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI");
+
+    const { error } = await sb.auth.signUp({
+        email,
+        password: pass,
+        options: { data: { first_name: nome } }
     });
 
-    function esci() {
-        supabase.auth.signOut().then(() => location.reload());
+    if (error) mostraErrore(error.message.toUpperCase());
+    else {
+        alert("CONTROLLA LA TUA E-MAIL PER CONFERMARE L'ISCRIZIONE");
+        vaiA('login');
     }
+}
 
-    lucide.createIcons();
-    check();
+async function faiGitHub() {
+    await sb.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo: window.location.href }
+    });
+}
+
+sb.auth.onAuthStateChange((_e, session) => {
+    if (session) check();
+});
+
+/* ================= APP ================= */
+
+async function check() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    caricaFeed();
+}
+
+function esci() {
+    sb.auth.signOut().then(() => location.reload());
+}
+
+lucide.createIcons();
+check();
 </script>
 
 </body>
