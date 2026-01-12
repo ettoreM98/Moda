@@ -1,3 +1,132 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWENISHLAND — Archivio Moda</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body { background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif; overflow:hidden; margin:0; height:100vh }
+        .serif { font-family:'Playfair Display',serif }
+        .hidden { display:none!important }
+        .split-layout { display:flex; height:100vh }
+        .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
+        @media (min-width:768px){ .visual-side{display:block} }
+
+        .visual-side img{
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            object-fit:cover; filter:grayscale(100%); opacity:0;
+            transition:opacity 1.5s ease, filter .8s ease; z-index:0
+        }
+        .visual-side img.active{ opacity:1; z-index:1 }
+        .visual-side img:hover{ filter:grayscale(0%); cursor:crosshair }
+
+        .form-side{
+            flex:1; display:flex; flex-direction:column; justify-content:center;
+            padding:60px; background:#0a0a0a; max-width:600px; margin:auto
+        }
+        .input-group{ margin-bottom:25px }
+        .input-label{
+            display:block; font-size:10px; text-transform:uppercase;
+            letter-spacing:2px; color:#555; margin-bottom:8px
+        }
+        input{
+            background:transparent; border-bottom:1px solid #222;
+            padding:10px 0; color:#fff; width:100%; outline:none; font-size:14px
+        }
+        input:focus{ border-bottom-color:#fff }
+
+        .btn-white{
+            background:#fff; color:#000; padding:18px;
+            font-weight:500; text-transform:uppercase; width:100%;
+            cursor:pointer; border:1px solid #fff; transition:.3s; margin-top:10px
+        }
+        .btn-white:hover{ background:#000; color:#fff }
+
+        #msg-box{
+            display:none; padding:12px; border:1px solid #333;
+            font-size:11px; text-transform:uppercase;
+            margin-bottom:20px; text-align:center
+        }
+        .link-small{
+            text-align:center; margin-top:20px;
+            font-size:10px; color:#555; cursor:pointer;
+            text-transform:uppercase; letter-spacing:1px
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="auth-container" class="split-layout">
+    <div class="visual-side">
+        <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
+        <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
+    </div>
+
+    <div class="form-side">
+        <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
+        <div id="msg-box"></div>
+
+        <!-- LOGIN -->
+        <div id="login-form">
+            <div class="input-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="l-email">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="l-pass">
+            </div>
+            <button onclick="faiLogin()" class="btn-white">Entra</button>
+            <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
+            <p onclick="vaiA('signup')" class="link-small">
+                Non hai un account? <b>Iscriviti</b>
+            </p>
+        </div>
+
+        <!-- SIGNUP -->
+        <div id="signup-form" class="hidden">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="input-label">Nome</label>
+                    <input type="text" id="r-nome">
+                </div>
+                <div>
+                    <label class="input-label">Cognome</label>
+                    <input type="text" id="r-cognome">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Data di Nascita</label>
+                <input type="date" id="r-nascita" style="color-scheme:dark">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Email</label>
+                <input type="email" id="r-email">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="r-pass">
+            </div>
+
+            <button onclick="faiRegistrazione()" class="btn-white">
+                Invia Richiesta
+            </button>
+
+            <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
+        </div>
+    </div>
+</div>
+
 <script>
 const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
 const SB_KEY = 'INSERISCI_LA_TUA_ANON_KEY';
@@ -9,14 +138,13 @@ function vaiA(m) {
     document.getElementById('msg-box').style.display = 'none';
 }
 
-function mess(t, err = false) {
+function mess(t, err=false) {
     const b = document.getElementById('msg-box');
     b.innerText = t;
     b.style.display = 'block';
     b.style.color = err ? '#ff4444' : '#44ff44';
 }
 
-/* VALIDAZIONE EMAIL SERIA */
 function emailValida(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -62,22 +190,18 @@ async function faiRegistrazione() {
             mess(error.message, true);
         } else {
             mess("Controlla la tua mail per confermare.", false);
-
-            setTimeout(() => {
-                vaiA('login');
-            }, 2000);
+            setTimeout(() => vaiA('login'), 2000);
         }
-
-    } catch (err) {
+    } catch {
         mess("Errore di connessione. Riprova più tardi.", true);
     }
 }
 
 async function faiLogin() {
-    const e = document.getElementById('l-email').value;
-    const p = document.getElementById('l-pass').value;
-
-    const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
+    const { error } = await sb.auth.signInWithPassword({
+        email: document.getElementById('l-email').value,
+        password: document.getElementById('l-pass').value
+    });
 
     if (error) mess(error.message, true);
     else alert("Login effettuato.");
@@ -103,3 +227,6 @@ setInterval(() => {
     imgs[idx].classList.add('active');
 }, 5000);
 </script>
+
+</body>
+</html>
