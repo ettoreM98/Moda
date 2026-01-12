@@ -14,16 +14,25 @@
         .split-layout { display: flex; height: 100vh; }
         .visual-side { flex: 1; position: relative; overflow: hidden; display: none; background: #000; }
         @media (min-width: 768px) { .visual-side { display: block; } }
-        .visual-side img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); opacity: 0; transition: opacity 1.5s ease-in-out; }
+
+        /* FIX FOTO: Tornano a colorarsi al passaggio del mouse */
+        .visual-side img { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            object-fit: cover; filter: grayscale(100%); opacity: 0; 
+            transition: opacity 1.5s ease, filter 0.8s ease; z-index: 0;
+        }
         .visual-side img.active { opacity: 1; z-index: 1; }
+        .visual-side img:hover { filter: grayscale(0%); cursor: crosshair; }
+
         .form-side { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px; background: #0a0a0a; max-width: 600px; margin: auto; }
         .input-group { margin-bottom: 25px; }
         .input-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #555; margin-bottom: 8px; }
-        input { background: transparent; border-bottom: 1px solid #222; padding: 10px 0; color: #fff; width: 100%; outline: none; font-size: 14px; width: 100%; }
+        input { background: transparent; border-bottom: 1px solid #222; padding: 10px 0; color: #fff; width: 100%; outline: none; font-size: 14px; }
         input:focus { border-bottom-color: #fff; }
         .btn-white { background: #fff; color: #000; padding: 18px; font-weight: 500; text-transform: uppercase; width: 100%; cursor: pointer; border: 1px solid #fff; transition: 0.3s; margin-top: 10px; }
         .btn-white:hover { background: #000; color: #fff; }
-        #msg-box { display: none; padding: 12px; border: 1px solid #333; font-size: 11px; text-transform: uppercase; margin-bottom: 20px; text-align: center; letter-spacing: 1px; }
+        #msg-box { display: none; padding: 12px; border: 1px solid #333; font-size: 11px; text-transform: uppercase; margin-bottom: 20px; text-align: center; }
+        .link-small { text-align: center; margin-top: 20px; font-size: 10px; color: #555; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -41,8 +50,9 @@
             <div id="login-form">
                 <div class="input-group"><label class="input-label">Email</label><input type="email" id="l-email"></div>
                 <div class="input-group"><label class="input-label">Password</label><input type="password" id="l-pass"></div>
-                <button onclick="faiLogin()" class="btn-white">Entra nell'Archivio</button>
-                <p onclick="vaiA('signup')" class="mt-8 text-center text-[10px] cursor-pointer uppercase tracking-[2px]">Nuovo Account</p>
+                <button onclick="faiLogin()" class="btn-white">Entra</button>
+                <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
+                <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
             </div>
 
             <div id="signup-form" class="hidden">
@@ -50,14 +60,11 @@
                     <div><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
                     <div><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
                 </div>
-                <div class="input-group">
-                    <label class="input-label">Data di Nascita (Min. 16 anni)</label>
-                    <input type="date" id="r-nascita" style="color-scheme: dark;">
-                </div>
+                <div class="input-group"><label class="input-label">Data di Nascita</label><input type="date" id="r-nascita" style="color-scheme: dark;"></div>
                 <div class="input-group"><label class="input-label">Email</label><input type="email" id="r-email"></div>
                 <div class="input-group"><label class="input-label">Password</label><input type="password" id="r-pass"></div>
                 <button id="btn-reg" onclick="faiRegistrazione()" class="btn-white">Invia Richiesta</button>
-                <p onclick="vaiA('login')" class="mt-8 text-center text-[10px] cursor-pointer uppercase tracking-[2px]">Torna al Login</p>
+                <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
             </div>
         </div>
     </div>
@@ -65,10 +72,7 @@
     <script>
         const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-        
-        const sb = window.supabase.createClient(SB_URL, SB_KEY, {
-            auth: { persistSession: true, detectSessionInUrl: true }
-        });
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
         function vaiA(m) {
             document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
@@ -80,7 +84,6 @@
             const b = document.getElementById('msg-box');
             b.innerText = t; b.style.display = 'block';
             b.style.color = err ? '#ff4444' : '#44ff44';
-            b.style.borderColor = err ? '#441111' : '#114411';
         }
 
         async function faiRegistrazione() {
@@ -89,42 +92,39 @@
             const n = document.getElementById('r-nome').value;
             const c = document.getElementById('r-cognome').value;
             const d = document.getElementById('r-nascita').value;
-            const btn = document.getElementById('btn-reg');
 
-            if(!e || !p || !n || !c || !d) return mess("COMPILA TUTTI I CAMPI.", true);
+            if(!e || !p || !n || !c || !d) return mess("Compila tutti i campi.", true);
 
-            // CONTROLLO ETÀ (REINTEGRATO)
             const nascita = new Date(d);
             const oggi = new Date();
             let eta = oggi.getFullYear() - nascita.getFullYear();
-            const m = oggi.getMonth() - nascita.getMonth();
-            if (m < 0 || (m === 0 && oggi.getDate() < nascita.getDate())) eta--;
-            
-            if (eta < 16) return mess("ACCESSO NEGATO: DEVI AVERE ALMENO 16 ANNI.", true);
+            if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta--;
+            if (eta < 16) return mess("Devi avere almeno 16 anni.", true);
 
-            btn.innerText = "ELABORAZIONE...";
-            btn.disabled = true;
+            const { error } = await sb.auth.signUp({
+                email: e, password: p,
+                options: { data: { first_name: n, last_name: c, birthday: d }, emailRedirectTo: window.location.origin }
+            });
 
-            try {
-                const { error } = await sb.auth.signUp({
-                    email: e, password: p,
-                    options: { 
-                        data: { first_name: n, last_name: c, birthday: d },
-                        emailRedirectTo: window.location.origin 
-                    }
-                });
-                if (error) mess("ERRORE: " + error.message.toUpperCase(), true);
-                else mess("RICHIESTA INVIATA! VERIFICA LA TUA EMAIL.");
-            } catch (err) { mess("ERRORE DI CARICAMENTO DATABASE.", true); }
-            finally { btn.innerText = "INVIA RICHIESTA"; btn.disabled = false; }
+            if (error) mess(error.message, true);
+            else mess("Richiesta inviata! Controlla l'email.");
         }
 
         async function faiLogin() {
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-            if (error) mess("ERRORE: " + error.message.toUpperCase(), true);
-            else alert("BENVENUTO.");
+            if (error) mess("Errore: " + error.message, true);
+            else alert("Benvenuto nell'archivio.");
+        }
+
+        async function recuperoPassword() {
+            const email = prompt("Inserisci la tua email per il recupero:");
+            if (email) {
+                const { error } = await sb.auth.resetPasswordForEmail(email);
+                if (error) alert(error.message);
+                else alert("Email di recupero inviata.");
+            }
         }
 
         let idx = 0; const imgs = document.querySelectorAll('.visual-side img');
