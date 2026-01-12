@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .serif { font-family: 'Playfair Display', serif; }
@@ -16,163 +17,138 @@
         input, textarea { background: #080808; border: 1px solid #1a1a1a; padding: 14px; color: #fff; width: 100%; outline: none; margin-bottom: 12px; font-size: 14px; }
         .error-msg { background: #2d0000; border: 1px solid #ff4444; color: #ff4444; padding: 12px; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; display: none; text-align: center; }
         .post-card { border-bottom: 1px solid #111; padding: 50px 0; }
-        /* Effetto Bianco e Nero al passaggio */
         .bw-photo { filter: grayscale(100%); transition: filter 0.7s ease; }
         .bw-photo:hover { filter: grayscale(0%); }
     </style>
 </head>
+
 <body>
 
-    <section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="serif text-7xl mb-12 italic tracking-tighter">Hawenishland</h1>
-        <div class="w-full max-w-sm">
-            <div id="error-display" class="error-msg"></div>
+<section id="auth-screen" class="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+    <h1 class="serif text-7xl mb-12 italic tracking-tighter">Hawenishland</h1>
+    <div class="w-full max-w-sm">
+        <div id="error-display" class="error-msg"></div>
 
-            <div id="login-form">
-                <input type="email" id="l-email" placeholder="Email">
-                <input type="password" id="l-pass" placeholder="Password">
-                <button onclick="faiLogin()" class="btn-white mb-4">Entra</button>
-                <button onclick="vaiA('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition italic">Unisciti</button>
-            </div>
-
-            <div id="signup-form" class="hidden text-left">
-                <input type="text" id="r-nome" placeholder="Nome">
-                <input type="text" id="r-cognome" placeholder="Cognome">
-                <p class="text-[9px] text-zinc-500 mb-1 uppercase tracking-widest">Data di nascita (Min. 16 anni)</p>
-                <input type="date" id="r-nascita">
-                <input type="email" id="r-email" placeholder="Email">
-                <input type="password" id="r-pass" placeholder="Password (Min. 6 caratteri)">
-                <button onclick="faiRegistrazione()" class="btn-white mb-4">Crea Account</button>
-                <button onclick="vaiA('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white block text-center italic">Accedi</button>
-            </div>
-
-            <div class="py-10 text-zinc-900 text-[10px] tracking-[0.5em] font-bold">— GITHUB —</div>
-            <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
-                <i data-lucide="github" class="w-4 h-4"></i>
-                <span class="font-semibold text-[10px] uppercase tracking-widest">GitHub Accesso</span>
-            </button>
+        <div id="login-form">
+            <input type="email" id="l-email" placeholder="Email">
+            <input type="password" id="l-pass" placeholder="Password">
+            <button onclick="faiLogin()" class="btn-white mb-4">Entra</button>
+            <button onclick="vaiA('signup')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white transition italic">Unisciti</button>
         </div>
-    </section>
 
-    <section id="app-screen" class="hidden">
-        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/90 p-4 z-50 flex justify-between items-center px-6">
-            <span class="serif text-2xl italic">Hawenishland</span>
-            <input type="text" id="cerca" oninput="caricaFeed()" placeholder="Cerca..." class="max-w-[150px] mb-0 py-1 px-4 text-[10px] bg-zinc-900 border-none rounded-full">
-            <button onclick="esci()" class="text-[9px] border border-zinc-800 px-4 py-2">LOGOUT</button>
-        </nav>
+        <div id="signup-form" class="hidden text-left">
+            <input type="text" id="r-nome" placeholder="Nome">
+            <input type="text" id="r-cognome" placeholder="Cognome">
+            <p class="text-[9px] text-zinc-500 mb-1 uppercase tracking-widest">Data di nascita (Min. 16 anni)</p>
+            <input type="date" id="r-nascita">
+            <input type="email" id="r-email" placeholder="Email">
+            <input type="password" id="r-pass" placeholder="Password (Min. 6 caratteri)">
+            <button onclick="faiRegistrazione()" class="btn-white mb-4">Crea Account</button>
+            <button onclick="vaiA('login')" class="text-[9px] text-zinc-500 uppercase tracking-widest hover:text-white block text-center italic">Accedi</button>
+        </div>
 
-        <main class="pt-32 max-w-xl mx-auto px-6 pb-20">
-            <div class="mb-16 border border-zinc-900 p-6">
-                <textarea id="p-testo" placeholder="Condividi la tua visione..." class="bg-transparent border-none text-xl serif italic h-24 p-0 mb-4 w-full"></textarea>
-                <input type="file" id="p-foto" accept="image/*" class="text-[10px] mb-4">
-                <button onclick="pubblicaPost()" id="btn-pub" class="btn-white">Pubblica</button>
-            </div>
-            <div id="feed" class="space-y-12"></div>
-        </main>
-    </section>
+        <div class="py-10 text-zinc-900 text-[10px] tracking-[0.5em] font-bold">— GITHUB —</div>
+        <button onclick="faiGitHub()" class="flex items-center justify-center gap-4 border border-zinc-900 p-4 w-full hover:bg-white hover:text-black transition">
+            <i data-lucide="github" class="w-4 h-4"></i>
+            <span class="font-semibold text-[10px] uppercase tracking-widest">GitHub Accesso</span>
+        </button>
+    </div>
+</section>
 
-    <script>
-        const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
-        const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+<section id="app-screen" class="hidden">
+    <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/90 p-4 z-50 flex justify-between items-center px-6">
+        <span class="serif text-2xl italic">Hawenishland</span>
+        <input type="text" id="cerca" oninput="caricaFeed()" placeholder="Cerca..." class="max-w-[150px] mb-0 py-1 px-4 text-[10px] bg-zinc-900 border-none rounded-full">
+        <button onclick="esci()" class="text-[9px] border border-zinc-800 px-4 py-2">LOGOUT</button>
+    </nav>
 
-        function vaiA(m) {
-            document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
-            document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-            document.getElementById('error-display').style.display = 'none';
+    <main class="pt-32 max-w-xl mx-auto px-6 pb-20">
+        <div class="mb-16 border border-zinc-900 p-6">
+            <textarea id="p-testo" placeholder="Condividi la tua visione..." class="bg-transparent border-none text-xl serif italic h-24 p-0 mb-4 w-full"></textarea>
+            <input type="file" id="p-foto" accept="image/*" class="text-[10px] mb-4">
+            <button onclick="pubblicaPost()" id="btn-pub" class="btn-white">Pubblica</button>
+        </div>
+        <div id="feed" class="space-y-12"></div>
+    </main>
+</section>
+
+<script>
+    const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+    const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
+
+    const supabaseJs = supabase;
+    const supabase = supabaseJs.createClient(SB_URL, SB_KEY);
+
+    function vaiA(m) {
+        document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
+        document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
+        document.getElementById('error-display').style.display = 'none';
+    }
+
+    function mostraErrore(msg) {
+        const d = document.getElementById('error-display');
+        d.innerText = msg;
+        d.style.display = 'block';
+    }
+
+    async function faiLogin() {
+        const e = document.getElementById('l-email').value;
+        const p = document.getElementById('l-pass').value;
+        const { error } = await supabase.auth.signInWithPassword({ email: e, password: p });
+        if (error) mostraErrore("E-MAIL O PASSWORD SBAGLIATI");
+        else check();
+    }
+
+    async function faiRegistrazione() {
+        const n = document.getElementById('r-nome').value;
+        const d = document.getElementById('r-nascita').value;
+        const e = document.getElementById('r-email').value;
+        const p = document.getElementById('r-pass').value;
+
+        if (!n || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI");
+        const age = new Date().getFullYear() - new Date(d).getFullYear();
+        if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI");
+
+        const { error } = await supabase.auth.signUp({
+            email: e,
+            password: p,
+            options: { data: { first_name: n } }
+        });
+
+        if (error) mostraErrore(error.message.toUpperCase());
+        else {
+            alert("CONTROLLA LA TUA E-MAIL PER CONFERMARE L'ISCRIZIONE");
+            vaiA('login');
         }
+    }
 
-        function mostraErrore(msg) {
-            const d = document.getElementById('error-display');
-            d.innerText = msg; d.style.display = 'block';
-        }
+    async function faiGitHub() {
+        await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { redirectTo: window.location.href }
+        });
+    }
 
-        async function faiLogin() {
-            const e = document.getElementById('l-email').value;
-            const p = document.getElementById('l-pass').value;
-            const { error } = await supabase.auth.signInWithPassword({ email: e, password: p });
-            if (error) {
-                if (error.message.includes("Invalid login")) mostraErrore("E-MAIL O PASSWORD SBAGLIATI");
-                else mostraErrore("UTENTE NON REGISTRATO");
-            } else location.reload();
-        }
-
-        async function faiRegistrazione() {
-            const n = document.getElementById('r-nome').value;
-            const d = document.getElementById('r-nascita').value;
-            const e = document.getElementById('r-email').value;
-            const p = document.getElementById('r-pass').value;
-
-            if(!n || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI");
-            const age = new Date().getFullYear() - new Date(d).getFullYear();
-            if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI");
-
-            const { error } = await supabase.auth.signUp({ email: e, password: p, options: { data: { first_name: n } } });
-            if (error) mostraErrore(error.message.toUpperCase());
-            else { alert("CONTROLLA LA TUA E-MAIL PER CONFERMARE L'ISCRIZIONE (ANCHE NELLO SPAM)"); vaiA('login'); }
-        }
-
-        async function faiGitHub() { await supabase.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } }); }
-
-        async function pubblicaPost() {
-            const t = document.getElementById('p-testo').value;
-            const f = document.getElementById('p-foto').files[0];
-            const btn = document.getElementById('btn-pub');
-            const { data: { user } } = await supabase.auth.getUser();
-            btn.disabled = true; btn.innerText = "CARICAMENTO...";
-            let url = null;
-            if (f) {
-                const name = `${Date.now()}-${f.name}`;
-                const { data } = await supabase.storage.from('immagini').upload(name, f);
-                if (data) url = `${SB_URL}/storage/v1/object/public/immagini/${name}`;
-            }
-            await supabase.from('posts').insert([{ content: t, user_email: user.email, image_url: url }]);
-            location.reload();
-        }
-
-        async function caricaFeed() {
-            const s = document.getElementById('cerca').value.toLowerCase();
-            const { data } = await supabase.from('posts').select('*, likes(count), comments(*)').order('created_at', { ascending: false });
-            const fil = data.filter(p => p.content.toLowerCase().includes(s) || p.user_email.toLowerCase().includes(s));
-            document.getElementById('feed').innerHTML = fil.map(p => `
-                <div class="post-card">
-                    <p class="text-[9px] text-zinc-600 mb-4 uppercase tracking-widest">BY ${p.user_email}</p>
-                    ${p.image_url ? `<img src="${p.image_url}" class="bw-photo w-full mb-6 shadow-2xl">` : ''}
-                    <p class="serif text-3xl italic mb-6">"${p.content}"</p>
-                    <div class="flex gap-6 border-t border-zinc-900 pt-4">
-                        <button onclick="mettiLike(${p.id})" class="text-[10px] flex items-center gap-2"><i data-lucide="heart" class="w-4 h-4"></i> ${p.likes[0].count}</button>
-                        <div class="text-[10px] text-zinc-500 uppercase flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4"></i> ${p.comments.length} Commenti</div>
-                    </div>
-                    <div class="mt-4 space-y-2">
-                        ${p.comments.map(c => `<div class="p-2 bg-zinc-900 text-[10px]"><b>${c.user_email.split('@')[0]}</b>: ${c.content}</div>`).join('')}
-                        <input type="text" placeholder="Commenta..." onkeydown="if(event.key==='Enter') inviaCommento(${p.id}, this.value)" class="text-[10px] mt-2">
-                    </div>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        async function mettiLike(id) {
-            const { data: { user } } = await supabase.auth.getUser();
-            await supabase.from('likes').insert([{ post_id: id, user_email: user.email }]);
+    async function check() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
             caricaFeed();
         }
+    }
 
-        async function inviaCommento(id, t) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if(!t) return;
-            await supabase.from('comments').insert([{ post_id: id, user_email: user.email, content: t }]);
-            caricaFeed();
-        }
+    supabase.auth.onAuthStateChange((_e, session) => {
+        if (session) check();
+    });
 
-        async function check() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); caricaFeed(); }
-        }
+    function esci() {
+        supabase.auth.signOut().then(() => location.reload());
+    }
 
-        function esci() { supabase.auth.signOut().then(() => location.reload()); }
-        lucide.createIcons();
-        check();
-    </script>
+    lucide.createIcons();
+    check();
+</script>
+
 </body>
 </html>
