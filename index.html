@@ -13,42 +13,36 @@
         .serif { font-family: 'Playfair Display', serif; }
         .hidden { display: none !important; }
         
-        /* LAYOUT A DUE COLONNE */
+        /* LAYOUT SPLIT EDITORIAL */
         .split-layout { display: flex; height: 100vh; }
         .visual-side { flex: 1; position: relative; overflow: hidden; display: none; background: #000; }
         @media (min-width: 768px) { .visual-side { display: block; } }
 
-        /* FOTO CHE CAMBIANO */
+        /* FOTO INTERATTIVE */
         .visual-side img {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; filter: grayscale(100%); opacity: 0;
-            /* Aggiunto z-index base per gestire la sovrapposizione */
-            z-index: 0;
-            transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out, filter 0.5s;
+            z-index: 0; transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out, filter 0.5s;
         }
-        /* L'immagine attiva ora sta fisicamente sopra (z-index: 1) */
         .visual-side img.active { opacity: 1; transform: scale(1.03); z-index: 1; }
-        .visual-side img:hover { filter: grayscale(0%); }
+        .visual-side img:hover { filter: grayscale(0%); cursor: crosshair; }
 
-        /* LATO FORM (Destra) */
+        /* AREA FORM */
         .form-side {
             flex: 1; display: flex; flex-direction: column;
-            justify-content: center; padding: 40px; background: #0a0a0a;
+            justify-content: center; padding: 60px; background: #0a0a0a;
             max-width: 600px; margin: auto;
-            border-left: 1px solid #111; /* Sottile linea di separazione */
         }
         
-        /* INPUT E SPAZIATURA */
         .input-group { margin-bottom: 35px; }
-        .input-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-bottom: 12px; }
+        .input-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #555; margin-bottom: 12px; }
         input {
-            background: transparent; border-bottom: 1px solid #333;
+            background: transparent; border-bottom: 1px solid #222;
             padding: 16px 0; color: #fff; width: 100%; outline: none;
-            font-size: 15px; letter-spacing: 0.5px; transition: border-color 0.3s;
+            font-size: 15px; transition: border-color 0.3s;
         }
         input:focus { border-color: #fff; }
         
-        /* BOTTONI E LINK */
         .btn-white {
             background: #fff; color: #000; padding: 20px;
             font-weight: 500; text-transform: uppercase; width: 100%;
@@ -58,32 +52,31 @@
         .btn-white:hover { background: #000; color: #fff; }
         
         .link-switch {
-            display: block; text-align: center; margin-top: 30px;
+            display: block; text-align: center; margin-top: 40px;
             font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
-            color: #888; cursor: pointer; transition: 0.3s;
+            color: #666; cursor: pointer;
         }
-        .link-switch span { color: #fff; border-bottom: 1px solid #fff; padding-bottom: 2px; margin-left: 5px; }
-        .link-switch:hover span { color: #aaa; border-color: #aaa; }
+        .link-switch span { color: #fff; border-bottom: 1px solid #fff; padding-bottom: 3px; margin-left: 8px; }
 
-        .github-btn { margin-top: 50px; padding-top: 30px; border-top: 1px solid #222; color: #555; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: 0.3s; }
-        .github-btn:hover { color: #fff; }
+        #error-display { background: rgba(255,0,0,0.1); border: 1px solid #441111; color: #ff4444; padding: 15px; font-size: 10px; letter-spacing: 1px; margin-bottom: 30px; display: none; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="auth-container" class="split-layout">
         <div class="visual-side">
-            <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active" alt="Fashion Man">
-            <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200" alt="Fashion Woman">
+            <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active" alt="Man">
+            <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200" alt="Woman">
         </div>
 
         <div class="form-side">
             <h1 class="serif text-6xl mb-16 italic tracking-tighter">Hawenishland</h1>
-            <div id="error-display" class="text-red-500 text-[11px] uppercase mb-8 hidden tracking-widest"></div>
+            
+            <div id="error-display"></div>
 
             <div id="login-form">
                 <div class="input-group">
-                    <label class="input-label">Indirizzo Email</label>
+                    <label class="input-label">Email</label>
                     <input type="email" id="l-email">
                 </div>
                 <div class="input-group">
@@ -91,10 +84,7 @@
                     <input type="password" id="l-pass">
                 </div>
                 <button onclick="faiLogin()" class="btn-white">Entra nell'Archivio</button>
-                
-                <p onclick="vaiA('signup')" class="link-switch">
-                    Non hai un account? <span>Iscriviti ora</span>
-                </p>
+                <p onclick="vaiA('signup')" class="link-switch">Non hai un account? <span>Iscriviti</span></p>
             </div>
 
             <div id="signup-form" class="hidden">
@@ -108,30 +98,20 @@
                         <input type="text" id="r-cognome">
                     </div>
                 </div>
-                
                 <div class="input-group">
                     <label class="input-label">Data di Nascita (Min. 16 anni)</label>
                     <input type="date" id="r-nascita" style="color-scheme: dark;">
                 </div>
-
                 <div class="input-group">
-                    <label class="input-label">Email</label>
+                    <label class="input-label">Indirizzo Email</label>
                     <input type="email" id="r-email">
                 </div>
                 <div class="input-group">
                     <label class="input-label">Password (Min. 8 caratteri)</label>
                     <input type="password" id="r-pass">
                 </div>
-                
                 <button onclick="faiRegistrazione()" class="btn-white">Crea il tuo Profilo</button>
-                
-                <p onclick="vaiA('login')" class="link-switch">
-                    Hai già un profilo? <span>Accedi</span>
-                </p>
-            </div>
-
-            <div class="github-btn" onclick="faiGitHub()">
-                <i data-lucide="github" class="w-4 h-4"></i> Accesso con GitHub
+                <p onclick="vaiA('login')" class="link-switch">Hai già un account? <span>Accedi</span></p>
             </div>
         </div>
     </div>
@@ -149,7 +129,7 @@
         const SB_KEY = 'sb_publishable_KHwmrWNgwndph8Iuxu-WfW_aUkZTVFI';
         const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-        // Cambio Foto Automatico
+        // --- GESTIONE INTERFACCIA ---
         let imgIdx = 0;
         const imgs = document.querySelectorAll('.visual-side img');
         setInterval(() => {
@@ -169,45 +149,50 @@
             d.innerText = msg; d.style.display = 'block';
         }
 
+        // --- FUNZIONE REGISTRAZIONE ---
+        async function faiRegistrazione() {
+            const n = document.getElementById('r-nome').value.trim();
+            const c = document.getElementById('r-cognome').value.trim();
+            const d = document.getElementById('r-nascita').value;
+            const e = document.getElementById('r-email').value.trim();
+            const p = document.getElementById('r-pass').value;
+
+            if(!n || !c || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI OBBLIGATORI.");
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(e)) return mostraErrore("FORMATO E-MAIL NON VALIDO.");
+
+            const dataNascita = new Date(d);
+            const oggi = new Date();
+            let eta = oggi.getFullYear() - dataNascita.getFullYear();
+            if (oggi.getMonth() < dataNascita.getMonth() || (oggi.getMonth() === dataNascita.getMonth() && oggi.getDate() < dataNascita.getDate())) eta--;
+
+            if (eta < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI PER ISCRIVERTI.");
+
+            try {
+                const { error } = await sb.auth.signUp({
+                    email: e, password: p,
+                    options: { data: { first_name: n, last_name: c }, emailRedirectTo: window.location.origin }
+                });
+
+                if (error) {
+                    mostraErrore("ERRORE: " + error.message.toUpperCase());
+                } else {
+                    alert("PROFILO CREATO! ORA CONTROLLA LA TUA E-MAIL PER CONFERMARE (ANCHE NELLO SPAM).");
+                    vaiA('login');
+                }
+            } catch (err) {
+                mostraErrore("ERRORE TECNICO: CONTROLLA LA TUA CONNESSIONE.");
+            }
+        }
+
+        // --- LOGIN E SESSIONE ---
         async function faiLogin() {
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-            if (error) mostraErrore("Credenziali non valide.");
+            if (error) mostraErrore("E-MAIL O PASSWORD NON VALIDE.");
             else location.reload();
-        }
-
-        async function faiRegistrazione() {
-            const n = document.getElementById('r-nome').value;
-            const c = document.getElementById('r-cognome').value;
-            const d = document.getElementById('r-nascita').value;
-            const e = document.getElementById('r-email').value;
-            const p = document.getElementById('r-pass').value;
-
-            if(!n || !c || !d || !e || !p) return mostraErrore("Compila tutti i campi.");
-            const age = new Date().getFullYear() - new Date(d).getFullYear();
-            if (age < 16) return mostraErrore("Devi avere almeno 16 anni.");
-
-            const res = await sb.auth.signUp({
-                email: e, password: p,
-                options: { data: { first_name: n, last_name: c } }
-            });
-
-            if (res.error) mostraErrore(res.error.message);
-            else { alert("Controlla l'email per confermare."); vaiA('login'); }
-        }
-
-        // ... FUNZIONI DEL FEED (NON TOCCATE) ...
-        async function caricaFeed() {
-            const { data, error } = await sb.from('posts').select('*, likes(count), comments(*)').order('created_at', { ascending: false });
-            if(error) return;
-            document.getElementById('feed').innerHTML = data.map(p => `
-                <div class="mb-24 border-b border-zinc-900 pb-12">
-                    <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-6">Archivio // ${p.user_email.split('@')[0]}</p>
-                    ${p.image_url ? `<img src="${p.image_url}" class="w-full mb-8 shadow-2xl grayscale hover:grayscale-0 transition-all duration-1000">` : ''}
-                    <p class="serif text-4xl italic leading-snug">"${p.content}"</p>
-                </div>
-            `).join('');
         }
 
         async function check() {
@@ -218,6 +203,20 @@
                 caricaFeed(); 
             }
         }
+
+        async function caricaFeed() {
+            const { data } = await sb.from('posts').select('*').order('created_at', { ascending: false });
+            if(data) {
+                document.getElementById('feed').innerHTML = data.map(p => `
+                    <div class="mb-24 border-b border-zinc-900 pb-12">
+                        <p class="text-[10px] text-zinc-500 uppercase tracking-[4px] mb-4">BY ${p.user_email.split('@')[0]}</p>
+                        ${p.image_url ? `<img src="${p.image_url}" class="w-full grayscale hover:grayscale-0 transition-all duration-1000 mb-6">` : ''}
+                        <p class="serif text-4xl italic">"${p.content}"</p>
+                    </div>
+                `).join('');
+            }
+        }
+
         function esci() { sb.auth.signOut().then(() => location.reload()); }
         function faiGitHub() { sb.auth.signInWithOAuth({ provider: 'github' }); }
         
