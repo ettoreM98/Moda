@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATELIER — Fashion Feed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #e5e5e5;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Effetto vetro stile emergent.sh */
+        .glass-nav {
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .post-card {
+            border: 1px solid #1a1a1a;
+            transition: border-color 0.3s ease;
+        }
+
+        .post-card:hover {
+            border-color: #333;
+        }
+
+        .btn-interact {
+            transition: all 0.2s ease;
+            color: #737373;
+        }
+
+        .btn-interact:hover {
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* Scrollbar sottile */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #222; }
+        
+        .tag {
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            padding: 2px 8px;
+            border: 1px solid #222;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="glass-nav fixed top-0 w-full z-50 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <span class="serif text-2xl tracking-tighter font-light">Atelier.</span>
+                <div class="hidden md:flex gap-6 text-[11px] uppercase tracking-[0.2em] mono text-zinc-500">
+                    <a href="#" class="hover:text-white transition">Collezioni</a>
+                    <a href="#" class="hover:text-white transition">Editoriale</a>
+                    <a href="#" class="hover:text-white transition">Live</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-5">
+                <i data-lucide="search" class="w-5 h-5 cursor-pointer hover:text-white transition"></i>
+                <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden cursor-pointer">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Fashion" alt="Profile">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-28 pb-20 px-4">
+        <div class="max-w-xl mx-auto space-y-16">
+            
+            <article class="post-card bg-[#080808] overflow-hidden">
+                <div class="p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 border border-zinc-800 p-0.5">
+                            <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=100&q=80" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="text-[13px] font-semibold tracking-tight">Elias Thorne</h4>
+                            <p class="text-[10px] mono text-zinc-500 uppercase">Creative Director, Paris</p>
+                        </div>
+                    </div>
+                    <i data-lucide="more-horizontal" class="w-4 h-4 text-zinc-600"></i>
+                </div>
+
+                <div class="relative group cursor-crosshair">
+                    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=80" 
+                         alt="Fashion Look" class="w-full grayscale hover:grayscale-0 transition duration-700 ease-in-out">
+                    <div class="absolute bottom-4 left-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="tag bg-black/50 backdrop-blur-md">Silk</span>
+                        <span class="tag bg-black/50 backdrop-blur-md">Archive</span>
+                    </div>
+                </div>
+
+                <div class="p-5">
+                    <div class="flex gap-6 mb-4">
+                        <button class="btn-interact"><i data-lucide="heart" class="w-5 h-5"></i></button>
+                        <button class="btn-interact"><i data-lucide="message-square" class="w-5 h-5"></i></button>
+                        <button class="btn-interact"><i data-lucide="bookmark" class="w-5 h-5"></i></button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <p class="serif italic text-lg leading-snug">
+                            "L'architettura del vestito definisce lo spazio che occupiamo nel mondo."
+                        </p>
+                        <p class="text-[13px] text-zinc-400 font-light leading-relaxed">
+                            Uno studio sulle proporzioni e sui volumi della seta cruda. La collezione 'Silenzi' esplora il vuoto tra il tessuto e la pelle.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-zinc-900 flex justify-between items-center">
+                        <span class="mono text-[9px] text-zinc-600 uppercase tracking-widest">Postato 2 ore fa</span>
+                        <span class="text-[11px] text-zinc-400 hover:text-white cursor-pointer underline underline-offset-4">Commenti (12)</span>
+                    </div>
+                </div>
+            </article>
+
+            <article class="post-card bg-[#080808] overflow-hidden">
+                <div class="p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 border border-zinc-800 p-0.5">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="text-[13px] font-semibold tracking-tight">Clara Valli</h4>
+                            <p class="text-[10px] mono text-zinc-500 uppercase">Trend Forecaster</p>
+                        </div>
+                    </div>
+                    <i data-lucide="more-horizontal" class="w-4 h-4 text-zinc-600"></i>
+                </div>
+
+                <div class="relative group">
+                    <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=80" 
+                         alt="Fashion Look" class="w-full grayscale hover:grayscale-0 transition duration-700 ease-in-out">
+                </div>
+
+                <div class="p-5">
+                    <div class="flex gap-6 mb-4">
+                        <button class="btn-interact"><i data-lucide="heart" class="w-5 h-5"></i></button>
+                        <button class="btn-interact"><i data-lucide="message-square" class="w-5 h-5"></i></button>
+                        <button class="btn-interact"><i data-lucide="send" class="w-5 h-5"></i></button>
+                    </div>
+                    
+                    <p class="serif italic text-lg leading-snug">
+                        "L'eleganza è rifiuto." — Chanel.
+                    </p>
+                    <p class="text-[13px] text-zinc-400 mt-2 font-light">
+                        Il ritorno ai tagli netti e alla palette monocromatica. Meno è meglio.
+                    </p>
+
+                    <div class="mt-6 pt-4 border-t border-zinc-900 flex justify-between items-center">
+                        <span class="mono text-[9px] text-zinc-600 uppercase tracking-widest">Postato ieri</span>
+                        <span class="text-[11px] text-zinc-400 hover:text-white cursor-pointer underline underline-offset-4">Commenti (4)</span>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+    </main>
+
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full flex gap-8 shadow-2xl z-50">
+        <i data-lucide="home" class="w-5 h-5 cursor-pointer"></i>
+        <i data-lucide="plus-square" class="w-5 h-5 cursor-pointer"></i>
+        <i data-lucide="user" class="w-5 h-5 cursor-pointer"></i>
+    </div>
+
+    <script>
+        // Inizializza le icone
+        lucide.createIcons();
+    </script>
+</body>
+</html>
