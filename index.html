@@ -7,62 +7,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; margin: 0; height: 100vh; }
+        body { background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; height: 100vh; }
         .serif { font-family: 'Playfair Display', serif; }
         .hidden { display: none !important; }
-        
-        /* LAYOUT SPLIT EDITORIAL */
         .split-layout { display: flex; height: 100vh; }
         .visual-side { flex: 1; position: relative; overflow: hidden; display: none; background: #000; }
         @media (min-width: 768px) { .visual-side { display: block; } }
-
-        /* FOTO INTERATTIVE */
-        .visual-side img {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; filter: grayscale(100%); opacity: 0;
-            z-index: 0; transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out, filter 0.5s;
-        }
-        .visual-side img.active { opacity: 1; transform: scale(1.03); z-index: 1; }
-        .visual-side img:hover { filter: grayscale(0%); cursor: crosshair; }
-
-        /* AREA FORM */
-        .form-side {
-            flex: 1; display: flex; flex-direction: column;
-            justify-content: center; padding: 60px; background: #0a0a0a;
-            max-width: 600px; margin: auto;
-            border-left: 1px solid #111;
-        }
-        
-        .input-group { margin-bottom: 35px; }
-        .input-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #555; margin-bottom: 12px; }
-        input {
-            background: transparent; border-bottom: 1px solid #222;
-            padding: 16px 0; color: #fff; width: 100%; outline: none;
-            font-size: 15px; transition: border-color 0.3s;
-        }
-        input:focus { border-color: #fff; }
-        
-        .btn-white {
-            background: #fff; color: #000; padding: 20px;
-            font-weight: 500; text-transform: uppercase; width: 100%;
-            cursor: pointer; font-size: 12px; letter-spacing: 3px;
-            transition: 0.3s; border: 1px solid #fff;
-        }
+        .visual-side img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .visual-side img.active { opacity: 1; z-index: 1; }
+        .form-side { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px; background: #0a0a0a; max-width: 600px; margin: auto; }
+        .input-group { margin-bottom: 25px; }
+        .input-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #555; margin-bottom: 8px; }
+        input { background: transparent; border-bottom: 1px solid #222; padding: 10px 0; color: #fff; width: 100%; outline: none; font-size: 14px; width: 100%; }
+        input:focus { border-bottom-color: #fff; }
+        .btn-white { background: #fff; color: #000; padding: 18px; font-weight: 500; text-transform: uppercase; width: 100%; cursor: pointer; border: 1px solid #fff; transition: 0.3s; margin-top: 10px; }
         .btn-white:hover { background: #000; color: #fff; }
-        
-        .link-switch {
-            display: block; text-align: center; margin-top: 40px;
-            font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
-            color: #666; cursor: pointer;
-        }
-        .link-switch span { color: #fff; border-bottom: 1px solid #fff; padding-bottom: 3px; margin-left: 8px; }
-
-        #msg-box { background: rgba(255,255,255,0.05); border: 1px solid #222; padding: 15px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; display: none; text-align: center; }
-
-        /* FEED ARCHIVIO */
-        .post-card { margin-bottom: 100px; border-bottom: 1px solid #111; padding-bottom: 50px; }
+        #msg-box { display: none; padding: 12px; border: 1px solid #333; font-size: 11px; text-transform: uppercase; margin-bottom: 20px; text-align: center; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -74,79 +35,40 @@
         </div>
 
         <div class="form-side">
-            <h1 class="serif text-6xl mb-16 italic tracking-tighter">Hawenishland</h1>
+            <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
             <div id="msg-box"></div>
 
             <div id="login-form">
-                <div class="input-group">
-                    <label class="input-label">Email</label>
-                    <input type="email" id="l-email">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Password</label>
-                    <input type="password" id="l-pass">
-                </div>
+                <div class="input-group"><label class="input-label">Email</label><input type="email" id="l-email"></div>
+                <div class="input-group"><label class="input-label">Password</label><input type="password" id="l-pass"></div>
                 <button onclick="faiLogin()" class="btn-white">Entra nell'Archivio</button>
-                <p onclick="vaiA('signup')" class="link-switch">Non hai un account? <span>Iscriviti</span></p>
+                <p onclick="vaiA('signup')" class="mt-8 text-center text-[10px] cursor-pointer uppercase tracking-[2px]">Nuovo Account</p>
             </div>
 
             <div id="signup-form" class="hidden">
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="input-label">Nome</label>
-                        <input type="text" id="r-nome" placeholder="ES. MARCO">
-                    </div>
-                    <div>
-                        <label class="input-label">Cognome</label>
-                        <input type="text" id="r-cognome" placeholder="ES. ROSSI">
-                    </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
+                    <div><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
                 </div>
                 <div class="input-group">
-                    <label class="input-label">Email</label>
-                    <input type="email" id="r-email" placeholder="EMAIL@ESEMPIO.IT">
+                    <label class="input-label">Data di Nascita (Min. 16 anni)</label>
+                    <input type="date" id="r-nascita" style="color-scheme: dark;">
                 </div>
-                <div class="input-group">
-                    <label class="input-label">Password</label>
-                    <input type="password" id="r-pass">
-                </div>
-                <button onclick="faiRegistrazione()" class="btn-white">Invia Richiesta</button>
-                <p onclick="vaiA('login')" class="link-switch">Hai già un account? <span>Accedi</span></p>
+                <div class="input-group"><label class="input-label">Email</label><input type="email" id="r-email"></div>
+                <div class="input-group"><label class="input-label">Password</label><input type="password" id="r-pass"></div>
+                <button id="btn-reg" onclick="faiRegistrazione()" class="btn-white">Invia Richiesta</button>
+                <p onclick="vaiA('login')" class="mt-8 text-center text-[10px] cursor-pointer uppercase tracking-[2px]">Torna al Login</p>
             </div>
-        </div>
-    </div>
-
-    <section id="app-screen" class="hidden min-h-screen bg-black">
-        <nav class="fixed top-0 w-full border-b border-zinc-900 bg-black/95 p-6 flex justify-between items-center px-12 z-50">
-            <span class="serif text-3xl italic">Hawenishland</span>
-            <div class="flex gap-10 items-center">
-                <button onclick="document.getElementById('upload-modal').classList.remove('hidden')" class="text-[10px] uppercase tracking-[3px]">Carica</button>
-                <button onclick="esci()" class="text-[10px] border border-zinc-800 px-6 py-2 uppercase tracking-[2px] hover:bg-white hover:text-black transition">Logout</button>
-            </div>
-        </nav>
-        <main class="pt-40 max-w-xl mx-auto px-6 pb-20" id="feed-content"></main>
-    </section>
-
-    <div id="upload-modal" class="hidden fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-6">
-        <div class="bg-zinc-950 border border-zinc-900 p-10 w-full max-w-md">
-            <h2 class="serif text-4xl mb-10 italic">Aggiungi all'Archivio</h2>
-            <div class="input-group">
-                <label class="input-label">Titolo o Descrizione</label>
-                <input type="text" id="p-content" placeholder="Esempio: Editorial FW26">
-            </div>
-            <div class="input-group">
-                <label class="input-label">URL Immagine</label>
-                <input type="text" id="p-img" placeholder="Incolla link foto">
-            </div>
-            <button onclick="pubblicaPost()" class="btn-white mb-6">Pubblica</button>
-            <button onclick="document.getElementById('upload-modal').classList.add('hidden')" class="w-full text-center text-[10px] uppercase text-zinc-600">Chiudi</button>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURAZIONE ---
         const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+        
+        const sb = window.supabase.createClient(SB_URL, SB_KEY, {
+            auth: { persistSession: true, detectSessionInUrl: true }
+        });
 
         function vaiA(m) {
             document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
@@ -157,7 +79,8 @@
         function mess(t, err = false) {
             const b = document.getElementById('msg-box');
             b.innerText = t; b.style.display = 'block';
-            b.style.color = err ? '#ff4444' : '#fff';
+            b.style.color = err ? '#ff4444' : '#44ff44';
+            b.style.borderColor = err ? '#441111' : '#114411';
         }
 
         async function faiRegistrazione() {
@@ -165,68 +88,47 @@
             const p = document.getElementById('r-pass').value;
             const n = document.getElementById('r-nome').value;
             const c = document.getElementById('r-cognome').value;
+            const d = document.getElementById('r-nascita').value;
+            const btn = document.getElementById('btn-reg');
 
-            const { data, error } = await sb.auth.signUp({
-                email: e, password: p,
-                options: { 
-                    data: { first_name: n, last_name: c },
-                    emailRedirectTo: window.location.origin
-                }
-            });
+            if(!e || !p || !n || !c || !d) return mess("COMPILA TUTTI I CAMPI.", true);
 
-            if (error) mess(error.message.toUpperCase(), true);
-            else mess("CONTROLLA LA TUA EMAIL PER ATTIVARE IL PROFILO.");
+            // CONTROLLO ETÀ (REINTEGRATO)
+            const nascita = new Date(d);
+            const oggi = new Date();
+            let eta = oggi.getFullYear() - nascita.getFullYear();
+            const m = oggi.getMonth() - nascita.getMonth();
+            if (m < 0 || (m === 0 && oggi.getDate() < nascita.getDate())) eta--;
+            
+            if (eta < 16) return mess("ACCESSO NEGATO: DEVI AVERE ALMENO 16 ANNI.", true);
+
+            btn.innerText = "ELABORAZIONE...";
+            btn.disabled = true;
+
+            try {
+                const { error } = await sb.auth.signUp({
+                    email: e, password: p,
+                    options: { 
+                        data: { first_name: n, last_name: c, birthday: d },
+                        emailRedirectTo: window.location.origin 
+                    }
+                });
+                if (error) mess("ERRORE: " + error.message.toUpperCase(), true);
+                else mess("RICHIESTA INVIATA! VERIFICA LA TUA EMAIL.");
+            } catch (err) { mess("ERRORE DI CARICAMENTO DATABASE.", true); }
+            finally { btn.innerText = "INVIA RICHIESTA"; btn.disabled = false; }
         }
 
         async function faiLogin() {
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-            if (error) mess("ACCESSO NEGATO: CONTROLLA LE CREDENZIALI.", true);
-            else checkSession();
+            if (error) mess("ERRORE: " + error.message.toUpperCase(), true);
+            else alert("BENVENUTO.");
         }
-
-        async function caricaFeed() {
-            const { data } = await sb.from('posts').select('*').order('created_at', { ascending: false });
-            if(data) {
-                document.getElementById('feed-content').innerHTML = data.map(post => `
-                    <div class="post-card">
-                        <p class="text-[9px] text-zinc-700 uppercase tracking-[4px] mb-6">ARCHIVE ITEM // ${post.id}</p>
-                        ${post.image_url ? `<img src="${post.image_url}" class="w-full grayscale hover:grayscale-0 transition-all duration-1000 mb-8">` : ''}
-                        <h2 class="serif text-4xl italic leading-tight">"${post.content}"</h2>
-                    </div>
-                `).join('');
-            }
-        }
-
-        async function pubblicaPost() {
-            const user = (await sb.auth.getUser()).data.user;
-            const content = document.getElementById('p-content').value;
-            const img = document.getElementById('p-img').value;
-
-            const { error } = await sb.from('posts').insert([{ content, image_url: img, user_email: user.email }]);
-            if(!error) {
-                document.getElementById('upload-modal').classList.add('hidden');
-                caricaFeed();
-            }
-        }
-
-        async function checkSession() {
-            const { data: { user } } = await sb.auth.getUser();
-            if (user) {
-                document.getElementById('auth-container').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                caricaFeed();
-            }
-        }
-
-        function esci() { sb.auth.signOut().then(() => location.reload()); }
 
         let idx = 0; const imgs = document.querySelectorAll('.visual-side img');
         setInterval(() => { imgs[idx].classList.remove('active'); idx = (idx + 1) % imgs.length; imgs[idx].classList.add('active'); }, 5000);
-
-        checkSession();
-        lucide.createIcons();
     </script>
 </body>
 </html>
