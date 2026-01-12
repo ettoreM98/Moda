@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HAWENISHLAND — Archivio Moda</title>
 
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" defer></script>
+
+    <!-- Supabase JS (UMD, espone window.supabase) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 
@@ -130,15 +133,13 @@
 
 <script>
 // === CONFIGURAZIONE SUPABASE ===
-// URL del tuo progetto
 const SUPABASE_URL = "https://nqeuecpgvqexhpztpois.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc"; // <-- metti qui la tua anon key [web:30][web:36]
 
-// Chiave ANON (pubblica, NON usare la service role sul frontend)
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc"; // <- SOSTITUISCI QUESTO VALORE [web:28][web:30]
+// dal CDN UMD la variabile globale è window.supabase [web:51][web:53]
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// === FUNZIONI UI ===
+// === SWITCH LOGIN / SIGNUP ===
 function vaiA(m) {
     document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
     document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
@@ -190,7 +191,7 @@ async function faiRegistrazione() {
             password: p,
             options: {
                  { first_name: n, last_name: c, birthday: d },
-                // Assicurati che questa origin sia presente in Site URL o Additional redirect URLs in Supabase [web:33][web:39]
+                // questa origin deve essere ammessa in Supabase (Site URL o Additional redirect URLs) [web:39]
                 emailRedirectTo: window.location.origin
             }
         });
@@ -236,7 +237,7 @@ async function recuperoPassword() {
     if (!email) return;
 
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin  // anche questa URL deve essere ammessa nelle impostazioni Supabase [web:39]
+        redirectTo: window.location.origin // anche qui la URL deve essere ammessa [web:39]
     });
 
     if (error) {
@@ -250,12 +251,13 @@ async function recuperoPassword() {
 // === SLIDESHOW SFONDO ===
 let idx = 0;
 const imgs = document.querySelectorAll('.visual-side img');
-setInterval(() => {
-    if (!imgs.length) return;
-    imgs[idx].classList.remove('active');
-    idx = (idx + 1) % imgs.length;
-    imgs[idx].classList.add('active');
-}, 5000);
+if (imgs.length > 0) {
+    setInterval(() => {
+        imgs[idx].classList.remove('active');
+        idx = (idx + 1) % imgs.length;
+        imgs[idx].classList.add('active');
+    }, 5000);
+}
 </script>
 
 </body>
