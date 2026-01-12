@@ -12,67 +12,34 @@
         body { background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; margin: 0; height: 100vh; }
         .serif { font-family: 'Playfair Display', serif; }
         .hidden { display: none !important; }
-        
-        /* LAYOUT SPLIT EDITORIAL */
         .split-layout { display: flex; height: 100vh; }
         .visual-side { flex: 1; position: relative; overflow: hidden; display: none; background: #000; }
         @media (min-width: 768px) { .visual-side { display: block; } }
-
-        /* FOTO INTERATTIVE (UOMO/DONNA) */
-        .visual-side img {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; filter: grayscale(100%); opacity: 0;
-            z-index: 0; transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out, filter 0.5s;
-        }
-        .visual-side img.active { opacity: 1; transform: scale(1.03); z-index: 1; }
+        .visual-side img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); opacity: 0; z-index: 0; transition: opacity 1.5s ease-in-out, filter 0.5s; }
+        .visual-side img.active { opacity: 1; z-index: 1; transform: scale(1.03); }
         .visual-side img:hover { filter: grayscale(0%); cursor: crosshair; }
-
-        /* AREA FORM */
-        .form-side {
-            flex: 1; display: flex; flex-direction: column;
-            justify-content: center; padding: 60px; background: #0a0a0a;
-            max-width: 600px; margin: auto;
-            border-left: 1px solid #111;
-        }
-        
+        .form-side { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px; background: #0a0a0a; max-width: 600px; margin: auto; border-left: 1px solid #111; }
         .input-group { margin-bottom: 35px; }
         .input-label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #555; margin-bottom: 12px; }
-        input {
-            background: transparent; border-bottom: 1px solid #222;
-            padding: 16px 0; color: #fff; width: 100%; outline: none;
-            font-size: 15px; transition: border-color 0.3s;
-        }
+        input { background: transparent; border-bottom: 1px solid #222; padding: 16px 0; color: #fff; width: 100%; outline: none; font-size: 15px; transition: border-color 0.3s; }
         input:focus { border-color: #fff; }
-        
-        .btn-white {
-            background: #fff; color: #000; padding: 20px;
-            font-weight: 500; text-transform: uppercase; width: 100%;
-            cursor: pointer; font-size: 12px; letter-spacing: 3px;
-            transition: 0.3s; border: 1px solid #fff;
-        }
+        .btn-white { background: #fff; color: #000; padding: 20px; font-weight: 500; text-transform: uppercase; width: 100%; cursor: pointer; font-size: 12px; letter-spacing: 3px; border: 1px solid #fff; transition: 0.3s; }
         .btn-white:hover { background: #000; color: #fff; }
-        
-        .link-switch {
-            display: block; text-align: center; margin-top: 40px;
-            font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
-            color: #666; cursor: pointer;
-        }
+        .link-switch { display: block; text-align: center; margin-top: 40px; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #666; cursor: pointer; }
         .link-switch span { color: #fff; border-bottom: 1px solid #fff; padding-bottom: 3px; margin-left: 8px; }
-
-        #error-display { background: rgba(255,0,0,0.1); border: 1px solid #441111; color: #ff4444; padding: 15px; font-size: 10px; letter-spacing: 1px; margin-bottom: 30px; display: none; text-align: center; }
+        #error-display { background: rgba(255,0,0,0.1); border: 1px solid #441111; color: #ff4444; padding: 15px; font-size: 10px; margin-bottom: 30px; display: none; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="auth-container" class="split-layout">
         <div class="visual-side">
-            <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active" alt="Man Fashion">
-            <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200" alt="Woman Fashion">
+            <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
+            <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
         </div>
 
         <div class="form-side">
             <h1 class="serif text-6xl mb-16 italic tracking-tighter">Hawenishland</h1>
-            
             <div id="error-display"></div>
 
             <div id="login-form">
@@ -90,25 +57,19 @@
 
             <div id="signup-form" class="hidden">
                 <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="input-label">Nome</label>
-                        <input type="text" id="r-nome" placeholder="ES. MARCO">
-                    </div>
-                    <div>
-                        <label class="input-label">Cognome</label>
-                        <input type="text" id="r-cognome" placeholder="ES. ROSSI">
-                    </div>
+                    <input type="text" id="r-nome" placeholder="NOME">
+                    <input type="text" id="r-cognome" placeholder="COGNOME">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">Data di Nascita (Min. 16 anni)</label>
+                    <label class="input-label">Data di Nascita</label>
                     <input type="date" id="r-nascita" style="color-scheme: dark;">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">Indirizzo Email</label>
-                    <input type="email" id="r-email" placeholder="EMAIL@ESEMPIO.IT">
+                    <label class="input-label">Email</label>
+                    <input type="email" id="r-email">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">Password (Min. 8 caratteri)</label>
+                    <label class="input-label">Password</label>
                     <input type="password" id="r-pass">
                 </div>
                 <button onclick="faiRegistrazione()" class="btn-white">Crea il tuo Profilo</button>
@@ -126,17 +87,18 @@
     </section>
 
     <script>
+        // CONFIGURAZIONE CON FIX AVANZATO PER SAFARI/CHROME
         const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-        const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let imgIdx = 0;
-        const imgs = document.querySelectorAll('.visual-side img');
-        setInterval(() => {
-            imgs[imgIdx].classList.remove('active');
-            imgIdx = (imgIdx + 1) % imgs.length;
-            imgs[imgIdx].classList.add('active');
-        }, 5000);
+        const sb = window.supabase.createClient(SB_URL, SB_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                flowType: 'pkce'
+            }
+        });
 
         function vaiA(m) {
             document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
@@ -156,23 +118,22 @@
             const e = document.getElementById('r-email').value.trim();
             const p = document.getElementById('r-pass').value;
 
-            if(!n || !c || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI OBBLIGATORI.");
-            
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(e)) return mostraErrore("FORMATO E-MAIL NON VALIDO.");
-
-            const age = new Date().getFullYear() - new Date(d).getFullYear();
-            if (age < 16) return mostraErrore("DEVI AVERE ALMENO 16 ANNI.");
+            if(!n || !c || !d || !e || !p) return mostraErrore("COMPILA TUTTI I CAMPI.");
 
             try {
-                const { error } = await sb.auth.signUp({
+                const { data, error } = await sb.auth.signUp({
                     email: e, password: p,
-                    options: { data: { first_name: n, last_name: c }, emailRedirectTo: window.location.origin }
+                    options: { data: { first_name: n, last_name: c } }
                 });
-                if (error) mostraErrore("ERRORE: " + error.message.toUpperCase());
-                else { alert("PROFILO CREATO! CONTROLLA LA TUA E-MAIL."); vaiA('login'); }
+
+                if (error) {
+                    mostraErrore("ERRORE: " + error.message.toUpperCase());
+                } else {
+                    alert("PROFILO CREATO! CONTROLLA L'EMAIL (ANCHE SPAM).");
+                    vaiA('login');
+                }
             } catch (err) {
-                mostraErrore("ERRORE TECNICO DI CARICAMENTO.");
+                alert("DIAGNOSTICA: CARICAMENTO FALLITO. RIPROVA O CAMBIA RETE.");
             }
         }
 
@@ -180,7 +141,7 @@
             const e = document.getElementById('l-email').value;
             const p = document.getElementById('l-pass').value;
             const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
-            if (error) mostraErrore("E-MAIL O PASSWORD NON VALIDE.");
+            if (error) mostraErrore("CREDENZIALI NON VALIDE.");
             else location.reload();
         }
 
@@ -205,6 +166,9 @@
                 caricaFeed(); 
             }
         }
+
+        let idx = 0; const imgs = document.querySelectorAll('.visual-side img');
+        setInterval(() => { imgs[idx].classList.remove('active'); idx = (idx + 1) % imgs.length; imgs[idx].classList.add('active'); }, 5000);
 
         function esci() { sb.auth.signOut().then(() => location.reload()); }
         lucide.createIcons();
