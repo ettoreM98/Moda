@@ -6,7 +6,7 @@
     <title>HAWENISHLAND — Archivio Moda</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js" defer></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 
@@ -182,17 +182,20 @@ async function faiRegistrazione() {
             password: p,
             options: {
                 data: { first_name: n, last_name: c, birthday: d },
-                emailRedirectTo: window.location.origin
+                // URL pubblico del tuo sito
+                emailRedirectTo: 'https://www.hawenishland.it/login'
             }
         });
 
+        console.log(error); // Mostra errore completo nella console
         if (error) {
-            mess(error.message, true);
+            mess(error.message || "Errore generico", true);
         } else {
             mess("Controlla la tua mail per confermare.", false);
             setTimeout(() => vaiA('login'), 2000);
         }
-    } catch {
+    } catch (e) {
+        console.error(e);
         mess("Errore di connessione. Riprova più tardi.", true);
     }
 }
@@ -212,7 +215,7 @@ async function recuperoPassword() {
     if (!email) return;
 
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
+        redirectTo: 'https://www.hawenishland.it/login'
     });
 
     if (error) alert(error.message);
