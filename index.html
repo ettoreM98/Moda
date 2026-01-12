@@ -84,6 +84,7 @@
                 <input type="password" id="l-pass">
             </div>
             <button onclick="faiLogin()" class="btn-white">Entra</button>
+            <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
             <p onclick="vaiA('signup')" class="link-small">
                 Non hai un account? <b>Iscriviti</b>
             </p>
@@ -117,10 +118,7 @@
                 <input type="password" id="r-pass">
             </div>
 
-            <button onclick="faiRegistrazione()" class="btn-white">
-                Invia Richiesta
-            </button>
-
+            <button onclick="faiRegistrazione()" class="btn-white">Invia Richiesta</button>
             <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
         </div>
     </div>
@@ -185,9 +183,8 @@ async function faiRegistrazione() {
             }
         });
 
-        if (error) {
-            mess(error.message, true);
-        } else {
+        if (error) mess(error.message, true);
+        else {
             mess("Controlla la tua mail per confermare.", false);
             setTimeout(() => vaiA('login'), 2000);
         }
@@ -204,6 +201,18 @@ async function faiLogin() {
 
     if (error) mess(error.message, true);
     else alert("Login effettuato.");
+}
+
+async function recuperoPassword() {
+    const email = prompt("Inserisci la tua email:");
+    if (!email) return;
+
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+    });
+
+    if (error) alert(error.message);
+    else alert("Email di recupero inviata.");
 }
 
 let idx = 0;
