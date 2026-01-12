@@ -49,7 +49,7 @@ input:focus{ border-bottom-color:#fff }
 .btn-white:hover{ background:#000; color:#fff }
 
 #msg-box{
-    display:none; padding:12px; border:1px solid #333;
+    display:block; padding:12px; border:1px solid #333;
     font-size:11px; text-transform:uppercase;
     margin-bottom:20px; text-align:center; word-break:break-word;
 }
@@ -71,10 +71,10 @@ input:focus{ border-bottom-color:#fff }
 
 <div class="form-side">
     <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
-    <div id="msg-box"></div>
+    <div id="msg-box">Controllo Supabase in corso…</div>
 
     <!-- LOGIN -->
-    <div id="login-form">
+    <div id="login-form" class="hidden">
         <div class="input-group">
             <label class="input-label">Email</label>
             <input type="email" id="l-email">
@@ -130,41 +130,44 @@ input:focus{ border-bottom-color:#fff }
 <script>
 const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
 const SB_KEY = 'INSERISCI_LA_TUA_ANON_KEY';
-const sb = supabase.createClient(SB_URL, SB_KEY);
+let sb;
 
+// funzione toggle form
 function vaiA(m) {
     document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
     document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-    document.getElementById('msg-box').style.display = 'none';
 }
 
+// funzione messaggi
 function mess(t, err=false) {
     const b = document.getElementById('msg-box');
     b.innerText = t;
-    b.style.display = 'block';
     b.style.color = err ? '#ff4444' : '#44ff44';
 }
 
+// controllo CORS e connessione Supabase
+(async function checkSupabase() {
+    try {
+        sb = supabase.createClient(SB_URL, SB_KEY);
+        // Proviamo a leggere la sessione come test
+        const { data, error } = await sb.auth.getSession();
+        if (error) {
+            mess("Errore Supabase: " + JSON.stringify(error), true);
+        } else {
+            mess("Supabase OK ✅ Puoi usare login/registrazione", false);
+            vaiA('login');
+        }
+    } catch(e) {
+        mess("Connessione a Supabase fallita: " + e.message + " 🔴 Probabile CORS/Cloudflare", true);
+    }
+})();
+
+// Validazione email
 function emailValida(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Controllo chiave anon all'avvio
-(async function checkKey() {
-    try {
-        const { data, error } = await sb.auth.getSession();
-        if (error) {
-            mess("Chiave anon non valida o dominio non autorizzato: " + JSON.stringify(error), true);
-            console.error(error);
-        } else {
-            console.log("Chiave anon valida, tutto ok!");
-        }
-    } catch (e) {
-        mess("Errore durante il controllo chiave anon: " + e.message, true);
-        console.error(e);
-    }
-})();
-
+// REGISTRAZIONE
 async function faiRegistrazione() {
     const e = document.getElementById('r-email').value.trim();
     const p = document.getElementById('r-pass').value;
@@ -181,14 +184,6 @@ async function faiRegistrazione() {
     if (p.length < 8)
         return mess("Password minimo 8 caratteri.", true);
 
-    const nascita = new Date(d);
-    const oggi = new Date();
-    let eta = oggi.getFullYear() - nascita.getFullYear();
-    if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta--;
-
-    if (eta < 16)
-        return mess("Devi avere almeno 16 anni.", true);
-
     try {
         const { data, error } = await sb.auth.signUp({
             email: e,
@@ -199,41 +194,44 @@ async function faiRegistrazione() {
             }
         });
 
-        if (error) {
-            mess("Errore: " + JSON.stringify(error), true);
-            console.error(error);
-        } else {
-            mess("Controlla la tua mail per confermare.", false);
-            setTimeout(() => vaiA('login'), 2000);
-        }
-    } catch (e) {
-        mess("Errore di connessione: " + e.message, true);
-        console.error(e);
+        if (error) mess("Errore registrazione: " + JSON.stringify(error), true);
+        else mess("Registrazione inviata ✅ Controlla la mail", false);
+    } catch(e) {
+        mess("Errore connessione: " + e.message + " 🔴 Probabile CORS/Cloudflare", true);
     }
 }
 
+// LOGIN
 async function faiLogin() {
-    const { error } = await sb.auth.signInWithPassword({
-        email: document.getElementById('l-email').value,
-        password: document.getElementById('l-pass').value
-    });
+    try {
+        const { error } = await sb.auth.signInWithPassword({
+            email: document.getElementById('l-email').value,
+            password: document.getElementById('l-pass').value
+        });
 
-    if (error) mess(error.message, true);
-    else alert("Login effettuato.");
+        if (error) mess("Login fallito: " + JSON.stringify(error), true);
+        else mess("Login effettuato ✅", false);
+    } catch(e) {
+        mess("Errore connessione: " + e.message + " 🔴 Probabile CORS/Cloudflare", true);
+    }
 }
 
+// RECUPERO PASSWORD
 async function recuperoPassword() {
     const email = prompt("Inserisci la tua email:");
     if (!email) return;
-
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://www.hawenishland.it/login'
-    });
-
-    if (error) mess("Errore recupero password: " + JSON.stringify(error), true);
-    else mess("Email di recupero inviata.", false);
+    try {
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+            redirectTo: 'https://www.hawenishland.it/login'
+        });
+        if (error) mess("Errore reset: " + JSON.stringify(error), true);
+        else mess("Email di recupero inviata ✅", false);
+    } catch(e) {
+        mess("Errore connessione: " + e.message + " 🔴 Probabile CORS/Cloudflare", true);
+    }
 }
 
+// SLIDES IMMAGINI
 let idx = 0;
 const imgs = document.querySelectorAll('.visual-side img');
 setInterval(() => {
