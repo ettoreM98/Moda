@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — Archivio Moda</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HAWENISHLAND — Auth + App</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Supabase UMD stabile (senza defer) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -18,133 +16,287 @@
     .hidden { display:none!important }
     .split-layout { display:flex; height:100vh }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
-    @media (min-width:768px){ .visual-side{display:block} }
+    @media (min-width:768px){ .visual-side { display:block } }
 
     .visual-side img{
       position:absolute; top:0; left:0; width:100%; height:100%;
       object-fit:cover; filter:grayscale(100%); opacity:0;
-      transition:opacity 1.5s ease, filter .8s ease; z-index:0
+      transition:opacity 1.5s ease, filter .8s ease; z-index:0;
     }
     .visual-side img.active{ opacity:1; z-index:1 }
     .visual-side img:hover{ filter:grayscale(0%); cursor:crosshair }
 
-    .form-side{
-      flex:1; display:flex; flex-direction:column; justify-content:center;
-      padding:60px; background:#0a0a0a; max-width:600px; margin:auto
+    /* AUTH SIDE (uguale al tuo) */
+    .form-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px;
+      background: #0a0a0a;
+      max-width: 720px;
+      margin: auto;
+      height:100vh;
+      overflow:hidden;
     }
-    .input-group{ margin-bottom:25px }
-    .input-label{
-      display:block; font-size:10px; text-transform:uppercase;
-      letter-spacing:2px; color:#555; margin-bottom:8px
+    .input-group { margin-bottom: 25px; }
+    .input-label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #555;
+      margin-bottom: 8px;
     }
-    input{
-      background:transparent; border-bottom:1px solid #222;
-      padding:10px 0; color:#fff; width:100%; outline:none; font-size:14px
+    input, textarea {
+      background: transparent;
+      border-bottom: 1px solid #222;
+      padding: 10px 0;
+      color: #fff;
+      width: 100%;
+      outline: none;
+      font-size: 14px;
     }
-    input:focus{ border-bottom-color:#fff }
-    .btn-white{
-      background:#fff; color:#000; padding:18px; font-weight:500;
-      text-transform:uppercase; width:100%; cursor:pointer;
-      border:1px solid #fff; transition:.3s; margin-top:10px
+    textarea{
+      border:1px solid #222;
+      border-radius:14px;
+      padding:12px;
     }
-    .btn-white:hover{ background:#000; color:#fff }
-    #msg-box{
-      display:none; padding:12px; border:1px solid #333;
-      font-size:11px; text-transform:uppercase;
-      margin-bottom:20px; text-align:center
+    input:focus, textarea:focus { border-color:#fff; }
+    .btn-white {
+      background: #fff;
+      color: #000;
+      padding: 18px;
+      font-weight: 500;
+      text-transform: uppercase;
+      width: 100%;
+      cursor: pointer;
+      border: 1px solid #fff;
+      transition: 0.3s;
+      margin-top: 10px;
     }
-    .link-small{
-      text-align:center; margin-top:20px;
-      font-size:10px; color:#555; cursor:pointer;
-      text-transform:uppercase; letter-spacing:1px
+    .btn-white:hover { background: #000; color: #fff; }
+    .btn-ghost {
+      border:1px solid #222;
+      padding: 18px;
+      font-weight: 500;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 10px;
+      width:100%;
     }
+    .btn-ghost:hover { border-color:#fff; }
+    #msg-box {
+      display: none;
+      padding: 12px;
+      border: 1px solid #333;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .link-small {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 10px;
+      color: #555;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* APP UI */
+    .card{
+      border:1px solid #1a1a1a;
+      border-radius:18px;
+      padding:16px;
+      background:rgba(255,255,255,0.02);
+    }
+    .muted{ color:#777; }
+    .pill{
+      border:1px solid #222;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+    }
+    .scroll-area{ overflow:auto; padding-right:6px; }
+    .scroll-area::-webkit-scrollbar{ width:6px; }
+    .scroll-area::-webkit-scrollbar-thumb{ background:#222; border-radius:6px; }
+
+    .btn-mini{
+      border:1px solid #222;
+      padding:10px 12px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-size:11px;
+      transition:.3s;
+      white-space:nowrap;
+    }
+    .btn-mini:hover{ border-color:#fff; }
+    .btn-mini-white{
+      background:#fff;
+      color:#000;
+      border:1px solid #fff;
+      padding:10px 12px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-size:11px;
+      transition:.3s;
+      white-space:nowrap;
+    }
+    .btn-mini-white:hover{ background:#000; color:#fff; }
   </style>
 </head>
 
 <body>
-
-<div id="auth-container" class="split-layout">
-
-  <div class="visual-side">
-    <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
-    <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
-  </div>
-
-  <div class="form-side">
-    <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
-    <div id="msg-box"></div>
-
-    <div id="login-form">
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input type="email" id="l-email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Password</label>
-        <input type="password" id="l-pass">
-      </div>
-      <button onclick="faiLogin()" class="btn-white">Entra</button>
-      <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
-      <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
+  <div class="split-layout">
+    <div class="visual-side">
+      <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
+      <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
     </div>
 
-    <div id="signup-form" class="hidden">
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
-        <div><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
+    <div class="form-side">
+      <h1 class="serif text-6xl mb-8 italic">Hawenishland</h1>
+      <div id="msg-box"></div>
+
+      <!-- AUTH -->
+      <div id="auth-view">
+        <div id="login-form">
+          <div class="input-group">
+            <label class="input-label">Email</label>
+            <input type="email" id="l-email">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Password</label>
+            <input type="password" id="l-pass">
+          </div>
+          <button onclick="faiLogin()" class="btn-white">Entra</button>
+          <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
+          <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
+        </div>
+
+        <div id="signup-form" class="hidden">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
+            <div><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Data di Nascita</label>
+            <input type="date" id="r-nascita" style="color-scheme: dark;">
+          </div>
+          <div class="input-group"><label class="input-label">Email</label><input type="email" id="r-email"></div>
+          <div class="input-group"><label class="input-label">Password</label><input type="password" id="r-pass"></div>
+          <button id="btn-reg" onclick="faiRegistrazione()" class="btn-white">Invia Richiesta</button>
+          <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
+        </div>
       </div>
-      <div class="input-group">
-        <label class="input-label">Data di Nascita</label>
-        <input type="date" id="r-nascita" style="color-scheme:dark">
+
+      <!-- APP -->
+      <div id="app-view" class="hidden h-full flex flex-col min-h-0">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <div class="muted text-xs uppercase tracking-[0.2em]">archivio sociale</div>
+            <div id="me-pill" class="pill mt-3 inline-block hidden"></div>
+          </div>
+          <div class="flex gap-3">
+            <button class="btn-mini" onclick="loadFeed()">Aggiorna</button>
+            <button class="btn-mini" onclick="logout()">Logout</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <!-- PROFILO -->
+          <div class="card">
+            <div class="flex items-center gap-4">
+              <img id="me-avatar" src="" class="w-14 h-14 rounded-full border border-[#222] object-cover hidden" alt="">
+              <div class="flex-1">
+                <div class="text-sm uppercase tracking-[0.15em] muted">profilo</div>
+                <div id="me-email" class="text-xs muted mt-1">—</div>
+                <div id="me-name" class="text-lg mt-1">—</div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <label class="input-label">username (pubblico)</label>
+              <input id="me-username" placeholder="es: hawenishland_user">
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+              <input id="avatar-file" type="file" accept="image/*" class="hidden" />
+              <button class="btn-mini" onclick="document.getElementById('avatar-file').click()">Foto profilo</button>
+              <button class="btn-mini-white" onclick="saveProfile()">Salva</button>
+            </div>
+
+            <div class="mt-5 text-sm uppercase tracking-[0.15em] muted">i tuoi follower</div>
+            <div id="followers-box" class="mt-3 space-y-2 max-h-[180px] scroll-area"></div>
+          </div>
+
+          <!-- CERCA + SEGUI -->
+          <div class="card">
+            <div class="text-sm uppercase tracking-[0.15em] muted mb-3">cerca persone</div>
+            <div class="flex gap-3">
+              <input id="search-q" placeholder="cerca username..." />
+              <button class="btn-mini-white" onclick="searchUsers()">Cerca</button>
+            </div>
+            <div id="search-results" class="mt-4 space-y-3 max-h-[260px] scroll-area"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
+          <!-- NUOVO POST -->
+          <div class="card flex flex-col min-h-0">
+            <div class="text-sm uppercase tracking-[0.15em] muted mb-3">nuovo post</div>
+            <textarea id="post-content" rows="5" placeholder="scrivi qualcosa..."></textarea>
+            <div class="mt-3 flex justify-end">
+              <button class="btn-mini-white" onclick="createPost()">Pubblica</button>
+            </div>
+          </div>
+
+          <!-- FEED -->
+          <div class="card flex flex-col min-h-0">
+            <div class="text-sm uppercase tracking-[0.15em] muted mb-3">feed</div>
+            <div id="feed" class="space-y-4 scroll-area flex-1 min-h-0"></div>
+          </div>
+        </div>
       </div>
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input type="email" id="r-email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Password</label>
-        <input type="password" id="r-pass">
-      </div>
-      <button id="btn-reg" onclick="faiRegistrazione()" class="btn-white">Invia Richiesta</button>
-      <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
+
     </div>
   </div>
-</div>
 
 <script>
-  /* ================= SUPABASE INIT ================= */
-
-  // 🔴 UNICA RIGA MODIFICATA: URL CORRETTO DEL PROGETTO
-  const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
-
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-
-  if (!window.supabase) {
-    alert("Errore caricamento Supabase. Ricarica la pagina.");
-    throw new Error("Supabase non caricato");
-  }
-
+  // ================== SUPABASE ==================
+  const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co'; // (corretto)
+  const SB_KEY = 'INCOLLA_LA_TUA_ANON_KEY';
+  if (!window.supabase) { alert("Supabase non caricato"); throw new Error("Supabase missing"); }
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-  function vaiA(m) {
-    document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
-    document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-    document.getElementById('msg-box').style.display = 'none';
-  }
+  const $ = (id) => document.getElementById(id);
 
-  function mess(t, err=false) {
-    const b = document.getElementById('msg-box');
+  function mess(t, err=false){
+    const b = $('msg-box');
     b.innerText = t;
     b.style.display = 'block';
     b.style.color = err ? '#ff4444' : '#44ff44';
+    clearTimeout(window.__msgTimer);
+    window.__msgTimer = setTimeout(()=> b.style.display='none', 3500);
   }
 
+  function vaiA(m) {
+    $('login-form').classList.toggle('hidden', m === 'signup');
+    $('signup-form').classList.toggle('hidden', m === 'login');
+    $('msg-box').style.display = 'none';
+  }
+
+  // ================== AUTH ==================
   async function faiRegistrazione() {
-    const e = document.getElementById('r-email').value.trim();
-    const p = document.getElementById('r-pass').value;
-    const n = document.getElementById('r-nome').value.trim();
-    const c = document.getElementById('r-cognome').value.trim();
-    const d = document.getElementById('r-nascita').value;
+    const e = $('r-email').value.trim();
+    const p = $('r-pass').value;
+    const n = $('r-nome').value.trim();
+    const c = $('r-cognome').value.trim();
+    const d = $('r-nascita').value;
 
     if (!e || !p || !n || !c) return mess("Compila tutti i campi.", true);
     if (!d) return mess("Inserisci la data di nascita.", true);
@@ -153,37 +305,43 @@
     const nascita = new Date(d);
     const oggi = new Date();
     let eta = oggi.getFullYear() - nascita.getFullYear();
-    if (oggi.getMonth() < nascita.getMonth() ||
-        (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta--;
+    if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta--;
     if (eta < 16) return mess("Devi avere almeno 16 anni.", true);
 
-    mess("Invio richiesta...", false);
+    $('btn-reg').disabled = true;
+    $('btn-reg').style.opacity = '0.6';
 
     try {
+      mess("Invio richiesta...", false);
+
       const { error } = await sb.auth.signUp({
         email: e,
         password: p,
-        options: {
-          data: { first_name: n, last_name: c, birthday: d }
-        }
+        options: { data: { first_name: n, last_name: c, birthday: d } }
       });
 
       if (error) return mess(error.message, true);
 
       mess("Richiesta inviata! Controlla l'email.");
-      setTimeout(() => vaiA('login'), 2500);
+      setTimeout(()=> vaiA('login'), 2500);
 
-    } catch (err) {
+    } catch {
       mess("Errore di connessione.", true);
+    } finally {
+      $('btn-reg').disabled = false;
+      $('btn-reg').style.opacity = '1';
     }
   }
 
   async function faiLogin() {
-    const e = document.getElementById('l-email').value.trim();
-    const p = document.getElementById('l-pass').value;
+    const e = $('l-email').value.trim();
+    const p = $('l-pass').value;
     const { error } = await sb.auth.signInWithPassword({ email: e, password: p });
     if (error) mess("Errore: " + error.message, true);
-    else alert("Benvenuto nell'archivio.");
+    else {
+      mess("Accesso effettuato.", false);
+      await bootApp();
+    }
   }
 
   async function recuperoPassword() {
@@ -193,6 +351,372 @@
     alert(error ? error.message : "Email di recupero inviata.");
   }
 
+  async function logout(){
+    await sb.auth.signOut();
+    showAuth();
+  }
+
+  function showAuth(){
+    $('app-view').classList.add('hidden');
+    $('auth-view').classList.remove('hidden');
+    $('msg-box').style.display = 'none';
+  }
+
+  function showApp(){
+    $('auth-view').classList.add('hidden');
+    $('app-view').classList.remove('hidden');
+    $('msg-box').style.display = 'none';
+  }
+
+  // ================== APP LOGIC ==================
+  let me = null;
+  let myProfile = null;
+
+  async function bootApp(){
+    const { data } = await sb.auth.getSession();
+    if (!data.session) return showAuth();
+    me = data.session.user;
+    showApp();
+    $('me-email').innerText = me.email || '—';
+    await ensureProfile();
+    await loadFollowCounts();
+    await loadFeed();
+  }
+
+  async function ensureProfile(){
+    const { data: prof, error } = await sb
+      .from('profiles')
+      .select('*')
+      .eq('id', me.id)
+      .maybeSingle();
+
+    if (error) return mess(error.message, true);
+
+    if (!prof){
+      const base = (me.user_metadata?.first_name || 'user') + '_' + Math.floor(Math.random()*9999);
+      const { data: ins, error: e2 } = await sb
+        .from('profiles')
+        .insert({ id: me.id, email: me.email, username: base })
+        .select().single();
+
+      if (e2) return mess(e2.message, true);
+      myProfile = ins;
+    } else {
+      myProfile = prof;
+    }
+
+    $('me-name').innerText = myProfile.username || '—';
+    $('me-username').value = myProfile.username || '';
+    $('me-pill').classList.remove('hidden');
+    $('me-pill').innerText = '@' + (myProfile.username || '—');
+
+    if (myProfile.avatar_url){
+      $('me-avatar').src = myProfile.avatar_url;
+      $('me-avatar').classList.remove('hidden');
+    } else {
+      $('me-avatar').classList.add('hidden');
+    }
+  }
+
+  async function saveProfile(){
+    const username = $('me-username').value.trim();
+    if (!username) return mess("Username obbligatorio.", true);
+
+    const file = $('avatar-file').files?.[0];
+    let avatar_url = myProfile?.avatar_url || null;
+
+    if (file){
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${me.id}/${Date.now()}.${ext}`;
+
+      const { error: upErr } = await sb.storage.from('avatars').upload(path, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+      if (upErr) return mess(upErr.message, true);
+
+      const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+      avatar_url = pub.publicUrl;
+    }
+
+    const { error } = await sb
+      .from('profiles')
+      .update({ username, avatar_url })
+      .eq('id', me.id);
+
+    if (error) return mess(error.message, true);
+
+    mess("Profilo salvato.");
+    await ensureProfile();
+  }
+
+  // ---------- Search / Follow ----------
+  async function searchUsers(){
+    const q = $('search-q').value.trim();
+    if (!q) return mess("Scrivi qualcosa da cercare.", true);
+
+    const { data, error } = await sb
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .ilike('username', `%${q}%`)
+      .limit(20);
+
+    if (error) return mess(error.message, true);
+
+    const { data: follows } = await sb
+      .from('follows')
+      .select('followed_id')
+      .eq('follower_id', me.id);
+
+    const followedSet = new Set((follows||[]).map(x=>x.followed_id));
+
+    const box = $('search-results');
+    box.innerHTML = '';
+    if (!data?.length){
+      box.innerHTML = `<div class="muted text-sm">Nessun risultato.</div>`;
+      return;
+    }
+
+    data.forEach(u=>{
+      if (u.id === me.id) return;
+      const isFollowed = followedSet.has(u.id);
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-3 border border-[#1a1a1a] rounded-xl p-3';
+      row.innerHTML = `
+        <div class="flex items-center gap-3">
+          <img src="${u.avatar_url || ''}" class="w-10 h-10 rounded-full border border-[#222] object-cover ${u.avatar_url ? '' : 'hidden'}">
+          <div>
+            <div class="text-sm">@${u.username}</div>
+            <div class="text-xs muted">utente</div>
+          </div>
+        </div>
+        <button class="${isFollowed ? 'btn-mini' : 'btn-mini-white'}">${isFollowed ? 'Segui già' : 'Segui'}</button>
+      `;
+      row.querySelector('button').onclick = async ()=>{
+        if (isFollowed) await unfollow(u.id);
+        else await follow(u.id);
+        await searchUsers();
+        await loadFollowCounts();
+      };
+      box.appendChild(row);
+    });
+  }
+
+  async function follow(userId){
+    const { error } = await sb.from('follows').insert({ follower_id: me.id, followed_id: userId });
+    if (error) mess(error.message, true);
+    else mess("Seguito.");
+  }
+
+  async function unfollow(userId){
+    const { error } = await sb.from('follows')
+      .delete().eq('follower_id', me.id).eq('followed_id', userId);
+    if (error) mess(error.message, true);
+    else mess("Non segui più.");
+  }
+
+  async function loadFollowCounts(){
+    const { data, error } = await sb
+      .from('follows')
+      .select('follower_id, profiles!follows_follower_id_fkey(username, avatar_url)')
+      .eq('followed_id', me.id)
+      .limit(30);
+
+    if (error) return;
+
+    const box = $('followers-box');
+    box.innerHTML = '';
+    if (!data?.length){
+      box.innerHTML = `<div class="muted text-sm">Nessun follower per ora.</div>`;
+      return;
+    }
+
+    data.forEach(x=>{
+      const p = x.profiles;
+      const el = document.createElement('div');
+      el.className = 'flex items-center gap-3 border border-[#1a1a1a] rounded-xl p-3';
+      el.innerHTML = `
+        <img src="${p?.avatar_url || ''}" class="w-8 h-8 rounded-full border border-[#222] object-cover ${p?.avatar_url ? '' : 'hidden'}">
+        <div class="text-sm">@${p?.username || 'utente'}</div>
+      `;
+      box.appendChild(el);
+    });
+  }
+
+  // ---------- Posts / Likes / Comments ----------
+  async function createPost(){
+    const content = $('post-content').value.trim();
+    if (!content) return mess("Scrivi qualcosa.", true);
+
+    const { error } = await sb.from('posts').insert({ user_id: me.id, content });
+    if (error) return mess(error.message, true);
+
+    $('post-content').value = '';
+    mess("Post pubblicato.");
+    await loadFeed();
+  }
+
+  async function loadFeed(){
+    // ids: me + chi seguo
+    const { data: following } = await sb
+      .from('follows')
+      .select('followed_id')
+      .eq('follower_id', me.id);
+
+    const ids = new Set([me.id, ...(following||[]).map(x=>x.followed_id)]);
+    const idList = Array.from(ids);
+
+    const { data: posts, error } = await sb
+      .from('posts')
+      .select('id, content, created_at, user_id, profiles:profiles(username, avatar_url)')
+      .in('user_id', idList)
+      .order('created_at', { ascending:false })
+      .limit(30);
+
+    if (error) return mess(error.message, true);
+
+    const { data: myLikes } = await sb
+      .from('likes')
+      .select('post_id')
+      .eq('user_id', me.id);
+
+    const liked = new Set((myLikes||[]).map(x=>x.post_id));
+    const postIds = (posts||[]).map(p=>p.id);
+
+    const likeCounts = new Map();
+    const commentCounts = new Map();
+
+    if (postIds.length){
+      const { data: lc } = await sb.from('likes').select('post_id').in('post_id', postIds);
+      (lc||[]).forEach(x=> likeCounts.set(x.post_id, (likeCounts.get(x.post_id)||0)+1));
+
+      const { data: cc } = await sb.from('comments').select('post_id').in('post_id', postIds);
+      (cc||[]).forEach(x=> commentCounts.set(x.post_id, (commentCounts.get(x.post_id)||0)+1));
+    }
+
+    const feed = $('feed');
+    feed.innerHTML = '';
+
+    if (!posts?.length){
+      feed.innerHTML = `<div class="muted text-sm">Nessun post. Segui qualcuno o pubblica il primo.</div>`;
+      return;
+    }
+
+    posts.forEach(p=>{
+      const prof = p.profiles || {};
+      const isLiked = liked.has(p.id);
+      const lc = likeCounts.get(p.id)||0;
+      const cc = commentCounts.get(p.id)||0;
+
+      const el = document.createElement('div');
+      el.className = 'border border-[#1a1a1a] rounded-2xl p-4';
+
+      el.innerHTML = `
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <img src="${prof.avatar_url || ''}" class="w-10 h-10 rounded-full border border-[#222] object-cover ${prof.avatar_url ? '' : 'hidden'}">
+            <div>
+              <div class="text-sm">@${prof.username || 'utente'}</div>
+              <div class="text-xs muted">${new Date(p.created_at).toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="pill">${p.user_id === me.id ? 'tuo post' : 'post'}</div>
+        </div>
+
+        <div class="mt-3 text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(p.content)}</div>
+
+        <div class="mt-4 flex items-center gap-3">
+          <button class="${isLiked ? 'btn-mini-white' : 'btn-mini'}" data-like="${p.id}">
+            ${isLiked ? 'Liked' : 'Like'} (${lc})
+          </button>
+          <button class="btn-mini" data-copen="${p.id}">
+            Commenti (${cc})
+          </button>
+        </div>
+
+        <div class="mt-3 hidden" id="cbox-${p.id}">
+          <div class="border border-[#1a1a1a] rounded-xl p-3">
+            <div class="flex gap-3">
+              <input id="ctext-${p.id}" placeholder="scrivi un commento...">
+              <button class="btn-mini-white" data-csend="${p.id}">Invia</button>
+            </div>
+            <div class="mt-3 space-y-2" id="clist-${p.id}"></div>
+          </div>
+        </div>
+      `;
+
+      el.querySelector(`[data-like="${p.id}"]`).onclick = async ()=>{
+        if (isLiked) await unlikePost(p.id);
+        else await likePost(p.id);
+        await loadFeed();
+      };
+
+      el.querySelector(`[data-copen="${p.id}"]`).onclick = async ()=>{
+        const box = document.getElementById(`cbox-${p.id}`);
+        box.classList.toggle('hidden');
+        if (!box.classList.contains('hidden')) await loadComments(p.id);
+      };
+
+      el.querySelector(`[data-csend="${p.id}"]`).onclick = async ()=>{
+        const txt = document.getElementById(`ctext-${p.id}`).value.trim();
+        if (!txt) return;
+        await addComment(p.id, txt);
+        document.getElementById(`ctext-${p.id}`).value = '';
+        await loadComments(p.id);
+        await loadFeed();
+      };
+
+      feed.appendChild(el);
+    });
+  }
+
+  async function likePost(postId){
+    const { error } = await sb.from('likes').insert({ post_id: postId, user_id: me.id });
+    if (error) mess(error.message, true);
+  }
+  async function unlikePost(postId){
+    const { error } = await sb.from('likes').delete().eq('post_id', postId).eq('user_id', me.id);
+    if (error) mess(error.message, true);
+  }
+  async function addComment(postId, content){
+    const { error } = await sb.from('comments').insert({ post_id: postId, user_id: me.id, content });
+    if (error) mess(error.message, true);
+  }
+  async function loadComments(postId){
+    const { data, error } = await sb
+      .from('comments')
+      .select('id, content, created_at, profiles:profiles(username)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending:true })
+      .limit(50);
+
+    if (error) return mess(error.message, true);
+
+    const list = document.getElementById(`clist-${postId}`);
+    list.innerHTML = '';
+
+    if (!data?.length){
+      list.innerHTML = `<div class="muted text-sm">Nessun commento.</div>`;
+      return;
+    }
+
+    data.forEach(c=>{
+      const row = document.createElement('div');
+      row.className = 'border border-[#1a1a1a] rounded-xl p-3';
+      row.innerHTML = `
+        <div class="text-xs muted">@${c.profiles?.username || 'utente'} • ${new Date(c.created_at).toLocaleString()}</div>
+        <div class="text-sm mt-1 whitespace-pre-wrap">${escapeHtml(c.content)}</div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function escapeHtml(str){
+    return (str||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }
+
+  // ================== SLIDESHOW ==================
   let idx = 0;
   const imgs = document.querySelectorAll('.visual-side img');
   setInterval(() => {
@@ -200,6 +724,15 @@
     idx = (idx + 1) % imgs.length;
     imgs[idx].classList.add('active');
   }, 5000);
+
+  // ================== STARTUP ==================
+  bootApp();
+
+  // keep UI in sync
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    if (session?.user) await bootApp();
+    else showAuth();
+  });
 </script>
 
 </body>
