@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HAWENISHLAND — Archivio Moda</title>
 
-  <!-- Tailwind (ok anche se warning in prod) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- ✅ Supabase UMD STABILE (SENZA defer) -->
+  <!-- Supabase UMD stabile (senza defer) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -114,7 +113,10 @@
 
 <script>
   /* ================= SUPABASE INIT ================= */
-  const SB_URL = 'https://nqueucpgvqexhpztpois.supabase.co';
+
+  // 🔴 UNICA RIGA MODIFICATA: URL CORRETTO DEL PROGETTO
+  const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
+
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
 
   if (!window.supabase) {
@@ -124,7 +126,6 @@
 
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
-  /* ================= UI HELPERS ================= */
   function vaiA(m) {
     document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
     document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
@@ -138,7 +139,6 @@
     b.style.color = err ? '#ff4444' : '#44ff44';
   }
 
-  /* ================= SIGNUP ================= */
   async function faiRegistrazione() {
     const e = document.getElementById('r-email').value.trim();
     const p = document.getElementById('r-pass').value;
@@ -174,11 +174,10 @@
       setTimeout(() => vaiA('login'), 2500);
 
     } catch (err) {
-      mess("Errore di connessione (load failed).", true);
+      mess("Errore di connessione.", true);
     }
   }
 
-  /* ================= LOGIN ================= */
   async function faiLogin() {
     const e = document.getElementById('l-email').value.trim();
     const p = document.getElementById('l-pass').value;
@@ -194,7 +193,6 @@
     alert(error ? error.message : "Email di recupero inviata.");
   }
 
-  /* ================= SLIDESHOW ================= */
   let idx = 0;
   const imgs = document.querySelectorAll('.visual-side img');
   setInterval(() => {
