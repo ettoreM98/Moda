@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — Archivio Moda</title>
+  <title>HAWENISHLAND — Social</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
@@ -11,430 +11,558 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    /* --- STILE ORIGINALE LOGIN (RIPRISTINATO) --- */
-    body { background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif; margin:0; height:100vh; overflow-x: hidden; }
-    .serif { font-family:'Playfair Display',serif }
-    .hidden { display:none!important }
+    /* =========================================
+       1. CSS BASE & ANIMAZIONI LOGIN
+       ========================================= */
+    body { background-color: #000; color: #e5e5e5; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+    .serif { font-family: 'Playfair Display', serif; }
+    .hidden { display: none !important; }
     
-    .split-layout { display:flex; height:100vh; width: 100vw; position: fixed; top:0; left:0; z-index: 50; background:#0a0a0a; transition: transform 0.8s ease-in-out; }
-    .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
-    @media (min-width:768px){ .visual-side{display:block} }
+    /* Layout Login Split */
+    .split-layout { display: flex; height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 50; background: #000; }
+    .visual-side { flex: 1; position: relative; overflow: hidden; display: none; background: #000; cursor: crosshair; }
+    @media (min-width: 768px) { .visual-side { display: block; } }
 
-    /* Effetto Hover Foto (Ripristinato) */
-    .visual-side img{
-      position:absolute; top:0; left:0; width:100%; height:100%;
-      object-fit:cover; filter:grayscale(100%); opacity:0;
-      transition:opacity 1.5s ease, filter .8s ease; z-index:0
+    /* EFFETTO B/N -> COLORE (RICHIESTO) */
+    .visual-side img {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: cover; 
+      filter: grayscale(100%) contrast(1.2); 
+      opacity: 0;
+      transition: opacity 1s ease, filter 0.5s ease;
+      pointer-events: none; /* Lascia passare il mouse al container */
     }
-    .visual-side img.active{ opacity:1; z-index:1 }
-    .visual-side img:hover{ filter:grayscale(0%); cursor:crosshair }
+    .visual-side img.active { opacity: 1; z-index: 1; }
+    
+    /* Quando l'utente passa il mouse SUL CONTAINER, l'immagine attiva diventa a colori */
+    .visual-side:hover img.active { filter: grayscale(0%) contrast(1); }
 
-    .form-side{
-      flex:1; display:flex; flex-direction:column; justify-content:center;
-      padding:60px; background:#0a0a0a; max-width:600px; margin:auto
+    .form-side { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px; max-width: 500px; margin: auto; }
+    
+    /* Input Style Elegante */
+    .input-group { margin-bottom: 20px; position: relative; }
+    .input-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #666; margin-bottom: 5px; }
+    input { background: transparent; border: none; border-bottom: 1px solid #333; padding: 10px 0; color: #fff; width: 100%; outline: none; transition: 0.3s; font-size: 14px; }
+    input:focus { border-bottom-color: #fff; }
+    
+    .btn-white {
+      background: #fff; color: #000; padding: 15px; width: 100%; 
+      text-transform: uppercase; font-weight: 600; font-size: 12px; letter-spacing: 1px;
+      border: 1px solid #fff; cursor: pointer; transition: 0.3s; margin-top: 20px;
     }
-    .input-group{ margin-bottom:25px }
-    .input-label{
-      display:block; font-size:10px; text-transform:uppercase;
-      letter-spacing:2px; color:#555; margin-bottom:8px
-    }
-    input{
-      background:transparent; border-bottom:1px solid #222;
-      padding:10px 0; color:#fff; width:100%; outline:none; font-size:14px
-    }
-    input:focus{ border-bottom-color:#fff }
-    .btn-white{
-      background:#fff; color:#000; padding:18px; font-weight:500;
-      text-transform:uppercase; width:100%; cursor:pointer;
-      border:1px solid #fff; transition:.3s; margin-top:10px
-    }
-    .btn-white:hover{ background:#000; color:#fff }
-    #msg-box{
-      display:none; padding:12px; border:1px solid #333;
-      font-size:11px; text-transform:uppercase;
-      margin-bottom:20px; text-align:center
-    }
-    .link-small{
-      text-align:center; margin-top:20px;
-      font-size:10px; color:#555; cursor:pointer;
-      text-transform:uppercase; letter-spacing:1px
-    }
+    .btn-white:hover { background: #000; color: #fff; }
 
-    /* --- STILI SOCIAL (MODIFICATI PER SCORRIMENTO) --- */
-    #app-interface { display: none; min-height: 100vh; background: #000; }
-    .app-layout { display: flex; max-width: 1400px; margin: 0 auto; min-height: 100vh; }
+    /* =========================================
+       2. LAYOUT APPLICAZIONE (SOCIAL)
+       ========================================= */
+    #app-interface { display: none; min-height: 100vh; }
+    .app-container { display: flex; max-width: 1300px; margin: 0 auto; border-left: 1px solid #1a1a1a; border-right: 1px solid #1a1a1a; min-height: 100vh; }
     
-    .sidebar { width: 250px; border-right: 1px solid #262626; height: 100vh; position: sticky; top: 0; padding: 20px; display: flex; flex-direction: column; }
-    .nav-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; color: #f5f5f5; margin-bottom: 5px; }
-    .nav-item:hover { background: #1a1a1a; }
+    /* Sidebar Sinistra */
+    .sidebar { width: 250px; padding: 30px 20px; border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+    .nav-btn { display: flex; align-items: center; gap: 15px; padding: 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; color: #ccc; margin-bottom: 5px; }
+    .nav-btn:hover { background: #111; color: #fff; }
+    .nav-btn i { width: 25px; font-size: 20px; text-align: center; }
 
-    .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+    /* Feed Centrale */
+    .feed-section { flex: 1; padding: 40px 0; max-width: 600px; margin: 0 auto; }
     
-    /* Layout Post (Tipo Facebook/Instagram) */
-    .feed-container { max-width: 600px; margin: 0 auto; }
-    .post-card { background: #000; border: 1px solid #262626; border-radius: 8px; margin-bottom: 30px; padding: 15px; }
-    .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .user-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #333; }
-    .post-img { width: 100%; border-radius: 4px; cursor: pointer; border: 1px solid #262626; }
-    
-    /* Profilo Utente (Dashboard) */
-    .profile-header { text-align: center; border-bottom: 1px solid #262626; padding-bottom: 30px; margin-bottom: 30px; }
-    .big-avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #333; margin: 0 auto 15px; cursor: pointer; transition: 0.3s; }
-    .big-avatar:hover { border-color: #fff; opacity: 0.8; }
-    
-    /* Modale Post (Zoom + Commenti) */
+    /* Card Post (Facebook Style) */
+    .post-card { background: #000; border: 1px solid #262626; border-radius: 8px; margin-bottom: 25px; overflow: hidden; }
+    .post-header { padding: 12px; display: flex; align-items: center; gap: 10px; }
+    .avatar-small { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #333; }
+    .post-image { width: 100%; display: block; cursor: pointer; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; }
+    .post-actions { padding: 12px; display: flex; gap: 20px; font-size: 22px; }
+    .post-details { padding: 0 12px 15px 12px; font-size: 14px; color: #ccc; }
+
+    /* Profilo Header (Facebook Style) */
+    .profile-cover { height: 150px; background: #111; position: relative; border-bottom: 1px solid #333; margin-bottom: 60px; }
+    .profile-avatar-container {
+      position: absolute; bottom: -50px; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 120px; border-radius: 50%; border: 4px solid #000;
+      background: #000; cursor: pointer; overflow: hidden;
+    }
+    .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+    .camera-overlay {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 30px;
+      background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+      font-size: 14px; color: #fff; opacity: 0; transition: 0.3s;
+    }
+    .profile-avatar-container:hover .camera-overlay { opacity: 1; }
+
+    /* Modale Full Screen (Post Dettaglio) */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-    .post-modal-box { background: #000; width: 90%; max-width: 900px; height: 80vh; border: 1px solid #333; display: flex; border-radius: 4px; overflow: hidden; }
-    .modal-img-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; border-right: 1px solid #262626; }
-    .modal-img-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .modal-info-side { flex: 1; display: flex; flex-direction: column; padding: 20px; }
-    .comment-list { flex: 1; overflow-y: auto; margin: 20px 0; border-top: 1px solid #262626; padding-top: 10px; font-size: 13px; }
+    .modal-content-box { background: #000; border: 1px solid #333; width: 95%; max-width: 1000px; height: 85vh; display: flex; border-radius: 4px; overflow: hidden; }
+    .modal-left { flex: 1.5; background: #050505; display: flex; justify-content: center; align-items: center; border-right: 1px solid #222; }
+    .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .modal-right { flex: 1; display: flex; flex-direction: column; background: #000; width: 350px; }
+    .modal-header { padding: 15px; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 10px; }
+    .modal-comments { flex: 1; overflow-y: auto; padding: 15px; font-size: 13px; }
+    .modal-footer { padding: 15px; border-top: 1px solid #222; display: flex; gap: 10px; }
+    
+    .comment-row { margin-bottom: 10px; display: flex; gap: 10px; }
+    .comment-content { color: #ddd; line-height: 1.4; }
+
   </style>
 </head>
-
 <body>
 
 <div id="auth-container" class="split-layout">
+  
   <div class="visual-side">
     <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
     <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
+    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200">
   </div>
 
   <div class="form-side">
-    <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
-    <div id="msg-box"></div>
+    <h1 class="serif text-5xl mb-2 italic">Hawenishland</h1>
+    <p class="text-xs text-gray-500 mb-10 uppercase tracking-widest">Archivio Sociale</p>
+
+    <div id="msg-box" class="hidden p-3 mb-4 text-xs text-center border"></div>
 
     <div id="login-form">
-      <div class="input-group"><label class="input-label">Email</label><input type="email" id="l-email"></div>
-      <div class="input-group"><label class="input-label">Password</label><input type="password" id="l-pass"></div>
-      <button onclick="faiLogin()" class="btn-white">Entra</button>
-      <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
-      <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
+      <div class="input-group">
+        <label class="input-label">Email</label>
+        <input type="email" id="l-email">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input type="password" id="l-pass">
+      </div>
+      <button onclick="handleLogin()" class="btn-white">Entra</button>
+      <div class="mt-6 text-center">
+        <span class="text-xs text-gray-500 cursor-pointer hover:text-white" onclick="toggleForms('signup')">Non hai un account? REGISTRATI</span>
+      </div>
     </div>
 
     <div id="signup-form" class="hidden">
-      <div class="input-group"><label class="input-label">Username (Pubblico)</label><input type="text" id="r-username"></div>
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
-        <div><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="input-group"><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
+        <div class="input-group"><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
       </div>
+      <div class="input-group"><label class="input-label">Username</label><input type="text" id="r-username"></div>
       <div class="input-group"><label class="input-label">Data di Nascita</label><input type="date" id="r-nascita" style="color-scheme:dark"></div>
       <div class="input-group"><label class="input-label">Email</label><input type="email" id="r-email"></div>
-      <div class="input-group"><label class="input-label">Password</label><input type="password" id="r-pass"></div>
-      <button onclick="faiRegistrazione()" class="btn-white">Registrati</button>
-      <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
+      <div class="input-group"><label class="input-label">Password (Min 8)</label><input type="password" id="r-pass"></div>
+      
+      <button onclick="handleSignup()" class="btn-white">Crea Account</button>
+      <div class="mt-6 text-center">
+        <span class="text-xs text-gray-500 cursor-pointer hover:text-white" onclick="toggleForms('login')">Torna al Login</span>
+      </div>
     </div>
   </div>
 </div>
 
 <div id="app-interface">
-  <div class="app-layout">
+  <div class="app-container">
     
     <div class="sidebar">
-      <h1 class="serif italic text-2xl mb-8 pl-4 cursor-pointer" onclick="switchView('feed')">Hawenishland</h1>
-      <div class="nav-item" onclick="switchView('feed')"><i class="fa-solid fa-house"></i><span>Home Feed</span></div>
-      <div class="nav-item" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Cerca</span></div>
-      <div class="nav-item" onclick="openUploadModal()"><i class="fa-regular fa-square-plus"></i><span>Nuovo Post</span></div>
-      <div class="nav-item" onclick="switchView('dashboard')"><i class="fa-regular fa-user"></i><span>Il Mio Profilo</span></div>
-      <div class="mt-auto nav-item text-red-500" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Esci</span></div>
-    </div>
-
-    <div class="main-content">
+      <h2 class="serif text-2xl mb-10 italic px-4 cursor-pointer" onclick="renderHome()">Hawenishland</h2>
       
-      <div id="view-feed" class="view-section">
-        <h2 class="serif text-2xl mb-6 italic">Ultime Novità</h2>
-        <div class="feed-container" id="posts-feed"></div>
+      <div class="nav-btn" onclick="renderHome()"><i class="fa-solid fa-house"></i> Home</div>
+      <div class="nav-btn" onclick="openModal('search-modal')"><i class="fa-solid fa-magnifying-glass"></i> Cerca</div>
+      <div class="nav-btn" onclick="openModal('upload-modal')"><i class="fa-solid fa-square-plus"></i> Crea Post</div>
+      <div class="nav-btn" onclick="renderProfile()"><i class="fa-solid fa-user"></i> Profilo</div>
+      
+      <div class="nav-btn mt-auto text-red-500 hover:text-red-400" onclick="handleLogout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Esci
       </div>
-
-      <div id="view-dashboard" class="view-section hidden">
-        <div class="feed-container">
-          
-          <div class="profile-header">
-            <div class="relative inline-block">
-               <img id="dash-avatar" src="https://via.placeholder.com/150" class="big-avatar" onclick="document.getElementById('avatar-upload').click()">
-               <div class="text-xs text-gray-500 mt-2">Clicca la foto per cambiarla</div>
-               <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar()">
-            </div>
-            <h2 id="dash-username" class="text-2xl font-light mt-4">...</h2>
-            <p id="dash-fullname" class="font-bold text-gray-400 text-sm mb-4">...</p>
-            
-            <div class="max-w-xs mx-auto bg-[#111] p-4 rounded border border-[#333] text-left mt-4 hidden" id="edit-info-box">
-              <label class="input-label">Nuovo Nome</label>
-              <input type="text" id="edit-name-input" class="mb-2">
-              <button onclick="updateProfileInfo()" class="btn-white py-2 text-xs">Salva Info</button>
-            </div>
-            <button onclick="document.getElementById('edit-info-box').classList.toggle('hidden')" class="text-xs underline text-gray-500 mt-2">Modifica Dati Personali</button>
-          </div>
-
-          <h3 class="serif text-xl mb-6 italic text-center">I Miei Post</h3>
-          <div id="my-posts-feed"></div>
-
-        </div>
-      </div>
-
     </div>
+
+    <div class="feed-section" id="main-content">
+      </div>
+
   </div>
 </div>
 
 <div id="upload-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="background:#111; padding:30px; max-width:400px; width:90%;">
-    <i class="fa-solid fa-xmark absolute top-4 right-4 cursor-pointer text-xl" onclick="closeModal('upload-modal')"></i>
-    <h2 class="serif text-xl mb-4 italic">Crea Post</h2>
+  <div style="background:#111; padding:30px; width:400px; border:1px solid #333; position:relative;">
+    <i class="fa-solid fa-xmark absolute top-3 right-3 cursor-pointer text-xl" onclick="closeModal('upload-modal')"></i>
+    <h3 class="serif text-xl mb-4 italic">Crea Nuovo Post</h3>
     
-    <label class="block mb-4 text-center border border-dashed border-gray-500 p-6 rounded cursor-pointer hover:border-white">
-      <span class="text-xs uppercase block mb-2">Seleziona Foto (Obbligatoria)</span>
-      <input type="file" id="post-file" accept="image/*">
+    <label class="block border border-dashed border-gray-600 p-8 text-center cursor-pointer hover:border-white mb-4">
+      <div class="text-xs uppercase text-gray-400 mb-2">Seleziona Immagine</div>
+      <i class="fa-solid fa-camera text-2xl"></i>
+      <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
     </label>
+    <div id="upload-preview-box" class="hidden mb-4"><img id="upload-preview" class="w-full h-32 object-cover rounded"></div>
     
-    <input type="text" id="post-caption" placeholder="Scrivi qualcosa..." class="w-full bg-black border-b border-gray-600 p-2 mb-4 text-white outline-none">
+    <input type="text" id="post-caption" placeholder="Scrivi didascalia..." class="w-full bg-black border-b border-gray-700 p-2 text-white mb-4 outline-none">
     <button onclick="submitPost()" class="btn-white">Pubblica</button>
   </div>
 </div>
 
+<div id="search-modal" class="modal-overlay hidden">
+  <div style="background:#111; padding:20px; width:400px; border:1px solid #333; position:relative; max-height:80vh;">
+    <i class="fa-solid fa-xmark absolute top-3 right-3 cursor-pointer" onclick="closeModal('search-modal')"></i>
+    <h3 class="serif text-xl mb-4 italic">Cerca</h3>
+    <input type="text" id="search-input" placeholder="Nome o username..." class="w-full bg-black border border-gray-700 p-2 text-white mb-4" onkeyup="searchUsers()">
+    <div id="search-results" class="overflow-y-auto" style="max-height:300px;"></div>
+  </div>
+</div>
+
 <div id="post-detail-modal" class="modal-overlay hidden">
-  <div class="post-modal-box">
-    <div class="modal-img-side">
+  <div class="modal-content-box">
+    <div class="modal-left">
       <img id="detail-img" src="">
     </div>
-    <div class="modal-info-side relative">
-      <i class="fa-solid fa-xmark absolute top-4 right-4 cursor-pointer text-xl" onclick="closeModal('post-detail-modal')"></i>
-      
-      <div class="flex items-center gap-3 mb-4">
-        <img id="detail-avatar" src="" class="w-8 h-8 rounded-full bg-gray-700">
-        <span id="detail-username" class="font-bold text-sm">User</span>
+    <div class="modal-right relative">
+      <div class="modal-header">
+        <img id="detail-avatar" src="" class="w-8 h-8 rounded-full border border-gray-600">
+        <span id="detail-username" class="font-bold text-sm"></span>
+        <i class="fa-solid fa-xmark ml-auto cursor-pointer text-lg" onclick="closeModal('post-detail-modal')"></i>
       </div>
       
-      <p id="detail-caption" class="text-sm text-gray-300 mb-4"></p>
-      
-      <div class="comment-list" id="detail-comments">
+      <div id="detail-comments" class="modal-comments">
         </div>
       
-      <div class="mt-auto flex gap-2">
-        <input type="text" id="new-comment" placeholder="Scrivi un commento..." class="flex-1 bg-black border border-gray-700 p-2 rounded text-sm text-white">
-        <button onclick="inviaCommento()" class="text-blue-400 font-bold text-sm uppercase">Invia</button>
+      <div class="modal-footer">
+        <input type="text" id="comment-input" placeholder="Aggiungi un commento..." class="flex-1 bg-transparent border-none outline-none text-sm text-white">
+        <button onclick="sendComment()" class="text-blue-500 font-bold text-xs uppercase">Pubblica</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="search-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="background:#111; padding:20px;">
-    <i class="fa-solid fa-xmark absolute top-4 right-4 cursor-pointer" onclick="closeModal('search-modal')"></i>
-    <h2 class="serif text-xl mb-4">Cerca Utenti</h2>
-    <input type="text" id="search-query" class="w-full bg-black border border-gray-700 p-2 text-white mb-4" placeholder="Nome o Username..." onkeyup="performSearch()">
-    <div id="search-results" class="max-h-60 overflow-y-auto"></div>
+<div id="edit-profile-modal" class="modal-overlay hidden">
+  <div style="background:#111; padding:30px; width:400px; border:1px solid #333; position:relative;">
+    <i class="fa-solid fa-xmark absolute top-3 right-3 cursor-pointer" onclick="closeModal('edit-profile-modal')"></i>
+    <h3 class="serif text-xl mb-4 italic">I Tuoi Dati</h3>
+    <div class="input-group"><label class="input-label">Nome Completo</label><input type="text" id="edit-fullname"></div>
+    <button onclick="saveProfileChanges()" class="btn-white">Salva</button>
   </div>
 </div>
 
 <script>
-  /* ================= CONFIGURAZIONE ================= */
+  /* =========================================
+     CONFIGURAZIONE SUPABASE
+     ========================================= */
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
+  
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
   let currentUser = null;
-  let currentPostId = null; // Per i commenti
+  let currentPostId = null;
 
-  /* ================= INIT & AUTH ================= */
+  /* =========================================
+     INIT & LOGIN LOGIC
+     ========================================= */
   window.addEventListener('load', async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) enterApp(session.user);
-    
-    // Slider Login (Ripristinato)
+    startSlider();
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      currentUser = data.session.user;
+      showApp();
+    }
+  });
+
+  function startSlider() {
     let idx = 0;
     const imgs = document.querySelectorAll('.visual-side img');
-    if(imgs.length){
+    if(imgs.length > 0) {
       setInterval(() => {
         imgs[idx].classList.remove('active');
         idx = (idx + 1) % imgs.length;
         imgs[idx].classList.add('active');
       }, 5000);
     }
-  });
-
-  async function enterApp(user) {
-    currentUser = user;
-    document.getElementById('auth-container').style.transform = "translateY(-100vh)";
-    setTimeout(() => {
-      document.getElementById('auth-container').style.display = 'none';
-      document.getElementById('app-interface').style.display = 'block';
-      loadUserData();
-      switchView('feed');
-    }, 600);
   }
 
-  function mess(t, err=false) {
-    const b = document.getElementById('msg-box');
-    b.innerText = t; b.style.display = 'block'; b.style.color = err ? '#ff4444' : '#44ff44';
-  }
-  function vaiA(m) {
-    document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
-    document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-    document.getElementById('msg-box').style.display = 'none';
+  function toggleForms(type) {
+    document.getElementById('login-form').classList.toggle('hidden', type === 'signup');
+    document.getElementById('signup-form').classList.toggle('hidden', type === 'login');
+    feedback('', false);
   }
 
-  // REGISTRAZIONE CON CONTROLLO ETA' RIPRISTINATO
-  async function faiRegistrazione() {
-    const u = document.getElementById('r-username').value.trim();
-    const e = document.getElementById('r-email').value.trim();
-    const p = document.getElementById('r-pass').value;
-    const n = document.getElementById('r-nome').value.trim();
-    const c = document.getElementById('r-cognome').value.trim();
-    const d = document.getElementById('r-nascita').value;
+  function feedback(txt, isError = false) {
+    const box = document.getElementById('msg-box');
+    if(!txt) { box.classList.add('hidden'); return; }
+    box.innerText = txt;
+    box.classList.remove('hidden');
+    box.style.color = isError ? '#ff4444' : '#44ff44';
+    box.style.borderColor = isError ? '#ff4444' : '#44ff44';
+  }
 
-    if(!u || !e || !p || !n || !c || !d) return mess("Compila tutti i campi.", true);
+  async function handleSignup() {
+    const nome = document.getElementById('r-nome').value.trim();
+    const cognome = document.getElementById('r-cognome').value.trim();
+    const username = document.getElementById('r-username').value.trim();
+    const nascita = document.getElementById('r-nascita').value;
+    const email = document.getElementById('r-email').value.trim();
+    const pass = document.getElementById('r-pass').value;
+
+    if(!nome || !cognome || !username || !nascita || !email || !pass) return feedback("Compila tutti i campi.", true);
+    if(pass.length < 8) return feedback("Password troppo corta (min 8).", true);
+
+    // Controllo Età (16+)
+    const dob = new Date(nascita);
+    const diff_ms = Date.now() - dob.getTime();
+    const age_dt = new Date(diff_ms); 
+    const age = Math.abs(age_dt.getUTCFullYear() - 1970);
+    if(age < 16) return feedback("Devi avere almeno 16 anni per iscriverti.", true);
+
+    feedback("Creazione account in corso...", false);
+
+    const { data, error } = await sb.auth.signUp({ email, password: pass });
     
-    // Controllo età 16 anni (Ripristinato)
-    const nascita = new Date(d);
-    const oggi = new Date();
-    let eta = oggi.getFullYear() - nascita.getFullYear();
-    if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta--;
-    if (eta < 16) return mess("Devi avere almeno 16 anni.", true);
+    if(error) return feedback(error.message, true);
 
-    try {
-      const { data, error } = await sb.auth.signUp({ email: e, password: p });
-      if(error) throw error;
-      
-      if(data.user) {
-        await sb.from('profiles').insert([{
-          id: data.user.id,
-          username: u.toLowerCase(),
-          full_name: `${n} ${c}`,
-          avatar_url: 'https://via.placeholder.com/150'
-        }]);
-      }
-      mess("Registrazione OK! Controlla l'email per confermare."); // Messaggio chiaro
-      setTimeout(() => vaiA('login'), 3000);
-    } catch(err) { mess("Errore: " + err.message, true); }
-  }
+    if(data.user) {
+      // Crea profilo
+      const { error: profErr } = await sb.from('profiles').insert([{
+        id: data.user.id,
+        username: username.toLowerCase(),
+        full_name: `${nome} ${cognome}`,
+        avatar_url: 'https://via.placeholder.com/150'
+      }]);
 
-  async function faiLogin() {
-    const e = document.getElementById('l-email').value.trim();
-    const p = document.getElementById('l-pass').value;
-    const { data, error } = await sb.auth.signInWithPassword({ email: e, password: p });
-    if(error) mess("Errore: " + error.message + " (Hai confermato la mail?)", true);
-    else enterApp(data.user);
-  }
-
-  async function recuperoPassword() {
-    const email = prompt("Email per recupero:");
-    if(email) {
-      const { error } = await sb.auth.resetPasswordForEmail(email);
-      alert(error ? error.message : "Controlla la tua email.");
+      if(profErr) console.error(profErr);
+      feedback("Registrazione completata! Controlla l'email per confermare.", false);
+      setTimeout(() => toggleForms('login'), 3000);
     }
   }
-  async function logout() { await sb.auth.signOut(); location.reload(); }
 
-  /* ================= SOCIAL & POST ================= */
+  async function handleLogin() {
+    const email = document.getElementById('l-email').value.trim();
+    const pass = document.getElementById('l-pass').value;
+    
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error) return feedback("Login fallito: " + error.message, true);
+    
+    currentUser = data.user;
+    showApp();
+  }
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    location.reload();
+  }
+
+  function showApp() {
+    document.getElementById('auth-container').style.display = 'none';
+    document.getElementById('app-interface').style.display = 'block';
+    renderHome(); // Carica il feed iniziale
+  }
+
+  /* =========================================
+     CORE LOGIC (FEED, PROFILO, POSTS)
+     ========================================= */
   
-  function switchView(name) {
-    ['view-feed', 'view-dashboard'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    document.getElementById(`view-${name}`).classList.remove('hidden');
-    if(name === 'feed') loadFeed('posts-feed', false); // Feed globale
-    if(name === 'dashboard') loadProfile(); // Mio Profilo
-  }
-
-  // CARICAMENTO PROFILO (Dati + Feed Verticale)
-  async function loadProfile() {
-    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-    if(data) {
-      document.getElementById('dash-username').innerText = data.username;
-      document.getElementById('dash-fullname').innerText = data.full_name;
-      document.getElementById('dash-avatar').src = data.avatar_url;
-      document.getElementById('edit-name-input').value = data.full_name;
-    }
-    // Carica i miei post nel formato "Feed Verticale"
-    loadFeed('my-posts-feed', true);
-  }
-
-  // GENERATORE FEED (Usato sia per Home che per Profilo)
-  async function loadFeed(containerId, onlyMine) {
-    const c = document.getElementById(containerId);
-    c.innerHTML = '<p class="text-center text-gray-500 py-10">Caricamento...</p>';
+  // 1. RENDER HOME FEED
+  async function renderHome() {
+    const main = document.getElementById('main-content');
+    main.innerHTML = '<div class="text-center mt-10 text-gray-500">Caricamento Feed...</div>';
     
-    let query = sb.from('posts').select('*, profiles(username, avatar_url), likes(user_id)').order('created_at', {ascending:false});
-    if(onlyMine) query = query.eq('user_id', currentUser.id);
+    const { data: posts } = await sb
+      .from('posts')
+      .select('*, profiles(username, avatar_url, full_name), likes(user_id)')
+      .order('created_at', { ascending: false });
 
-    const { data: posts } = await query;
-    c.innerHTML = '';
-
-    if(!posts || !posts.length) {
-      c.innerHTML = '<p class="text-center text-gray-500">Nessun post trovato.</p>';
+    main.innerHTML = '<h2 class="serif text-2xl mb-6 italic text-center">Home Feed</h2>';
+    
+    if(!posts || posts.length === 0) {
+      main.innerHTML += '<div class="text-center text-gray-600">Nessun post. Inizia a seguire qualcuno o crea un post!</div>';
       return;
     }
 
-    posts.forEach(p => {
-      const isLiked = p.likes && p.likes.some(l => l.user_id === currentUser.id);
-      const heartClass = isLiked ? "fa-solid text-red-500" : "fa-regular";
-
-      // Template Card (uguale per home e profilo)
-      const html = `
-        <div class="post-card">
-          <div class="post-header">
-            <img src="${p.profiles?.avatar_url || 'https://via.placeholder.com/30'}" class="user-avatar">
-            <span class="font-bold text-sm text-white">${p.profiles?.username}</span>
-            ${onlyMine ? `<i class="fa-solid fa-trash ml-auto text-gray-600 cursor-pointer hover:text-red-500" onclick="deletePost('${p.id}')"></i>` : ''}
-          </div>
-          
-          <img src="${p.image_url}" class="post-img" onclick='openPostDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
-          
-          <div class="flex gap-4 mt-3 text-xl text-gray-300">
-            <i class="${heartClass} fa-heart cursor-pointer hover:text-red-500" onclick="toggleLike('${p.id}')"></i>
-            <i class="fa-regular fa-comment cursor-pointer hover:text-white" onclick='openPostDetail(${JSON.stringify(p).replace(/'/g, "&#39;")})'></i>
-          </div>
-          
-          <div class="mt-2 text-sm text-gray-300">
-            <span class="font-bold text-white mr-2">${p.profiles?.username}</span>
-            ${p.caption || ''}
-          </div>
-        </div>
-      `;
-      c.innerHTML += html;
+    posts.forEach(post => {
+      main.appendChild(createPostCard(post));
     });
   }
 
-  /* ================= DETTAGLIO POST & COMMENTI ================= */
+  // 2. RENDER PROFILO (Header + Feed Personale)
+  async function renderProfile() {
+    const main = document.getElementById('main-content');
+    main.innerHTML = '<div class="text-center mt-10">Caricamento Profilo...</div>';
+
+    // Prendi Dati Utente
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    
+    // Header HTML
+    const headerHTML = `
+      <div class="profile-cover">
+        <div class="profile-avatar-container" onclick="document.getElementById('avatar-input').click()">
+          <img src="${profile.avatar_url}" class="profile-avatar-img">
+          <div class="camera-overlay"><i class="fa-solid fa-camera"></i></div>
+          <input type="file" id="avatar-input" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
+        </div>
+      </div>
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-serif italic">${profile.full_name}</h2>
+        <p class="text-sm text-gray-500">@${profile.username}</p>
+        <button onclick="openModal('edit-profile-modal')" class="mt-4 border border-gray-600 px-4 py-1 text-xs rounded hover:bg-white hover:text-black transition">Modifica Profilo</button>
+      </div>
+      <hr class="border-gray-800 mb-8">
+    `;
+
+    main.innerHTML = headerHTML;
+
+    // Prendi Post Utente
+    const { data: myPosts } = await sb
+      .from('posts')
+      .select('*, profiles(username, avatar_url, full_name), likes(user_id)')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if(!myPosts || myPosts.length === 0) {
+      main.innerHTML += '<div class="text-center text-gray-600">Non hai ancora pubblicato nulla.</div>';
+    } else {
+      myPosts.forEach(post => {
+        main.appendChild(createPostCard(post));
+      });
+    }
+    
+    // Pre-fill edit modal
+    document.getElementById('edit-fullname').value = profile.full_name;
+  }
+
+  // Helper: Crea la Carta del Post
+  function createPostCard(post) {
+    const isLiked = post.likes && post.likes.some(l => l.user_id === currentUser.id);
+    const div = document.createElement('div');
+    div.className = 'post-card';
+    
+    div.innerHTML = `
+      <div class="post-header">
+        <img src="${post.profiles.avatar_url}" class="avatar-small">
+        <div>
+          <div class="font-bold text-sm">${post.profiles.username}</div>
+          <div class="text-xs text-gray-500">${new Date(post.created_at).toLocaleDateString()}</div>
+        </div>
+      </div>
+      <img src="${post.image_url}" class="post-image" onclick='openPostDetail(${JSON.stringify(post).replace(/'/g, "&#39;")})'>
+      <div class="post-actions">
+        <i class="${isLiked ? 'fa-solid text-red-500' : 'fa-regular'} fa-heart cursor-pointer hover:scale-110 transition" onclick="toggleLike('${post.id}')"></i>
+        <i class="fa-regular fa-comment cursor-pointer hover:text-white" onclick='openPostDetail(${JSON.stringify(post).replace(/'/g, "&#39;")})'></i>
+      </div>
+      <div class="post-details">
+        <span class="font-bold">${post.profiles.username}</span> ${post.caption || ''}
+      </div>
+    `;
+    return div;
+  }
+
+  /* =========================================
+     ACTIONS (LIKE, COMMENT, UPLOAD)
+     ========================================= */
+
+  // LIKE
+  async function toggleLike(postId) {
+    // Check se esiste
+    const { data } = await sb.from('likes').select('*').eq('post_id', postId).eq('user_id', currentUser.id);
+    
+    if(data.length > 0) {
+      await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    } else {
+      await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+    }
+    
+    // Refresh semplice: ricarica la vista attuale
+    const isInProfile = document.querySelector('.profile-cover') !== null;
+    isInProfile ? renderProfile() : renderHome();
+  }
+
+  // UPLOAD AVATAR
+  async function uploadAvatar(input) {
+    const file = input.files[0];
+    if(!file) return;
+    
+    const fileName = `avatar_${currentUser.id}_${Date.now()}`;
+    const { error } = await sb.storage.from('posts').upload(fileName, file);
+    
+    if(error) return alert("Errore upload: " + error.message);
+    
+    const { data } = sb.storage.from('posts').getPublicUrl(fileName);
+    await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
+    renderProfile();
+  }
+
+  // UPLOAD POST
+  function previewUpload(input) {
+    if(input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('upload-preview').src = e.target.result;
+        document.getElementById('upload-preview-box').classList.remove('hidden');
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  async function submitPost() {
+    const file = document.getElementById('post-file').files[0];
+    const caption = document.getElementById('post-caption').value;
+    
+    if(!file) return alert("Devi selezionare un'immagine!");
+    
+    const fileName = `post_${Date.now()}_${currentUser.id}`;
+    const { error } = await sb.storage.from('posts').upload(fileName, file);
+    
+    if(error) return alert("Errore Storage: " + error.message);
+    
+    const { data } = sb.storage.from('posts').getPublicUrl(fileName);
+    
+    const { error: dbErr } = await sb.from('posts').insert([{
+      user_id: currentUser.id,
+      image_url: data.publicUrl,
+      caption: caption
+    }]);
+    
+    if(dbErr) return alert("Errore DB: " + dbErr.message);
+    
+    closeModal('upload-modal');
+    // Pulisci
+    document.getElementById('post-file').value = '';
+    document.getElementById('post-caption').value = '';
+    document.getElementById('upload-preview-box').classList.add('hidden');
+    renderHome();
+  }
+
+  // DETTAGLIO POST & COMMENTI
   async function openPostDetail(post) {
     currentPostId = post.id;
     document.getElementById('post-detail-modal').classList.remove('hidden');
     
-    // Popola dati
     document.getElementById('detail-img').src = post.image_url;
     document.getElementById('detail-avatar').src = post.profiles.avatar_url;
     document.getElementById('detail-username').innerText = post.profiles.username;
-    document.getElementById('detail-caption').innerText = post.caption || '';
     
-    // Carica Commenti
     loadComments();
   }
 
   async function loadComments() {
-    const list = document.getElementById('detail-comments');
-    list.innerHTML = 'Caricamento...';
+    const container = document.getElementById('detail-comments');
+    container.innerHTML = 'Caricamento...';
     
     const { data: comments } = await sb
       .from('comments')
-      .select('*, profiles(username)')
+      .select('*, profiles(username, avatar_url)')
       .eq('post_id', currentPostId)
-      .order('created_at', {ascending: true});
+      .order('created_at', { ascending: true });
       
-    list.innerHTML = '';
-    if(!comments || !comments.length) {
-      list.innerHTML = '<p class="text-gray-500 text-center mt-4">Nessun commento.</p>';
+    container.innerHTML = '';
+    if(!comments || comments.length === 0) {
+      container.innerHTML = '<div class="text-gray-500 text-center mt-4">Nessun commento.</div>';
       return;
     }
     
     comments.forEach(c => {
-      list.innerHTML += `
-        <div class="mb-2">
-          <span class="font-bold text-white mr-2">${c.profiles.username}</span>
-          <span class="text-gray-300">${c.content}</span>
+      const row = document.createElement('div');
+      row.className = 'comment-row';
+      row.innerHTML = `
+        <img src="${c.profiles.avatar_url}" class="w-8 h-8 rounded-full">
+        <div class="comment-content">
+          <span class="font-bold text-sm mr-2">${c.profiles.username}</span>
+          <span class="text-sm text-gray-300">${c.content}</span>
         </div>
       `;
+      container.appendChild(row);
     });
   }
 
-  async function inviaCommento() {
-    const input = document.getElementById('new-comment');
+  async function sendComment() {
+    const input = document.getElementById('comment-input');
     const txt = input.value.trim();
     if(!txt) return;
     
@@ -444,99 +572,43 @@
       content: txt
     }]);
     
-    if(error) alert("Errore commento: " + error.message);
+    if(error) alert("Errore invio: " + error.message);
     else {
       input.value = '';
       loadComments();
     }
   }
 
-  /* ================= AZIONI UTENTE (Like, Upload, Delete) ================= */
-  
-  async function toggleLike(postId) {
-    const { data } = await sb.from('likes').select('*').eq('post_id', postId).eq('user_id', currentUser.id);
-    if (data.length > 0) await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
-    else await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-    
-    // Ricarica la vista corrente
-    const currentView = document.getElementById('view-feed').classList.contains('hidden') ? 'dashboard' : 'feed';
-    switchView(currentView);
+  // MODIFICA PROFILO
+  async function saveProfileChanges() {
+    const fn = document.getElementById('edit-fullname').value;
+    await sb.from('profiles').update({ full_name: fn }).eq('id', currentUser.id);
+    closeModal('edit-profile-modal');
+    renderProfile();
   }
 
-  // UPLOAD AVATAR
-  async function uploadAvatar() {
-    const file = document.getElementById('avatar-upload').files[0];
-    if(!file) return;
-    
-    const fileName = `avatar_${currentUser.id}_${Date.now()}`;
-    // Carica su bucket 'posts' che sappiamo funzionare
-    const { error } = await sb.storage.from('posts').upload(fileName, file);
-    if(error) return alert("Errore caricamento: " + error.message);
-    
-    const { data } = sb.storage.from('posts').getPublicUrl(fileName);
-    await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
-    
-    alert("Foto profilo aggiornata!");
-    loadProfile();
-  }
-  
-  // MODIFICA NOME
-  async function updateProfileInfo() {
-    const name = document.getElementById('edit-name-input').value;
-    await sb.from('profiles').update({ full_name: name }).eq('id', currentUser.id);
-    alert("Nome aggiornato.");
-    loadProfile();
-  }
-
-  // UPLOAD POST
-  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
-  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-  async function submitPost() {
-    const file = document.getElementById('post-file').files[0];
-    const caption = document.getElementById('post-caption').value;
-    if(!file) return alert("Devi caricare una foto per postare."); // Vincolo foto
-
-    const fileName = `post_${Date.now()}`;
-    const { error } = await sb.storage.from('posts').upload(fileName, file);
-    if(error) return alert("Errore upload: " + error.message);
-    
-    const { data } = sb.storage.from('posts').getPublicUrl(fileName);
-    
-    const { error: dbErr } = await sb.from('posts').insert([{
-      user_id: currentUser.id,
-      image_url: data.publicUrl,
-      caption: caption
-    }]);
-
-    if(dbErr) alert("Errore Database: " + dbErr.message);
-    else {
-      closeModal('upload-modal');
-      switchView('feed');
-    }
-  }
-  
-  async function deletePost(id) {
-    if(!confirm("Eliminare questo post?")) return;
-    await sb.from('posts').delete().eq('id', id);
-    loadProfile();
-  }
-
-  // RICERCA
-  function openSearch(){ document.getElementById('search-modal').classList.remove('hidden'); }
-  async function performSearch() {
-    const q = document.getElementById('search-query').value;
+  // SEARCH
+  async function searchUsers() {
+    const q = document.getElementById('search-input').value;
     if(q.length < 2) return;
-    const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`);
-    const c = document.getElementById('search-results');
-    c.innerHTML = '';
+    
+    const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10);
+    const res = document.getElementById('search-results');
+    res.innerHTML = '';
+    
     data?.forEach(u => {
-      c.innerHTML += `<div class="p-2 border-b border-gray-700 flex gap-2 items-center text-white"><img src="${u.avatar_url}" class="w-6 h-6 rounded-full">${u.username}</div>`;
+      res.innerHTML += `
+        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-gray-900 cursor-pointer">
+          <img src="${u.avatar_url}" class="w-8 h-8 rounded-full">
+          <div>${u.username}</div>
+        </div>
+      `;
     });
   }
-  
-  // Helper caricamento dati
-  async function loadUserData() { /* ... */ }
+
+  // UTILS
+  function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 </script>
 </body>
