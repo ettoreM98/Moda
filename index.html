@@ -147,12 +147,18 @@
     }
     .icon-btn:hover { opacity: 1; transform: translateY(-2px); color: var(--gold); }
     
+    /* --- FIX LIKE CSS ESTREMO --- */
+    /* Se un elemento ha la classe .liked, l'icona interna DEVE essere rossa e piena */
+    .liked { color: var(--red-like) !important; opacity: 1 !important; }
+    .liked i { 
+        font-weight: 900 !important; /* Fa-Solid */
+        color: var(--red-like) !important;
+        font-family: "Font Awesome 6 Free" !important;
+    }
+
     .likes-count { font-size: 14px; font-weight: 600; color: #fff; }
     .caption-box { margin-top: 15px; padding: 0 5px; font-size: 15px; line-height: 1.6; color: #cbd5e1; }
     .caption-user { font-weight: 700; color: var(--gold); margin-right: 8px; cursor: pointer; }
-
-    /* Classi utilitarie per il Like Rosso */
-    .heart-filled { color: var(--red-like) !important; opacity: 1 !important; }
 
     /* --- BUTTONS & EMPTY STATE --- */
     .btn-gold {
@@ -441,10 +447,11 @@
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
     
-    // FIX DEFINITIVO LIKE: Scriviamo la classe direttamente nell'HTML
-    const heartIcon = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
-    
-    // Il tasto elimina appare nel feed SOLO se il post è mio (ma nel feed vedo solo quelli degli altri, quindi qui è raro, ma lo lascio per sicurezza)
+    // FIX CLASSI LIKE: Se è piaciuto, ha classe 'liked'.
+    // L'icona è 'fa-solid' se liked, 'fa-regular' se no.
+    const likedClass = liked ? 'liked' : '';
+    const iconClass = liked ? 'fa-solid' : 'fa-regular';
+
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
@@ -459,8 +466,8 @@
         </div>
         ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="action-bar">
-          <div class="icon-btn" onclick="toggleLike('${post.id}', this)">
-            <i class="${heartIcon}"></i>
+          <div class="icon-btn ${likedClass}" onclick="toggleLike('${post.id}', this)">
+            <i class="${iconClass} fa-heart"></i>
             <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
           </div>
           <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
@@ -476,18 +483,22 @@
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
     let currentCount = parseInt(countSpan.innerText);
     
-    // Verifica lo stato guardando l'icona attuale
-    const isLiked = icon.classList.contains('fa-solid');
+    // VERIFICA STATO REALE BASATO SULLA CLASSE
+    const isAlreadyLiked = btnContainer.classList.contains('liked');
 
-    if (isLiked) {
-      // Tolgo il like
-      icon.className = 'fa-regular fa-heart'; // Rimuove rosso e solido
+    if (isAlreadyLiked) {
+      // UNLIKE
+      btnContainer.classList.remove('liked');
+      icon.className = "fa-regular fa-heart"; // Forza reset
       countSpan.innerText = Math.max(0, currentCount - 1);
+      
       await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
     } else {
-      // Metto il like
-      icon.className = 'fa-solid fa-heart text-red-500'; // Aggiunge rosso e solido
+      // LIKE
+      btnContainer.classList.add('liked');
+      icon.className = "fa-solid fa-heart"; // Forza solid
       countSpan.innerText = currentCount + 1;
+      
       await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
     }
   }
@@ -578,18 +589,31 @@
             `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
     }
 
-    // Like logic nella modale
+    // Like logic nella modale (Identica al feed)
     const liked = await isLikedByMe(postId);
     const likeBtn = document.getElementById('detail-like-btn');
-    likeBtn.className = liked ? "fa-solid fa-heart cursor-pointer text-red-500" : "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
     
+    // Reset classi base
+    likeBtn.className = "";
+    
+    if (liked) {
+      likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500 liked";
+    } else {
+      likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
+    }
+    
+    // Logica click modale
     likeBtn.onclick = async () => { 
-        const isLikedNow = likeBtn.classList.contains('fa-solid'); 
+        const isLikedNow = likeBtn.classList.contains('liked'); 
         if(isLikedNow) { 
+            // Unlike
+            likeBtn.classList.remove('liked');
             likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white"; 
             await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id); 
         } else { 
-            likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500"; 
+            // Like
+            likeBtn.classList.add('liked');
+            likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500 liked"; 
             await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]); 
         } 
         refreshDetailCounts(postId); 
