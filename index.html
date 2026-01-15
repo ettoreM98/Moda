@@ -107,6 +107,18 @@
       pointer-events: none;
     }
 
+    /* BADGE NOTIFICHE */
+    .notif-badge {
+      position: absolute; top: 0; right: 0;
+      width: 16px; height: 16px;
+      background: var(--red-like);
+      color: white; font-size: 10px; font-weight: bold;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg-deep);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
     /* --- FEED & POSTS --- */
     .main-content { flex: 1; padding: 40px; max-width: 700px; margin: 0 auto; }
 
@@ -195,6 +207,16 @@
     .detail-img-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #1e293b; min-width: 350px; position: relative; }
     
+    /* STILE NOTIFICHE LISTA */
+    .notif-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer; transition: 0.2s;
+    }
+    .notif-row:hover { background: rgba(212, 175, 55, 0.05); }
+    .notif-row.unread { background: rgba(212, 175, 55, 0.15); border-left: 3px solid var(--gold); }
+    .notif-icon { width: 32px; display: flex; justify-content: center; }
+
     @media (max-width: 800px) {
       .sidebar { 
         width: 100%; height: 60px; position: fixed; bottom: 0; top: auto; left: 0; margin: 0; 
@@ -252,6 +274,10 @@
       <div class="nav-item" onclick="openSearchModal()" title="Cerca">
         <i class="fa-solid fa-magnifying-glass"></i>
       </div>
+      <div class="nav-item relative" onclick="openNotificationsModal()" title="Notifiche">
+        <i class="fa-solid fa-bell"></i>
+        <span id="nav-notif-badge" class="hidden notif-badge">0</span>
+      </div>
       <div class="nav-item" onclick="openUploadModal()" title="Nuovo Post">
         <i class="fa-solid fa-plus"></i>
       </div>
@@ -264,6 +290,17 @@
       </div>
     </div>
     <div class="main-content" id="main-content-area"></div>
+  </div>
+</div>
+
+<div id="notifications-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] max-h-[500px] flex flex-col">
+    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+      <h3 class="font-bold text-white text-lg">Notifiche</h3>
+      <i class="fa-solid fa-xmark cursor-pointer text-white" onclick="closeModal('notifications-modal')"></i>
+    </div>
+    <div id="notifications-list" class="flex-1 overflow-y-auto bg-slate-900">
+      </div>
   </div>
 </div>
 
@@ -368,11 +405,68 @@
   window.addEventListener('load', async () => {
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
     if (imgs.length) { setInterval(() => { imgs[i].classList.remove('active'); i = (i + 1) % imgs.length; imgs[i].classList.add('active'); }, 5000); }
-    // CORREZIONE: destrutturazione corretta di data: { session }
     const { data: { session } } = await sb.auth.getSession();
     if (session) enterApp(session.user);
     else document.getElementById('auth-container').style.display = 'flex';
   });
+
+  /* --- NUOVA LOGICA NOTIFICHE --- */
+  async function checkNotifications() {
+    if(!currentUser) return;
+    const { count, error } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('is_read', false);
+    const badge = document.getElementById('nav-notif-badge');
+    if (count > 0) {
+      badge.innerText = count > 9 ? '9+' : count;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  async function openNotificationsModal() {
+    document.getElementById('notifications-modal').classList.remove('hidden');
+    const container = document.getElementById('notifications-list');
+    container.innerHTML = '<p class="p-4 text-center text-gray-500">Caricamento...</p>';
+
+    // Scarica notifiche
+    const { data: notifs } = await sb.from('notifications')
+      .select(`*, actor:actor_id(username, avatar_url)`)
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // Segna come lette
+    await sb.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id).eq('is_read', false);
+    document.getElementById('nav-notif-badge').classList.add('hidden'); // Nascondi badge
+
+    if (!notifs || notifs.length === 0) {
+      return container.innerHTML = '<div class="p-8 text-center text-gray-400"><i class="fa-regular fa-bell-slash text-2xl mb-2"></i><br>Nessuna notifica</div>';
+    }
+
+    container.innerHTML = '';
+    notifs.forEach(n => {
+      let icon = '', text = '';
+      if(n.type === 'like') { icon = '<i class="fa-solid fa-heart text-red-500"></i>'; text = 'ha messo like al tuo post'; }
+      else if(n.type === 'comment') { icon = '<i class="fa-solid fa-comment text-blue-400"></i>'; text = 'ha commentato il tuo post'; }
+      else if(n.type === 'follow') { icon = '<i class="fa-solid fa-user-plus text-green-400"></i>'; text = 'ha iniziato a seguirti'; }
+      
+      const time = new Date(n.created_at).toLocaleDateString('it-IT');
+      const rowClass = n.is_read ? 'notif-row' : 'notif-row unread';
+      const clickAction = (n.post_id) ? `closeModal('notifications-modal'); openPostDetail('${n.post_id}')` : `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')`;
+
+      container.insertAdjacentHTML('beforeend', `
+        <div class="${rowClass}" onclick="${clickAction}">
+          <img src="${n.actor.avatar_url || 'https://via.placeholder.com/32'}" class="w-10 h-10 rounded-full object-cover border border-gray-600">
+          <div class="flex-1">
+            <div class="text-sm text-white"><span class="font-bold text-[#d4af37]">${n.actor.username}</span> ${text}</div>
+            <div class="text-xs text-gray-500">${time}</div>
+          </div>
+          <div class="notif-icon">${icon}</div>
+        </div>
+      `);
+    });
+  }
+  /* --- FINE LOGICA NOTIFICHE --- */
 
   async function sharePost(postId, caption) {
     const text = `Guarda questo post su Hawenishland: ${caption || ''}`;
@@ -385,24 +479,21 @@
     const { error } = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
     if(error) alert("Errore: " + error.message);
     else {
-      closeModal('post-detail-modal'); // Chiudi modale se aperto
-      if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); // Aggiorna profilo se sei lì
-      else renderFeedView(); // Altrimenti feed
+      closeModal('post-detail-modal'); 
+      if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); 
+      else renderFeedView(); 
     }
   }
 
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
-    // Rimuovo marcatore profilo
     if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
 
     main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
 
-    // CORREZIONE: destrutturazione data: follows
     const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
     const followingIds = follows ? follows.map(f => f.followed_id) : [];
 
-    // EMPTY STATE 1: Non segui nessuno
     if (followingIds.length === 0) {
       return main.innerHTML = `
         <div class="empty-feed-box">
@@ -414,13 +505,11 @@
       `;
     }
 
-    // CORREZIONE: destrutturazione data: posts
     const { data: posts, error } = await sb.from('posts')
       .select(`*, profiles:user_id (username, avatar_url)`)
       .in('user_id', followingIds)
       .order('created_at', { ascending: false });
 
-    // EMPTY STATE 2: Nessun post dai seguiti
     if (error || !posts || posts.length === 0) {
       return main.innerHTML = `
         <div class="empty-feed-box">
@@ -443,10 +532,7 @@
   function createPostHTML(post, counts, liked) {
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
-    
-    // FIX LIKE: Applicazione corretta della classe in base allo stato iniziale
     const heartIcon = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
-    
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
@@ -477,18 +563,14 @@
     const icon = btnContainer.querySelector('i');
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
     let currentCount = parseInt(countSpan.innerText);
-    
-    // Verifica lo stato guardando l'icona attuale
     const isLiked = icon.classList.contains('fa-solid');
 
     if (isLiked) {
-      // Tolgo il like
-      icon.className = 'fa-regular fa-heart'; // Rimuove rosso e solido
+      icon.className = 'fa-regular fa-heart'; 
       countSpan.innerText = Math.max(0, currentCount - 1);
       await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
     } else {
-      // Metto il like
-      icon.className = 'fa-solid fa-heart text-red-500'; // Aggiunge rosso e solido
+      icon.className = 'fa-solid fa-heart text-red-500'; 
       countSpan.innerText = currentCount + 1;
       await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
     }
@@ -501,17 +583,14 @@
   }
   
   async function isLikedByMe(postId) { 
-    // CORREZIONE: destrutturazione corretta (anche se qui funzionava, meglio essere coerenti)
     const { data } = await sb.from('likes').select('id').eq('post_id', postId).eq('user_id', currentUser.id); 
     return data && data.length > 0; 
   }
   
-  // --- PROFILO ---
   async function openUserProfile(userId) {
     const main = document.getElementById('main-content-area');
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
     
-    // CORREZIONE: destrutturazione data: profile
     const { data: profile } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return main.innerHTML = "<p class='text-center mt-10 text-white'>Utente non trovato.</p>";
 
@@ -521,12 +600,10 @@
     
     let isFollowing = false;
     if (userId !== currentUser.id) {
-      // CORREZIONE: data in destrutturazione
       const { data } = await sb.from('follows').select('*').eq('follower_id', currentUser.id).eq('followed_id', userId);
       isFollowing = data && data.length > 0;
     }
 
-    // CORREZIONE: destrutturazione data: posts
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const isMe = userId === currentUser.id;
     const btn = isMe ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : `<button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>`;
@@ -557,35 +634,27 @@
     const c = document.getElementById('p-followers'); if(c) c.innerText = isFollowing ? parseInt(c.innerText)-1 : parseInt(c.innerText)+1;
   }
 
-  // --- DETAIL MODAL ---
   async function openPostDetail(postId) {
     currentPostId = postId;
     document.getElementById('post-detail-modal').classList.remove('hidden');
     document.getElementById('detail-comments').innerHTML = '<p class="text-center text-gray-500 mt-4">Caricamento...</p>';
-    
-    // Pulisci il container del delete button
     document.getElementById('detail-delete-btn-container').innerHTML = '';
 
-    // CORREZIONE: destrutturazione data: post
     const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
     
-    // Immagine
     const imgEl = document.getElementById('detail-img'); const noImgEl = document.getElementById('detail-noimg');
     if(post.image_url) { imgEl.src = post.image_url; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden'); } else { imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden'); }
 
-    // User Info
     const u = post.profiles; 
     document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32'; 
     document.getElementById('detail-username').innerText = u.username; 
     document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
 
-    // INIETTA TASTO ELIMINA SE IL POST È MIO
     if (post.user_id === currentUser.id) {
         document.getElementById('detail-delete-btn-container').innerHTML = 
             `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
     }
 
-    // Like logic nella modale
     const liked = await isLikedByMe(postId);
     const likeBtn = document.getElementById('detail-like-btn');
     likeBtn.className = liked ? "fa-solid fa-heart cursor-pointer text-red-500" : "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
@@ -602,10 +671,8 @@
         refreshDetailCounts(postId); 
     };
 
-    // Comments
     const list = document.getElementById('detail-comments'); list.innerHTML = '';
     if(post.caption) { list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-4 p-2 bg-white/5 rounded-lg border border-white/5"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover"><div><span class="font-bold mr-2 text-[#d4af37]">${u.username}</span><span class="text-gray-300">${escapeHtml(post.caption)}</span></div></div>`); }
-    // CORREZIONE: destrutturazione data: coms
     const { data: coms } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
     coms.forEach(c => { const cu = c.profiles; list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-2"><img src="${cu.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 text-white cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${cu.username}</span><span class="text-gray-400">${escapeHtml(c.content)}</span></div></div>`); });
     refreshDetailCounts(postId);
@@ -629,7 +696,17 @@
   async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
   async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
   async function logout() { await sb.auth.signOut(); location.reload(); }
-  function enterApp(u) { currentUser=u; document.getElementById('auth-container').style.transform = "translateY(-100vh)"; setTimeout(()=>{ document.getElementById('auth-container').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); renderFeedView(); },600); }
+  function enterApp(u) { 
+    currentUser=u; 
+    document.getElementById('auth-container').style.transform = "translateY(-100vh)"; 
+    setTimeout(()=>{ 
+      document.getElementById('auth-container').classList.add('hidden'); 
+      document.getElementById('app-interface').classList.remove('hidden'); 
+      renderFeedView();
+      checkNotifications(); // CONTROLLA LE NOTIFICHE ALL'AVVIO
+      setInterval(checkNotifications, 30000); // CONTROLLA OGNI 30 SECONDI
+    },600); 
+  }
 </script>
 </body>
 </html>
