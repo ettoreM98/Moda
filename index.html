@@ -209,11 +209,23 @@
       .app-layout { display: block; }
     }
 
-    /* --- CHAT STYLES --- */
-    #chat-messages::-webkit-scrollbar { width: 3px; }
-    .msg-bubble { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
+    /* --- CHAT & NOTIFICATIONS CSS --- */
+    .gold-dot {
+      width: 10px; height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: absolute;
+      top: 10px; right: 10px;
+      box-shadow: 0 0 8px var(--gold);
+      display: none; /* Nascosto di default */
+      z-index: 60;
+    }
+    .msg-bubble { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; margin-bottom: 8px; position: relative; }
     .msg-mine { background: var(--gold); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
     .msg-theirs { background: rgba(255,255,255,0.1); color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
+    .inbox-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s; }
+    .inbox-item:hover { background: rgba(255,255,255,0.05); }
+    .unread-indicator { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; margin-left: auto; }
   </style>
 </head>
 <body>
@@ -261,7 +273,11 @@
       <div class="nav-item" onclick="openUploadModal()" title="Nuovo Post">
         <i class="fa-solid fa-plus"></i>
       </div>
-      <div class="nav-item" id="sidebar-profile-link" title="Profilo">
+      <div class="nav-item relative" onclick="openInboxModal()" title="Messaggi">
+        <div id="global-gold-dot" class="gold-dot"></div>
+        <i class="fa-regular fa-envelope"></i>
+      </div>
+      <div class="nav-item" onclick="openUserProfile(currentUser.id)" title="Profilo">
         <i class="fa-solid fa-user"></i>
       </div>
       <div style="margin-top:auto"></div>
@@ -270,23 +286,6 @@
       </div>
     </div>
     <div class="main-content" id="main-content-area"></div>
-  </div>
-</div>
-
-<div id="chat-modal" class="modal-overlay hidden">
-  <div class="glass-modal w-[400px] h-[550px] flex flex-col">
-    <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-slate-900/50">
-      <div class="flex items-center gap-3">
-        <img id="chat-avatar" src="" class="w-10 h-10 rounded-full border border-[#d4af37] object-cover">
-        <span id="chat-username" class="font-bold text-white">Chat</span>
-      </div>
-      <i class="fa-solid fa-xmark cursor-pointer text-white hover:text-[#d4af37]" onclick="closeChat()"></i>
-    </div>
-    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-slate-900/20"></div>
-    <div class="p-4 border-t border-gray-700 flex gap-2">
-      <input type="text" id="chat-input" placeholder="Messaggio..." class="flex-1 bg-slate-800 border-none rounded-xl p-3 text-white outline-none focus:ring-1 focus:ring-[#d4af37]" onkeypress="if(event.key==='Enter') sendMessage()">
-      <button onclick="sendMessage()" class="btn-gold !p-3 !rounded-full w-12 h-12 flex items-center justify-center"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
   </div>
 </div>
 
@@ -376,6 +375,33 @@
         <button onclick="saveProfile()" class="flex-1 btn-gold">Salva</button>
         <button onclick="closeModal('edit-profile-modal')" class="flex-1 border border-gray-600 py-2 rounded-lg text-white hover:bg-white/10">Annulla</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="inbox-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] h-[550px] flex flex-col">
+    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+      <h3 class="font-bold text-lg text-white">Messaggi</h3>
+      <i class="fa-solid fa-xmark cursor-pointer text-white" onclick="closeModal('inbox-modal')"></i>
+    </div>
+    <div id="inbox-list" class="flex-1 overflow-y-auto"></div>
+  </div>
+</div>
+
+<div id="chat-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] h-[550px] flex flex-col">
+    <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-slate-900/50">
+      <div class="flex items-center gap-3">
+        <img id="chat-header-avatar" src="" class="w-8 h-8 rounded-full border border-[#d4af37]">
+        <span id="chat-header-name" class="font-bold text-white">Chat</span>
+      </div>
+      <i class="fa-solid fa-xmark cursor-pointer text-white" onclick="closeChat()"></i>
+    </div>
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-slate-900/20"></div>
+    <div class="p-4 border-t border-gray-700 flex gap-2">
+      <input type="text" id="chat-input" placeholder="Scrivi un messaggio..." class="flex-1 bg-slate-800 border-none rounded-xl p-3 text-white outline-none focus:ring-1 focus:ring-[#d4af37]" onkeypress="if(event.key==='Enter') sendMessage()">
+      <button onclick="sendMessage()" class="btn-gold !p-3 !rounded-full w-12 h-12 flex items-center justify-center"><i class="fa-regular fa-paper-plane"></i></button>
     </div>
   </div>
 </div>
@@ -489,7 +515,7 @@
             <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
           </div>
           <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
-          <div class="icon-btn" onclick="openChat('${post.user_id}', '${user.username}', '${user.avatar_url}')"><i class="fa-regular fa-paper-plane"></i></div>
+          <div class="icon-btn ml-auto" onclick="sharePost('${post.id}', \`${escapeHtml(post.caption)}\`)"><i class="fa-regular fa-paper-plane"></i></div>
         </div>
         <div class="caption-box"><span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>${escapeHtml(post.caption)}</div>
       </div>
@@ -543,7 +569,12 @@
 
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const isMe = userId === currentUser.id;
-    const btn = isMe ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : `<div class="flex gap-2"><button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button><button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button></div>`;
+    const btn = isMe ? 
+      `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : 
+      `<div class="flex gap-2">
+         <button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>
+         <button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button>
+       </div>`;
 
     main.innerHTML = `
       <div id="view-profile-active" class="hidden"></div>
@@ -561,52 +592,6 @@
       </div>
       <div class="grid grid-cols-3 gap-1">${posts ? posts.map(p => `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(p.caption).substring(0,40)}...</div>`}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`).join('') : ''}</div>
     `;
-  }
-
-  // --- CHAT FUNCTIONS ---
-  async function openChat(userId, username, avatar) {
-    if(userId === currentUser.id) return;
-    activeChatId = userId;
-    document.getElementById('chat-modal').classList.remove('hidden');
-    document.getElementById('chat-username').innerText = username;
-    document.getElementById('chat-avatar').src = avatar || 'https://via.placeholder.com/40';
-    loadMessages();
-    
-    if(chatSub) chatSub.unsubscribe();
-    chatSub = sb.channel('messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-        if(payload.new.sender_id === activeChatId || payload.new.receiver_id === activeChatId) loadMessages();
-      }).subscribe();
-  }
-
-  async function loadMessages() {
-    const { data: msgs } = await sb.from('messages')
-      .select('*')
-      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`)
-      .order('created_at', { ascending: true });
-
-    const container = document.getElementById('chat-messages');
-    container.innerHTML = '';
-    msgs?.forEach(m => {
-      const isMine = m.sender_id === currentUser.id;
-      container.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">${escapeHtml(m.text)}</div>`);
-    });
-    container.scrollTop = container.scrollHeight;
-  }
-
-  async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if(!text || !activeChatId) return;
-    input.value = '';
-    const { error } = await sb.from('messages').insert([{ sender_id: currentUser.id, receiver_id: activeChatId, text }]);
-    if(!error) loadMessages();
-  }
-
-  function closeChat() {
-    document.getElementById('chat-modal').classList.add('hidden');
-    if(chatSub) chatSub.unsubscribe();
-    activeChatId = null;
   }
 
   async function toggleFollow(targetId) {
@@ -714,13 +699,150 @@
     await sb.from('profiles').update({ avatar_url:data.publicUrl }).eq('id',currentUser.id); 
   }
 
+  /* --- FUNZIONI CHAT & INBOX --- */
+
+  // Controllo notifiche in realtime
+  async function checkNotifications() {
+    const { count } = await sb.from('messages').select('*', { count: 'exact', head: true })
+      .eq('receiver_id', currentUser.id)
+      .eq('is_read', false);
+    
+    const dot = document.getElementById('global-gold-dot');
+    if (count && count > 0) dot.style.display = 'block';
+    else dot.style.display = 'none';
+  }
+
+  async function openInboxModal() {
+    document.getElementById('inbox-modal').classList.remove('hidden');
+    const container = document.getElementById('inbox-list');
+    container.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+    // Recupero tutti i messaggi dove sono coinvolto
+    const { data: msgs } = await sb.from('messages').select('*')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', { ascending: false });
+
+    if (!msgs || msgs.length === 0) {
+      container.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessun messaggio.</p>';
+      return;
+    }
+
+    // Trovo utenti unici
+    const uniqueUsers = new Set();
+    const previews = [];
+
+    for (const m of msgs) {
+      const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+      if (!uniqueUsers.has(otherId)) {
+        uniqueUsers.add(otherId);
+        previews.push({ msg: m, otherId });
+      }
+    }
+
+    container.innerHTML = '';
+    
+    for (const item of previews) {
+      const { data: u } = await sb.from('profiles').select('*').eq('id', item.otherId).single();
+      const isUnread = (item.msg.receiver_id === currentUser.id && !item.msg.is_read);
+      const dotHtml = isUnread ? `<div class="unread-indicator"></div>` : '';
+
+      const html = `
+        <div class="inbox-item" onclick="closeModal('inbox-modal'); openChat('${u.id}', '${u.username}', '${u.avatar_url}')">
+          <img src="${u.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]">
+          <div class="flex-1 overflow-hidden">
+            <div class="font-bold text-white text-sm">${u.username}</div>
+            <div class="text-gray-400 text-xs truncate">${item.msg.sender_id === currentUser.id ? 'Tu: ' : ''}${escapeHtml(item.msg.content)}</div>
+          </div>
+          ${dotHtml}
+        </div>`;
+      container.insertAdjacentHTML('beforeend', html);
+    }
+  }
+
+  async function openChat(userId, username, avatar) {
+    if (userId === currentUser.id) return;
+    activeChatId = userId;
+    
+    document.getElementById('chat-modal').classList.remove('hidden');
+    document.getElementById('chat-header-name').innerText = username;
+    document.getElementById('chat-header-avatar').src = avatar || 'https://via.placeholder.com/40';
+    
+    await loadMessages();
+    await markAsRead(userId);
+
+    // Iscrizione Realtime
+    if (chatSub) chatSub.unsubscribe();
+    chatSub = sb.channel('chat-room')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        if ((payload.new.sender_id === activeChatId && payload.new.receiver_id === currentUser.id) ||
+            (payload.new.sender_id === currentUser.id && payload.new.receiver_id === activeChatId)) {
+          loadMessages();
+          if (payload.new.receiver_id === currentUser.id) markAsRead(activeChatId);
+        }
+      }).subscribe();
+  }
+
+  async function loadMessages() {
+    const { data: msgs } = await sb.from('messages').select('*')
+      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`)
+      .order('created_at', { ascending: true });
+
+    const box = document.getElementById('chat-messages');
+    box.innerHTML = '';
+    msgs?.forEach(m => {
+      const isMine = m.sender_id === currentUser.id;
+      box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">${escapeHtml(m.content)}</div>`);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !activeChatId) return;
+    input.value = '';
+    const { error } = await sb.from('messages').insert([{ sender_id: currentUser.id, receiver_id: activeChatId, content: text }]);
+    if (!error) loadMessages();
+  }
+
+  async function markAsRead(senderId) {
+    await sb.from('messages').update({ is_read: true })
+      .eq('sender_id', senderId)
+      .eq('receiver_id', currentUser.id);
+    checkNotifications(); // Aggiorna pallino globale
+  }
+
+  function closeChat() {
+    document.getElementById('chat-modal').classList.add('hidden');
+    activeChatId = null;
+    if (chatSub) chatSub.unsubscribe();
+    checkNotifications();
+  }
+
+  // --- STARTUP MODIFICATO ---
+  function enterApp(u) { 
+    currentUser=u; 
+    document.getElementById('auth-container').style.transform = "translateY(-100vh)"; 
+    setTimeout(()=>{ 
+      document.getElementById('auth-container').classList.add('hidden'); 
+      document.getElementById('app-interface').classList.remove('hidden'); 
+      renderFeedView(); 
+      checkNotifications(); // Controllo notifiche all'avvio
+      
+      // Ascolto globale per notifiche
+      sb.channel('global-notif').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        if(payload.new.receiver_id === currentUser.id) checkNotifications();
+      }).subscribe();
+
+    },600); 
+  }
+
   function mess(t,e){const b=document.getElementById('msg-box');b.innerText=t;b.classList.remove('hidden');b.style.borderColor=e?'red':'green';b.style.color=e?'red':'green';}
   function vaiA(m){ document.getElementById('login-form').classList.toggle('hidden',m==='signup'); document.getElementById('signup-form').classList.toggle('hidden',m==='login'); }
   function escapeHtml(t) { return t?t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"):""; }
   async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
   async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
   async function logout() { await sb.auth.signOut(); location.reload(); }
-  function enterApp(u) { currentUser=u; document.getElementById('auth-container').style.transform = "translateY(-100vh)"; document.getElementById('sidebar-profile-link').onclick = () => openUserProfile(u.id); setTimeout(()=>{ document.getElementById('auth-container').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); renderFeedView(); },600); }
 </script>
 </body>
 </html>
