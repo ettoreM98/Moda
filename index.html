@@ -38,7 +38,7 @@
     ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
     .hidden { display: none !important; }
 
-    /* --- SIDEBAR --- */
+    /* --- SIDEBAR ICONE --- */
     .app-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
 
     .sidebar { 
@@ -233,7 +233,7 @@
       <div id="detail-comments" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
       <div class="p-4 border-t border-gray-700 bg-slate-900">
         <div class="flex gap-4 text-2xl mb-3">
-          <div id="detail-like-btn-wrapper" class="cursor-pointer icon-btn"><i class="fa-regular fa-heart"></i></div>
+          <div id="detail-like-btn-wrapper" class="cursor-pointer icon-btn"></div>
           <i class="fa-regular fa-comment text-white"></i>
         </div>
         <div class="font-bold text-sm mb-3 text-white"><span id="detail-likes-count">0</span> Mi piace</div>
@@ -305,7 +305,6 @@
     const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
     const followingIds = follows ? follows.map(f => f.followed_id) : [];
 
-    // Se non segui nessuno, mostra empty state
     if (followingIds.length === 0) {
       return main.innerHTML = `<div class="empty-feed-box"><i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i><h2 class="text-xl font-bold mb-2">Home Vuota</h2><p class="text-gray-400 mb-6">Non segui ancora nessuno.</p><button onclick="openSearchModal()" class="btn-gold">Cerca Persone</button></div>`;
     }
@@ -317,7 +316,6 @@
     }
 
     main.innerHTML = '';
-    // Usa for...of per aspettare correttamente le chiamate asincrone (Likestatus)
     for (const post of posts) {
       const counts = await getPostCounts(post.id);
       const likedByMe = await isLikedByMe(post.id);
@@ -329,22 +327,21 @@
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
     
-    const iconClass = liked ? 'fa-solid fa-heart text-[#ef4444]' : 'fa-regular fa-heart';
-    
-    // Tasto delete solo se è mio
-    const deleteIcon = (post.user_id === currentUser.id) 
-      ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
+    // Costruzione HTML Icona
+    const heartHTML = liked 
+      ? '<i class="fa-solid fa-heart text-[#ef4444]"></i>' 
+      : '<i class="fa-regular fa-heart"></i>';
+    const likedState = liked ? 'true' : 'false';
 
     return `
       <div class="post-card">
         <div class="post-header">
           <div class="user-badge" onclick="openUserProfile('${post.user_id}')"><img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar"><div class="user-meta"><span class="username">${user.username}</span><span class="post-date">${dateStr}</span></div></div>
-          ${deleteIcon}
         </div>
         ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="action-bar">
-          <div class="icon-btn" onclick="toggleLike('${post.id}', this)">
-            <i class="${iconClass}"></i>
+          <div class="icon-btn" onclick="toggleLike('${post.id}', this)" data-liked="${likedState}">
+            ${heartHTML}
             <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
           </div>
           <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
@@ -355,46 +352,52 @@
     `;
   }
 
-  // --- NEW ROBUST LIKE LOGIC ---
+  // --- NEW ATOMIC LIKE LOGIC ---
   async function toggleLike(postId, btnContainer) {
-    const icon = btnContainer.querySelector('i');
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
     let currentCount = parseInt(countSpan.innerText);
     
-    // 1. Determina stato ATTUALE visivo
-    const wasLiked = icon.classList.contains('fa-solid');
+    // Leggi stato attuale
+    const wasLiked = btnContainer.getAttribute('data-liked') === 'true';
 
-    // 2. UI Ottimistica (Aggiorna subito)
+    // 1. UI OTTIMISTICA: Aggiorna subito, sostituisci HTML
     if (wasLiked) {
-      icon.className = 'fa-regular fa-heart';
+      // Tolgo il like
+      btnContainer.setAttribute('data-liked', 'false');
+      btnContainer.querySelector('i').remove(); 
+      btnContainer.insertAdjacentHTML('afterbegin', '<i class="fa-regular fa-heart"></i>');
       countSpan.innerText = Math.max(0, currentCount - 1);
     } else {
-      icon.className = 'fa-solid fa-heart text-[#ef4444]';
+      // Metto il like
+      btnContainer.setAttribute('data-liked', 'true');
+      btnContainer.querySelector('i').remove();
+      btnContainer.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-heart text-[#ef4444]"></i>');
       countSpan.innerText = currentCount + 1;
     }
 
-    // 3. Chiamata DB con Rollback
+    // 2. DB CALL
     let error = null;
     if (wasLiked) {
-      // Stavo mettendo like, ora tolgo
       const res = await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
       error = res.error;
     } else {
-      // Stavo togliendo like, ora metto
       const res = await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-      // Ignora errore duplicati (significa che era già lì, quindi UI ora è corretta)
       if (res.error && res.error.code !== '23505') error = res.error; 
     }
 
-    // 4. Rollback se errore
+    // 3. ROLLBACK SE ERRORE
     if (error) {
       console.error("Like Error", error);
       // Revert UI
-      if (wasLiked) {
-        icon.className = 'fa-solid fa-heart text-[#ef4444]';
+      if (wasLiked) { // Stavo togliendo, rimetto
+        btnContainer.setAttribute('data-liked', 'true');
+        btnContainer.querySelector('i').remove();
+        btnContainer.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-heart text-[#ef4444]"></i>');
         countSpan.innerText = currentCount; 
-      } else {
-        icon.className = 'fa-regular fa-heart';
+      } else { // Stavo mettendo, tolgo
+        btnContainer.setAttribute('data-liked', 'false');
+        btnContainer.querySelector('i').remove();
+        btnContainer.insertAdjacentHTML('afterbegin', '<i class="fa-regular fa-heart"></i>');
         countSpan.innerText = currentCount;
       }
       alert("Errore di connessione. Riprova.");
@@ -470,32 +473,32 @@
 
     const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
     
-    // Immagine
     const imgEl = document.getElementById('detail-img'); const noImgEl = document.getElementById('detail-noimg');
     if(post.image_url) { imgEl.src = post.image_url; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden'); } else { imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden'); }
 
-    // User Info
     const u = post.profiles; 
     document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32'; 
     document.getElementById('detail-username').innerText = u.username; 
     document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
 
-    // Tasto delete nella modale
+    // Tasto delete nella modale (Solo per i propri post)
     if (post.user_id === currentUser.id) {
         document.getElementById('detail-delete-btn-container').innerHTML = 
             `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
     }
 
-    // Like logic modale (New Robust Logic)
+    // Like logic nella modale
     const liked = await isLikedByMe(postId);
     const likeWrapper = document.getElementById('detail-like-btn-wrapper');
-    const heartIcon = liked ? 'fa-solid fa-heart text-[#ef4444]' : 'fa-regular fa-heart text-white';
+    const likedState = liked ? 'true' : 'false';
+    const heartIcon = liked ? '<i class="fa-solid fa-heart text-[#ef4444]"></i>' : '<i class="fa-regular fa-heart"></i>';
     
-    likeWrapper.innerHTML = `<i class="${heartIcon}"></i>`;
+    likeWrapper.setAttribute('data-liked', likedState);
+    likeWrapper.innerHTML = heartIcon;
     
+    // Uso la stessa funzione toggleLike
     likeWrapper.onclick = () => toggleLike(postId, likeWrapper).then(() => refreshDetailCounts(postId));
 
-    // Comments
     const list = document.getElementById('detail-comments'); list.innerHTML = '';
     if(post.caption) { list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-4 p-2 bg-white/5 rounded-lg border border-white/5"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover"><div><span class="font-bold mr-2 text-[#d4af37]">${u.username}</span><span class="text-gray-300">${escapeHtml(post.caption)}</span></div></div>`); }
     const { data: coms } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
