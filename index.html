@@ -3,756 +3,992 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HAWENISHLAND — Official Society</title>
+    <title>HAWENISHLAND — Official Enterprise Society</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
         /* =========================================
-           ENTERPRISE CSS RESET & VARIABLES
+           SISTEMA DI DESIGN & VARIABILI
            ========================================= */
         :root {
-            --bg-body: #050505;
-            --bg-card: #0f0f0f;
-            --bg-input: #141414;
-            --border: #262626;
-            --text: #ffffff;
-            --text-muted: #888888;
-            --font-ui: 'Inter', sans-serif;
+            --bg-deep: #000000;
+            --bg-surface: #0a0a0a;
+            --bg-card: #111111;
+            --bg-input: #161616;
+            --border-primary: #262626;
+            --text-white: #ffffff;
+            --text-dim: #8e8e8e;
+            --accent-red: #ff3b30;
+            --font-main: 'Inter', sans-serif;
             --font-brand: 'Playfair Display', serif;
-            --header-h: 70px;
+            --nav-h: 70px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            margin: 0; padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background-color: var(--bg-body); color: var(--text);
-            font-family: var(--font-ui); margin: 0; padding: 0;
-            height: 100vh; overflow: hidden;
+            background-color: var(--bg-deep);
+            color: var(--text-white);
+            font-family: var(--font-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Gestito dallo scroll interno */
         }
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        /* Scrollbar Moderna */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
         .serif { font-family: var(--font-brand); }
         .hidden { display: none !important; }
 
         /* =========================================
-           1. AUTH LAYER (SLIDESHOW & FORMS)
+           1. AUTHENTICATION & SLIDESHOW (RESTORED)
            ========================================= */
-        #auth-overlay {
+        #auth-gate {
             position: fixed; inset: 0; z-index: 9999;
             background: #000; display: flex; align-items: center; justify-content: center;
         }
 
-        .auth-slideshow {
+        .auth-bg-container {
             position: absolute; inset: 0; z-index: 1; overflow: hidden;
         }
+
         .auth-slide {
             position: absolute; inset: 0; width: 100%; height: 100%;
             object-fit: cover; opacity: 0; transform: scale(1.1);
-            transition: opacity 2s ease-in-out, transform 8s ease-out;
-            filter: brightness(0.4) grayscale(20%);
+            transition: opacity 2s ease-in-out, transform 10s linear;
+            filter: brightness(0.4) grayscale(30%);
         }
         .auth-slide.active { opacity: 1; transform: scale(1); }
 
-        .auth-modal {
-            position: relative; z-index: 10; width: 90%; max-width: 420px;
-            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1); padding: 45px;
-            text-align: center; border-radius: 4px; box-shadow: 0 40px 100px rgba(0,0,0,1);
+        .auth-panel {
+            position: relative; z-index: 10; width: 90%; max-width: 440px;
+            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px 40px; border-radius: 2px; text-align: center;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
         }
 
-        .brand-lg { font-size: 3.8rem; font-style: italic; line-height: 1; margin-bottom: 10px; }
-        .tagline { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 4px; color: var(--text-muted); margin-bottom: 40px; }
+        .auth-logo { font-size: 3.5rem; font-style: italic; line-height: 1; margin-bottom: 8px; color: #fff; }
+        .auth-tag { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 4px; color: var(--text-dim); margin-bottom: 40px; }
 
-        .input-box { margin-bottom: 20px; text-align: left; }
-        .lbl-sm { font-size: 0.7rem; text-transform: uppercase; color: #666; display: block; margin-bottom: 6px; }
-        .inp-auth {
-            width: 100%; background: var(--bg-input); border: 1px solid #222;
-            padding: 15px; color: #fff; border-radius: 4px; transition: 0.3s;
-        }
-        .inp-auth:focus { border-color: #666; background: #000; }
-
-        .btn-gold {
-            width: 100%; background: #fff; color: #000; padding: 16px;
-            font-weight: 700; text-transform: uppercase; border: none; cursor: pointer;
-            border-radius: 4px; transition: 0.3s; margin-top: 15px;
-        }
-        .btn-gold:hover { background: #d0d0d0; }
-
-        #auth-status { margin-bottom: 20px; padding: 12px; font-size: 0.85rem; border-radius: 4px; display: none; }
-        .err { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #7f1d1d; }
-        .ok { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid #064e3b; }
-
-        /* =========================================
-           2. MAIN APP FRAMEWORK
-           ========================================= */
-        #app-root { display: none; width: 100%; height: 100%; position: relative; }
-
-        /* Navigation Header */
-        .app-nav {
-            position: fixed; top: 0; left: 0; width: 100%; height: var(--header-h);
-            background: rgba(5, 5, 5, 0.98); backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border); display: flex;
-            align-items: center; justify-content: space-between; padding: 0 30px; z-index: 500;
-        }
-        .logo-nav { font-size: 1.5rem; font-style: italic; font-weight: 700; cursor: pointer; }
-
-        /* Sidebar System */
-        .sb-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 600; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .sb-overlay.active { opacity: 1; pointer-events: auto; }
-
-        .sb-drawer {
-            position: fixed; top: 0; left: 0; height: 100%; width: 320px;
-            background: #000; border-right: 1px solid #1a1a1a; z-index: 700;
-            transform: translateX(-100%); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex; flex-direction: column; padding: 40px 30px;
-        }
-        .sb-drawer.active { transform: translateX(0); }
-
-        .nav-link {
-            display: flex; align-items: center; gap: 20px; padding: 20px 15px;
-            color: #999; font-size: 1.1rem; font-weight: 500; cursor: pointer;
-            border-radius: 8px; transition: 0.3s; margin-bottom: 10px;
-        }
-        .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); transform: translateX(10px); }
-        .nav-link i { width: 25px; text-align: center; }
-        .nav-link.exit { margin-top: auto; color: #ef4444; }
-
-        /* Viewport Engine */
-        .main-shell {
-            width: 100%; height: 100%; padding-top: var(--header-h);
-            overflow-y: auto; background: var(--bg-body);
-        }
-        .view-content { max-width: 720px; margin: 0 auto; padding: 40px 20px 150px; }
-
-        /* =========================================
-           3. POST & CARD STYLING
-           ========================================= */
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 40px; overflow: hidden; }
-        .card-top { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
-        .card-user { display: flex; align-items: center; gap: 14px; cursor: pointer; }
-        .p-av-sm { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #222; }
+        .auth-input-group { margin-bottom: 18px; text-align: left; }
+        .auth-label { font-size: 0.65rem; text-transform: uppercase; color: #555; display: block; margin-bottom: 6px; letter-spacing: 1px; }
         
-        .card-img-box { width: 100%; background: #000; display: flex; align-items: center; justify-content: center; min-height: 400px; }
-        .card-img { width: 100%; display: block; object-fit: cover; max-height: 850px; }
+        .auth-field {
+            width: 100%; background: var(--bg-input); border: 1px solid #222;
+            padding: 15px; color: #fff; font-size: 1rem; transition: 0.3s;
+        }
+        .auth-field:focus { border-color: #666; background: #000; }
 
-        .card-actions { padding: 16px 20px 8px; display: flex; gap: 25px; }
-        .btn-icon { font-size: 1.7rem; cursor: pointer; transition: 0.2s; color: #fff; }
-        .btn-icon:hover { opacity: 0.6; transform: scale(1.1); }
-        .btn-icon.liked { color: #ef4444; }
+        .btn-luxury {
+            width: 100%; background: #fff; color: #000; padding: 18px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+            border: none; cursor: pointer; transition: 0.3s; margin-top: 15px;
+        }
+        .btn-luxury:hover { background: #d0d0d0; }
 
-        .card-info { padding: 0 20px 20px; font-size: 1rem; line-height: 1.6; }
-        .num-likes { font-weight: 700; margin-bottom: 8px; display: block; }
-        .caption { color: #eee; }
-        .author-inline { font-weight: 700; margin-right: 8px; cursor: pointer; }
+        #auth-feedback { margin-bottom: 25px; padding: 14px; font-size: 0.85rem; display: none; text-align: left; }
+        .err-msg { background: rgba(255, 59, 48, 0.2); color: #ff9f0a; border: 1px solid #641e16; }
+        .ok-msg { background: rgba(48, 209, 88, 0.2); color: #8ef99d; border: 1px solid #145a32; }
 
         /* =========================================
-           4. PROFILE STYLING (FIXED RATIO)
+           2. APP CORE INTERFACE
            ========================================= */
-        .p-hero { text-align: center; margin-bottom: 50px; }
-        .p-av-box { 
-            width: 140px; height: 140px; margin: 0 auto 25px; position: relative; 
-            border-radius: 50%; border: 4px solid #1a1a1a; padding: 4px; overflow: hidden;
+        #app-shell { display: none; width: 100%; height: 100%; position: relative; }
+
+        /* Navigation */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: var(--nav-h);
+            background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-primary); display: flex;
+            align-items: center; justify-content: space-between; padding: 0 30px; z-index: 1000;
         }
-        .p-av-xl { 
-            width: 100%; height: 100%; border-radius: 50%; 
-            object-fit: cover; /* Garantisce che la foto non si tagli o distorca */
-            cursor: pointer; transition: 0.3s; background: #222;
+        .nav-brand { font-size: 1.6rem; font-style: italic; font-weight: 700; cursor: pointer; }
+
+        /* Dynamic Sidebar */
+        .sidebar-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1100; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .sidebar-mask.visible { opacity: 1; pointer-events: auto; }
+
+        .sidebar-menu {
+            position: fixed; top: 0; left: 0; height: 100%; width: 320px;
+            background: #050505; border-right: 1px solid #1a1a1a; z-index: 1200;
+            transform: translateX(-100%); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column; padding: 50px 30px;
         }
-        .p-name { font-size: 2.6rem; font-weight: 700; margin: 0; letter-spacing: -1px; }
-        .p-fullname { color: #777; font-weight: 600; font-size: 1rem; margin-top: 10px; }
+        .sidebar-menu.visible { transform: translateX(0); }
 
-        .p-stats-bar { display: flex; justify-content: center; gap: 50px; margin: 40px 0; border-y: 1px solid #1a1a1a; padding: 30px 0; }
-        .s-val { font-size: 1.5rem; font-weight: 700; display: block; color: #fff; }
-        .s-lbl { font-size: 0.75rem; text-transform: uppercase; color: #555; letter-spacing: 2px; }
+        .side-link {
+            display: flex; align-items: center; gap: 22px; padding: 20px 15px;
+            color: #888; font-size: 1.15rem; font-weight: 400; cursor: pointer;
+            transition: 0.3s; margin-bottom: 10px; border-radius: 8px;
+        }
+        .side-link:hover { color: #fff; background: rgba(255,255,255,0.05); padding-left: 25px; }
+        .side-link i { width: 28px; text-align: center; }
+        .side-link.logout { margin-top: auto; color: var(--accent-red); opacity: 0.8; }
+        .side-link.logout:hover { background: rgba(255, 59, 48, 0.1); opacity: 1; }
 
-        .p-action-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 50px; }
-        .btn-ui { padding: 12px 40px; border-radius: 6px; font-weight: 700; border: 1px solid #333; background: transparent; color: #fff; cursor: pointer; transition: 0.3s; }
-        .btn-ui:hover { background: #fff; color: #000; border-color: #fff; }
-        .btn-ui.fill { background: #fff; color: #000; }
-
-        /* SETTINGS & SECURITY */
-        .p-settings { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 15px; padding: 35px; margin-top: 30px; text-align: left; }
-        .p-settings h3 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #222; padding-bottom: 15px; }
-        .sec-row { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #111; }
+        /* Main Viewport */
+        .viewport-scroller {
+            width: 100%; height: 100%; padding-top: var(--nav-h);
+            overflow-y: auto; background: var(--bg-deep);
+        }
+        .main-container { max-width: 700px; margin: 0 auto; padding: 40px 15px 150px; }
 
         /* =========================================
-           5. MODALS ENGINE
+           3. POST CARDS (PIXEL PERFECT)
            ========================================= */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.96);
-            backdrop-filter: blur(15px); z-index: 2000;
+        .post-card { background: var(--bg-surface); border: 1px solid var(--border-primary); border-radius: 0; margin-bottom: 50px; overflow: hidden; }
+        .post-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
+        .post-user-info { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+        
+        .avatar-circle-sm { 
+            width: 44px; height: 44px; border-radius: 50%; 
+            object-fit: cover; border: 1px solid #222; 
+            background: #111; aspect-ratio: 1/1; 
+        }
+        .post-user-name { font-weight: 700; font-size: 0.95rem; }
+
+        .post-image-box { width: 100%; background: #000; display: flex; align-items: center; justify-content: center; min-height: 400px; }
+        .post-image-main { width: 100%; display: block; object-fit: cover; max-height: 850px; }
+
+        .post-action-row { padding: 18px 20px 10px; display: flex; gap: 28px; }
+        .post-btn { font-size: 1.7rem; cursor: pointer; transition: 0.2s; color: #fff; }
+        .post-btn:hover { transform: scale(1.1); opacity: 0.8; }
+        .post-btn.liked { color: var(--accent-red); animation: pop 0.3s ease; }
+        @keyframes pop { 0% {transform:scale(1);} 50% {transform:scale(1.2);} 100% {transform:scale(1);} }
+
+        .post-meta-area { padding: 0 20px 22px; font-size: 1rem; line-height: 1.6; }
+        .post-likes-total { font-weight: 700; margin-bottom: 8px; display: block; }
+        .post-caption-box { color: #eee; }
+        .post-author-label { font-weight: 700; margin-right: 10px; cursor: pointer; }
+        .post-comments-link { color: var(--text-dim); font-size: 0.9rem; margin-top: 10px; cursor: pointer; display: block; }
+
+        /* =========================================
+           4. PROFILE DESIGN (IPAD OPTIMIZED)
+           ========================================= */
+        .profile-top { text-align: center; margin-bottom: 60px; }
+        
+        .btn-nav-back {
+            text-align: left; padding: 15px 0; color: var(--text-dim);
+            cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 10px;
+        }
+        .btn-nav-back:hover { color: #fff; }
+
+        .profile-avatar-container {
+            width: 140px; height: 140px; margin: 0 auto 30px; position: relative;
+            border-radius: 50%; border: 2px solid #333; padding: 4px; background: #000;
+        }
+        .profile-img-xl {
+            width: 100%; height: 100%; border-radius: 50%;
+            object-fit: cover; /* ESSENZIALE: Evita tagli */
+            cursor: pointer; transition: 0.3s; aspect-ratio: 1/1;
+        }
+
+        .profile-name-lg { font-size: 2.8rem; font-weight: 700; margin: 0; letter-spacing: -1.5px; }
+        .profile-full-name { color: #777; font-weight: 600; font-size: 1.1rem; margin-top: 8px; }
+
+        .profile-stats-grid { 
+            display: flex; justify-content: center; gap: 60px; 
+            margin: 45px 0; border-top: 1px solid #1a1a1a; 
+            border-bottom: 1px solid #1a1a1a; padding: 35px 0; 
+        }
+        .stat-click { cursor: pointer; text-align: center; }
+        .stat-value { font-size: 1.6rem; font-weight: 700; display: block; color: #fff; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; color: #555; letter-spacing: 2.5px; margin-top: 4px; }
+
+        .profile-btn-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 60px; }
+        .btn-fashion { padding: 12px 45px; font-weight: 700; border: 1px solid #333; background: transparent; color: #fff; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
+        .btn-fashion:hover { background: #fff; color: #000; border-color: #fff; }
+        .btn-fashion.active { background: #fff; color: #000; border-color: #fff; }
+
+        /* Dashboard & Security Card */
+        .settings-card { background: #080808; border: 1px solid #1a1a1a; border-radius: 0; padding: 40px; margin-top: 40px; text-align: left; }
+        .settings-card h3 { font-size: 1.3rem; margin-bottom: 35px; border-bottom: 1px solid #222; padding-bottom: 15px; font-weight: 700; }
+        
+        .security-row { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 25px 0; border-bottom: 1px solid #111; 
+        }
+        .security-info p:first-child { font-weight: 700; font-size: 1rem; }
+        .security-info p:last-child { color: #555; font-size: 0.85rem; }
+
+        /* =========================================
+           5. MODALS & OVERLAYS
+           ========================================= */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.98);
+            backdrop-filter: blur(20px); z-index: 3000;
             display: none; align-items: center; justify-content: center;
         }
-        .modal.active { display: flex; }
+        .modal-overlay.active { display: flex; }
 
-        .modal-inner {
-            background: #080808; border: 1px solid #222; border-radius: 15px;
-            width: 95%; max-width: 550px; max-height: 85vh;
-            display: flex; flex-direction: column; box-shadow: 0 50px 150px rgba(0,0,0,1);
+        .modal-window {
+            background: #050505; border: 1px solid #222; border-radius: 0;
+            width: 100%; max-width: 600px; height: 100%; 
+            display: flex; flex-direction: column; position: relative;
+        }
+        @media (min-width: 768px) { .modal-window { height: auto; max-height: 85vh; border-radius: 8px; } }
+
+        .modal-top-bar {
+            padding: 22px 30px; border-bottom: 1px solid #1a1a1a;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 700; font-size: 1.2rem;
         }
 
-        .m-head { padding: 20px 25px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
-        .m-body { flex: 1; overflow-y: auto; padding: 20px; }
+        .modal-content-area { flex: 1; overflow-y: auto; padding: 25px; }
 
-        .upload-zone { border: 2px dashed #222; border-radius: 12px; padding: 60px 20px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .upload-zone:hover { border-color: #fff; background: #111; }
+        .comment-item-row { display: flex; gap: 16px; margin-bottom: 22px; }
+        .comment-user-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+        .comment-body { flex: 1; }
+        .comment-user-name { font-weight: 700; margin-right: 8px; cursor: pointer; font-size: 0.9rem; }
+        .comment-text { color: #ccc; font-size: 0.95rem; line-height: 1.4; }
 
-        .comm-input-zone { padding: 25px; border-top: 1px solid #1a1a1a; display: flex; gap: 15px; background: #0a0a0a; }
-        .comm-field { flex: 1; background: #1a1a1a; border: none; padding: 15px 20px; color: #fff; border-radius: 40px; }
+        .comment-input-footer { padding: 25px 30px; border-top: 1px solid #1a1a1a; display: flex; gap: 15px; background: #080808; }
+        .comment-input-field { flex: 1; background: #141414; border: none; padding: 15px 25px; color: #fff; border-radius: 40px; font-size: 1rem; }
+
+        .search-result-row {
+            display: flex; align-items: center; gap: 18px;
+            padding: 18px 30px; border-bottom: 1px solid #111;
+            cursor: pointer; transition: 0.2s;
+        }
+        .search-result-row:hover { background: #0c0c0c; }
     </style>
 </head>
 
 <body>
 
-    <div id="auth-overlay">
-        <div class="auth-slideshow" id="slideshow-container"></div>
-        
-        <div class="auth-modal">
-            <h1 class="serif brand-lg">Hawenish</h1>
-            <p class="tagline">Official Society</p>
+    <div id="auth-gate">
+        <div class="auth-bg-container" id="slideshow-engine">
+            </div>
 
-            <div id="auth-status"></div>
+        <div class="auth-panel">
+            <h1 class="serif auth-logo">Hawenish</h1>
+            <p class="auth-tag">Official Society Membership</p>
 
-            <div id="view-login">
-                <div class="input-box">
-                    <span class="lbl-sm">Email</span>
-                    <input type="email" id="log-email" class="inp-auth" placeholder="iltuonome@email.it">
+            <div id="auth-feedback"></div>
+
+            <div id="auth-view-login">
+                <div class="auth-input-group">
+                    <span class="auth-label">Indirizzo Email</span>
+                    <input type="email" id="input-log-email" class="auth-field" placeholder="esempio@email.it">
                 </div>
-                <div class="input-box">
-                    <span class="lbl-sm">Password</span>
-                    <input type="password" id="log-pass" class="inp-auth" placeholder="••••••••">
+                <div class="auth-input-group">
+                    <span class="auth-label">Password Segreta</span>
+                    <input type="password" id="input-log-pass" class="auth-field" placeholder="••••••••">
                 </div>
-                <button class="btn-gold" onclick="apiLogin()">Entra nel Club</button>
-                <div class="flex justify-between mt-8 font-medium text-xs text-gray-500">
-                    <span class="cursor-pointer hover:text-white" onclick="authSwitch('reg')">Registrati</span>
-                    <span class="cursor-pointer hover:text-white" onclick="apiRecoverPassword()">Perso Password?</span>
+                <button class="btn-luxury" onclick="handleApiLogin()">Entra nel Club</button>
+                
+                <div class="flex justify-between mt-10 text-[11px] font-bold uppercase tracking-widest text-zinc-500">
+                    <span class="cursor-pointer hover:text-white transition" onclick="toggleAuthMode('signup')">Iscriviti</span>
+                    <span class="cursor-pointer hover:text-white transition" onclick="handleApiPasswordReset()">Password Persa?</span>
                 </div>
             </div>
 
-            <div id="view-signup" class="hidden">
-                <div class="input-box">
-                    <span class="lbl-sm">Username</span>
-                    <input type="text" id="reg-user" class="inp-auth" placeholder="@username">
+            <div id="auth-view-signup" class="hidden">
+                <div class="auth-input-group">
+                    <span class="auth-label">Nome Utente</span>
+                    <input type="text" id="input-reg-user" class="auth-field" placeholder="@username">
                 </div>
-                <div class="input-box">
-                    <span class="lbl-sm">Nome Completo</span>
-                    <input type="text" id="reg-name" class="inp-auth" placeholder="Mario Rossi">
+                <div class="auth-input-group">
+                    <span class="auth-label">Nome Completo</span>
+                    <input type="text" id="input-reg-name" class="auth-field" placeholder="Mario Rossi">
                 </div>
-                <div class="input-box">
-                    <span class="lbl-sm">Email</span>
-                    <input type="email" id="reg-email" class="inp-auth" placeholder="nome@email.it">
+                <div class="auth-input-group">
+                    <span class="auth-label">Email di Contatto</span>
+                    <input type="email" id="input-reg-email" class="auth-field" placeholder="nome@mail.com">
                 </div>
-                <div class="input-box">
-                    <span class="lbl-sm">Password</span>
-                    <input type="password" id="reg-pass" class="inp-auth" placeholder="Min. 8 caratteri">
+                <div class="auth-input-group">
+                    <span class="auth-label">Crea Password</span>
+                    <input type="password" id="input-reg-pass" class="auth-field" placeholder="Min. 8 caratteri">
                 </div>
-                <button class="btn-gold" onclick="apiSignup()">Crea Profilo</button>
-                <div class="mt-8 text-center font-medium text-xs text-gray-500">
-                    <span class="cursor-pointer hover:text-white" onclick="authSwitch('log')">Torna al Login</span>
+                <button class="btn-luxury" onclick="handleApiSignup()">Crea Profilo</button>
+                <div class="mt-10 text-center text-[11px] font-bold uppercase tracking-widest text-zinc-500">
+                    <span class="cursor-pointer hover:text-white transition" onclick="toggleAuthMode('login')">Hai già un account? Login</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="app-root">
+    <div id="app-shell">
         
-        <header class="app-nav">
-            <i class="fa-solid fa-bars-staggered text-xl cursor-pointer" onclick="uiSidebar(true)"></i>
-            <span class="serif logo-nav" onclick="uiView('feed')">Hawenishland</span>
-            <div class="flex items-center gap-8">
-                <i class="fa-solid fa-magnifying-glass text-xl cursor-pointer hover:text-gray-400" onclick="uiModal('modal-search')"></i>
-                <i class="fa-regular fa-square-plus text-2xl cursor-pointer hover:text-gray-400" onclick="uiModal('modal-create')"></i>
+        <nav class="navbar">
+            <i class="fa-solid fa-bars-staggered text-2xl cursor-pointer" onclick="toggleSidebarView(true)"></i>
+            <span class="serif nav-brand" onclick="navigateTo('feed')">Hawenishland</span>
+            <div class="flex items-center gap-10">
+                <i class="fa-solid fa-magnifying-glass text-xl cursor-pointer hover:opacity-50" onclick="toggleModalView('modal-search')"></i>
+                <i class="fa-regular fa-square-plus text-2xl cursor-pointer hover:opacity-50" onclick="toggleModalView('modal-create')"></i>
             </div>
-        </header>
+        </nav>
 
-        <div class="sb-overlay" id="overlay-ui" onclick="uiSidebar(false)"></div>
-        <aside class="sb-drawer" id="sidebar-ui">
-            <div class="mb-12 serif text-3xl italic font-bold px-4">Hawenishland</div>
-            <div class="nav-link" onclick="uiView('feed')"><i class="fa-solid fa-house"></i> Home Feed</div>
-            <div class="nav-link" onclick="uiModal('modal-search')"><i class="fa-solid fa-users"></i> Esplora Membri</div>
-            <div class="nav-link" onclick="uiModal('modal-create')"><i class="fa-regular fa-plus-square"></i> Nuovo Post</div>
-            <div class="nav-link" onclick="uiView('profile')"><i class="fa-regular fa-user-circle"></i> Mio Profilo</div>
+        <div class="sidebar-mask" id="ui-sidebar-mask" onclick="toggleSidebarView(false)"></div>
+        <aside class="sidebar-menu" id="ui-sidebar-drawer">
+            <div class="mb-16 serif text-4xl italic font-bold">Hawenish</div>
             
-            <div class="nav-link exit" onclick="apiLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Esci</div>
+            <div class="side-link" onclick="navigateTo('feed')">
+                <i class="fa-solid fa-house"></i> Home Feed
+            </div>
+            <div class="side-link" onclick="toggleModalView('modal-search')">
+                <i class="fa-solid fa-compass"></i> Scopri Membri
+            </div>
+            <div class="side-link" onclick="toggleModalView('modal-create')">
+                <i class="fa-regular fa-square-plus"></i> Crea Nuovo Post
+            </div>
+            <div class="side-link" onclick="navigateTo('profile')">
+                <i class="fa-regular fa-user-circle"></i> Il Mio Profilo
+            </div>
+            
+            <div class="side-link logout" onclick="handleApiLogout()">
+                <i class="fa-solid fa-power-off"></i> Disconnetti Account
+            </div>
         </aside>
 
-        <main class="main-shell" id="app-viewport">
+        <main class="viewport-scroller" id="ui-scroll-container">
             
-            <section id="page-feed" class="view-content">
-                <div id="feed-loader" class="text-center p-12 text-gray-700 hidden"><i class="fa-solid fa-spinner fa-spin fa-3x"></i></div>
-                <div id="feed-render"></div>
-            </section>
+            <div id="ui-view-feed" class="main-container">
+                <div id="ui-feed-status" class="text-center p-20 text-zinc-700 hidden">
+                    <i class="fa-solid fa-spinner fa-spin fa-3x"></i>
+                </div>
+                <div id="ui-feed-list">
+                    </div>
+            </div>
 
-            <section id="page-profile" class="view-content hidden">
-                <div class="p-hero">
-                    <div id="btn-back" class="hidden text-left mb-8 text-sm text-gray-500 cursor-pointer" onclick="uiView('feed')">
-                        <i class="fa-solid fa-chevron-left mr-2"></i> Torna alla Home
+            <div id="ui-view-profile" class="main-container hidden">
+                <div class="profile-top">
+                    <div id="ui-back-nav" class="btn-nav-back hidden" onclick="navigateTo('feed')">
+                        <i class="fa-solid fa-arrow-left"></i> Torna alla Home
                     </div>
 
-                    <div class="p-av-box">
-                        <img id="p-img" src="" class="p-av-xl" onclick="uiTriggerAvatar()">
-                        <input type="file" id="av-file" class="hidden" accept="image/*" onchange="apiAvatarUpload()">
+                    <div class="profile-avatar-container">
+                        <img id="ui-p-avatar" src="" class="profile-img-xl" onclick="triggerProfileImageUpload()">
+                        <input type="file" id="input-avatar-file" class="hidden" accept="image/*" onchange="handleApiAvatarUpload()">
                     </div>
                     
-                    <h1 id="p-user" class="p-name">@username</h1>
-                    <p id="p-realname" class="p-fullname">Andrea Raimondi</p>
+                    <h1 id="ui-p-username" class="profile-name-lg">@username</h1>
+                    <p id="ui-p-fullname" class="profile-full-name">Caricamento...</p>
 
-                    <div class="p-stats-bar">
-                        <div class="stat-item" onclick="apiShowFollowers('followers')">
-                            <span class="s-val" id="st-followers">0</span>
-                            <span class="s-lbl">Follower</span>
+                    <div class="profile-stats-grid">
+                        <div class="stat-click" onclick="fetchFollowerList('followers')">
+                            <span class="stat-value" id="ui-stat-followers">0</span>
+                            <span class="stat-label">Follower</span>
                         </div>
-                        <div class="stat-item" onclick="apiShowFollowers('following')">
-                            <span class="s-val" id="st-following">0</span>
-                            <span class="s-lbl">Seguiti</span>
+                        <div class="stat-click" onclick="fetchFollowerList('following')">
+                            <span class="stat-value" id="ui-stat-following">0</span>
+                            <span class="stat-label">Seguiti</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="s-val" id="st-posts">0</span>
-                            <span class="s-lbl">Post</span>
+                        <div class="stat-click">
+                            <span class="stat-value" id="ui-stat-posts">0</span>
+                            <span class="stat-label">Post</span>
                         </div>
                     </div>
 
-                    <div id="p-actions" class="p-action-row"></div>
+                    <div id="ui-profile-actions-area" class="profile-btn-row"></div>
 
-                    <div id="p-settings-box" class="p-settings hidden">
-                        <h3>Gestione Profilo</h3>
-                        <div class="mb-8">
-                            <span class="lbl-sm">Nome Visualizzato</span>
-                            <input id="upd-name" class="inp-auth mb-4">
-                            <span class="lbl-sm">Username Personale</span>
-                            <input id="upd-user" class="inp-auth mb-6">
-                            <button class="btn-gold py-3 text-sm" onclick="apiUpdateMetadata()">Applica Modifiche</button>
+                    <div id="ui-settings-panel" class="settings-card hidden">
+                        <h3>Impostazioni Profilo</h3>
+                        <div class="mb-10">
+                            <span class="auth-label">Nome Pubblico</span>
+                            <input id="input-upd-name" class="auth-field mb-6" placeholder="Nome">
+                            <span class="auth-label">Nome Utente (@)</span>
+                            <input id="input-upd-user" class="auth-field mb-10" placeholder="username">
+                            <button class="btn-luxury py-4 text-sm" onclick="handleApiMetadataUpdate()">Salva Modifiche</button>
                         </div>
 
-                        <div class="pt-8 border-t border-gray-900">
-                            <h3>Sicurezza & Accesso</h3>
-                            <div class="sec-row">
-                                <div><p class="font-bold text-sm">Email Account</p><p id="curr-email" class="text-xs text-gray-600">andrea@mail.it</p></div>
-                                <button class="text-blue-500 font-bold text-xs uppercase" onclick="apiInitEmailChange()">Modifica</button>
+                        <div class="pt-10 border-t border-zinc-900">
+                            <h3>Sicurezza Account</h3>
+                            <div class="security-row">
+                                <div class="security-info">
+                                    <p>Indirizzo Email</p>
+                                    <p id="ui-display-email">email@esempio.it</p>
+                                </div>
+                                <button class="text-blue-500 font-bold text-xs uppercase tracking-widest" onclick="handleApiEmailUpdate()">Modifica</button>
                             </div>
-                            <div class="sec-row">
-                                <div><p class="font-bold text-sm">Protezione Password</p><p class="text-xs text-gray-600">Verifica tramite link sicuro</p></div>
-                                <button class="text-red-500 font-bold text-xs uppercase" onclick="apiInitPasswordReset()">Reset via Email</button>
+                            <div class="security-row">
+                                <div class="security-info">
+                                    <p>Accesso & Password</p>
+                                    <p>Gestione link di ripristino</p>
+                                </div>
+                                <button class="text-red-500 font-bold text-xs uppercase tracking-widest" onclick="handleApiPasswordUpdate()">Reset via Email</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="p-posts-grid" class="mt-12 border-t border-gray-900 pt-12"></div>
-            </section>
+                <div id="ui-profile-posts-render" class="mt-8"></div>
+            </div>
+
         </main>
     </div>
 
-    <div id="modal-create" class="modal">
-        <div class="modal-inner">
-            <div class="m-head"><span>Nuova Creazione</span><i class="fa-solid fa-xmark cursor-pointer" onclick="uiCloseModal('modal-create')"></i></div>
-            <div class="p-8">
-                <textarea id="c-caption" class="inp-auth mb-6 resize-none" rows="4" placeholder="Cosa hai in mente?"></textarea>
-                <label class="upload-zone block">
-                    <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-600 mb-4"></i>
-                    <p class="text-sm text-gray-500">Trascina o clicca per caricare foto</p>
-                    <input type="file" id="c-file" class="hidden" accept="image/*">
+    <div id="modal-create" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-top-bar">
+                <span>Crea Nuova Ispirazione</span>
+                <i class="fa-solid fa-xmark cursor-pointer text-2xl" onclick="toggleModalView('modal-create', false)"></i>
+            </div>
+            <div class="modal-content-area">
+                <textarea id="input-create-caption" class="auth-field mb-8 resize-none" rows="5" placeholder="Di cosa tratta questo post?"></textarea>
+                
+                <label class="block border-2 border-dashed border-zinc-800 rounded-xl p-16 text-center cursor-pointer hover:border-zinc-500 hover:bg-zinc-900 transition mb-10">
+                    <i class="fa-solid fa-camera-retro text-5xl text-zinc-700 mb-4"></i>
+                    <p class="text-sm text-zinc-500 font-medium">Trascina o clicca per caricare un'immagine moda</p>
+                    <input type="file" id="input-create-file" class="hidden" accept="image/*">
                 </label>
-                <button class="btn-gold" onclick="apiPublish()">Pubblica Post</button>
+
+                <button onclick="handleApiPublishPost()" class="btn-luxury">Pubblica Post</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-search" class="modal">
-        <div class="modal-inner h-[70vh]">
-            <div class="m-head">
-                <div class="flex-1 mr-6 bg-black border border-gray-800 rounded-full px-5 flex items-center">
-                    <i class="fa-solid fa-magnifying-glass text-gray-600 mr-4"></i>
-                    <input id="s-input" class="bg-transparent border-none py-3 text-white w-full text-sm outline-none" placeholder="Cerca persone per nome o username..." onkeyup="apiHandleSearch()">
+    <div id="modal-search" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-top-bar p-3">
+                <div class="flex-1 mr-8 bg-zinc-900 rounded-full px-6 flex items-center border border-zinc-800 focus-within:border-zinc-500 transition">
+                    <i class="fa-solid fa-magnifying-glass text-zinc-500 mr-4"></i>
+                    <input id="input-search-field" class="bg-transparent border-none py-3 text-white w-full text-base outline-none" placeholder="Cerca persone..." onkeyup="handleApiUserSearch()">
                 </div>
-                <i class="fa-solid fa-xmark cursor-pointer" onclick="uiCloseModal('modal-search')"></i>
+                <i class="fa-solid fa-xmark cursor-pointer text-2xl px-4" onclick="toggleModalView('modal-search', false)"></i>
             </div>
-            <div id="s-results" class="m-body"></div>
-        </div>
-    </div>
-
-    <div id="modal-list" class="modal">
-        <div class="modal-inner h-[60vh]">
-            <div class="m-head"><span id="l-title" class="font-bold">Membri</span><i class="fa-solid fa-xmark cursor-pointer" onclick="uiCloseModal('modal-list')"></i></div>
-            <div id="l-results" class="m-body"></div>
-        </div>
-    </div>
-
-    <div id="modal-detail" class="modal">
-        <div class="modal-inner h-[90vh] max-w-[680px]">
-            <div class="m-head"><span>Dettagli Post</span><i class="fa-solid fa-xmark cursor-pointer" onclick="uiCloseModal('modal-detail')"></i></div>
-            <div class="m-body" id="d-scroll">
-                <div class="p-8 border-b border-gray-900 bg-[#070707] flex gap-5">
-                    <div class="font-bold text-sm" id="d-user-top"></div>
-                    <p class="text-sm text-gray-400" id="d-caption-top"></p>
+            <div id="ui-search-results-list" class="modal-content-area p-0">
                 </div>
-                <div id="d-comments" class="p-6"></div>
+        </div>
+    </div>
+
+    <div id="modal-list" class="modal-overlay">
+        <div class="modal-window max-w-[450px]">
+            <div class="modal-top-bar">
+                <span id="ui-list-title">Club Members</span>
+                <i class="fa-solid fa-xmark cursor-pointer text-2xl" onclick="toggleModalView('modal-list', false)"></i>
             </div>
-            <div class="comm-input-zone">
-                <input id="d-input" class="comm-field outline-none" placeholder="Lascia un commento professionale...">
-                <button class="text-blue-500 font-bold px-4" onclick="apiSubmitComment()">Invia</button>
+            <div id="ui-list-results-render" class="modal-content-area p-0 h-[50vh]">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal-detail" class="modal-overlay">
+        <div class="modal-window h-[90vh] max-w-[700px]">
+            <div class="modal-top-bar">
+                <span>Interazioni</span>
+                <i class="fa-solid fa-xmark cursor-pointer text-2xl" onclick="toggleModalView('modal-detail', false)"></i>
+            </div>
+            
+            <div class="modal-content-area" id="ui-detail-scroll-pane">
+                <div class="p-8 border-b border-zinc-900 flex gap-6 bg-[#060606] mb-4">
+                    <div class="font-bold text-sm" id="ui-detail-author-top"></div>
+                    <p class="text-sm text-zinc-400" id="ui-detail-caption-top"></p>
+                </div>
+                
+                <div id="ui-detail-comments-render" class="px-2">
+                    </div>
+            </div>
+
+            <div class="comment-input-footer">
+                <input id="input-detail-comment-msg" class="comment-input-field outline-none" placeholder="Aggiungi il tuo pensiero...">
+                <button class="text-blue-500 font-bold px-6 text-sm uppercase tracking-widest" onclick="handleApiCommentSubmit()">Invia</button>
             </div>
         </div>
     </div>
 
     <script>
-        // CORE DB CONNECTION
+        /**
+         * SUPABASE INITIALIZATION
+         */
         const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
         const _db = window.supabase.createClient(SB_URL, SB_KEY);
 
-        // GLOBAL APP STATE
-        let SESSION = null;
-        let VIEW_PROFILE_ID = null;
-        let ACTIVE_POST_ID = null;
+        /**
+         * GLOBAL APP STATE
+         */
+        let GLOBAL_USER = null;
+        let ACTIVE_VIEW_UID = null;
+        let ACTIVE_DETAIL_POST_ID = null;
 
-        // FASHION ASSETS
-        const SLIDES = [
-            'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1600', // Donna Fashion
-            'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1600', // Uomo Fashion
-            'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600', // Donna 2
-            'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1600'  // Uomo 2
+        const FASHION_ASSETS = [
+            'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1600',
+            'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1600',
+            'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600',
+            'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1600'
         ];
 
-        /* --- BOOTSTRAP --- */
+        /* --- BOOTSTRAP SYSTEM --- */
         window.addEventListener('load', async () => {
-            initSlides();
+            initAuthSlideshow();
+            // Verifica sessione attiva
             const { data: { session } } = await _db.auth.getSession();
-            if (session) bootApp(session.user);
+            if (session) {
+                bootstrapApp(session.user);
+            }
         });
 
-        function initSlides() {
-            const container = document.getElementById('slideshow-container');
-            SLIDES.forEach((url, i) => {
+        function initAuthSlideshow() {
+            const box = document.getElementById('slideshow-engine');
+            FASHION_ASSETS.forEach((u, i) => {
                 const img = document.createElement('img');
-                img.src = url; img.className = `auth-slide ${i === 0 ? 'active' : ''}`;
-                container.appendChild(img);
+                img.src = u; img.className = `auth-slide ${i === 0 ? 'active' : ''}`;
+                box.appendChild(img);
             });
-            let cur = 0; const imgs = document.querySelectorAll('.auth-slide');
+            let idx = 0;
+            const slides = document.querySelectorAll('.auth-slide');
             setInterval(() => {
-                imgs[cur].classList.remove('active');
-                cur = (cur + 1) % imgs.length;
-                imgs[cur].classList.add('active');
-            }, 5000);
+                slides[idx].classList.remove('active');
+                idx = (idx + 1) % slides.length;
+                slides[idx].classList.add('active');
+            }, 5500);
         }
 
-        /* --- AUTH SYSTEM --- */
-        function authSwitch(mode) {
-            document.getElementById('view-login').classList.toggle('hidden', mode === 'reg');
-            document.getElementById('view-signup').classList.toggle('hidden', mode === 'log');
-            uiStatus('', false);
+        /* --- AUTH MODULE --- */
+        function toggleAuthMode(target) {
+            document.getElementById('auth-view-login').classList.toggle('hidden', target !== 'login');
+            document.getElementById('auth-view-signup').classList.toggle('hidden', target !== 'signup');
+            updateStatusMsg('');
         }
 
-        function uiStatus(t, err = true) {
-            const b = document.getElementById('auth-status');
-            if (!t) { b.style.display = 'none'; return; }
-            b.innerText = t; b.style.display = 'block';
-            b.className = err ? 'err' : 'ok';
+        function updateStatusMsg(txt, isErr = true) {
+            const b = document.getElementById('auth-feedback');
+            if (!txt) { b.style.display = 'none'; return; }
+            b.innerText = txt; b.style.display = 'block';
+            b.className = isErr ? 'err-msg' : 'ok-msg';
         }
 
-        async function apiLogin() {
-            const e = document.getElementById('log-email').value, p = document.getElementById('log-pass').value;
-            if(!e || !p) return uiStatus('Inserisci le credenziali.');
+        async function handleApiLogin() {
+            const e = document.getElementById('input-log-email').value.trim();
+            const p = document.getElementById('input-log-pass').value;
+            if(!e || !p) return updateStatusMsg('Dati mancanti.');
+
             const { data, error } = await _db.auth.signInWithPassword({ email: e, password: p });
-            if (error) return uiStatus(error.message);
-            bootApp(data.user);
+            if (error) return updateStatusMsg(error.message);
+            bootstrapApp(data.user);
         }
 
-        async function apiSignup() {
-            const u = document.getElementById('reg-user').value.trim(), n = document.getElementById('reg-name').value.trim();
-            const e = document.getElementById('reg-email').value, p = document.getElementById('reg-pass').value;
-            if(!u || !n || !e || !p) return uiStatus('Compila tutti i campi.');
-            const { data, error } = await _db.auth.signUp({ email: e, password: p, options: { data: { first_name: n } } });
-            if (error) return uiStatus(error.message);
+        async function handleApiSignup() {
+            const u = document.getElementById('reg-user')?.value || document.getElementById('input-reg-user').value.trim();
+            const n = document.getElementById('reg-name')?.value || document.getElementById('input-reg-name').value.trim();
+            const e = document.getElementById('input-reg-email').value;
+            const p = document.getElementById('input-reg-pass').value;
+
+            if(!u || !n || !e || !p) return updateStatusMsg('Compila ogni campo moda.');
+            if(p.length < 8) return updateStatusMsg('Password troppo breve.');
+
+            const { data, error } = await _db.auth.signUp({
+                email: e, password: p, options: { data: { first_name: n } }
+            });
+
+            if (error) return updateStatusMsg(error.message);
+
             if (data.user) {
-                await _db.from('profiles').upsert([{ id: data.user.id, username: u.toLowerCase(), full_name: n }]);
+                // Inserimento profilo DB forzato per evitare bug di sincronizzazione
+                const { error: pErr } = await _db.from('profiles').upsert([{
+                    id: data.user.id,
+                    username: u.toLowerCase().replace('@', ''),
+                    full_name: n
+                }]);
+                if(pErr) console.error("Profile sync error", pErr);
             }
-            uiStatus('Iscrizione completata! Verifica la tua mail.', false);
-            setTimeout(() => authSwitch('log'), 3000);
+            updateStatusMsg('Profilo creato! Verifica la tua email.', false);
+            setTimeout(() => toggleAuthMode('login'), 3500);
         }
 
-        async function apiRecoverPassword() {
-            const m = prompt("Inserisci la tua email di registrazione:");
+        async function handleApiPasswordReset() {
+            const m = prompt("Inserisci la tua email registrata:");
             if (m) {
                 const { error } = await _db.auth.resetPasswordForEmail(m);
-                alert(error ? error.message : "Controlla la tua posta per il link di reset.");
+                alert(error ? error.message : "Controlla la posta per il link sicuro.");
             }
         }
 
-        async function apiLogout() { await _db.auth.signOut(); location.reload(); }
+        async function handleApiLogout() { await _db.auth.signOut(); location.reload(); }
 
-        function bootApp(user) {
-            SESSION = user;
-            document.getElementById('auth-overlay').style.transform = 'translateY(-100%)';
+        function bootstrapApp(user) {
+            GLOBAL_USER = user;
+            const gate = document.getElementById('auth-gate');
+            gate.style.opacity = '0';
             setTimeout(() => {
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('app-root').style.display = 'block';
-                uiView('feed');
+                gate.style.display = 'none';
+                document.getElementById('app-shell').style.display = 'block';
+                navigateTo('feed');
             }, 600);
         }
 
-        /* --- UI & NAVIGATION ENGINE --- */
-        function uiSidebar(open) {
-            document.getElementById('sidebar-ui').classList.toggle('active', open);
-            document.getElementById('overlay-ui').classList.toggle('active', open);
+        /* --- NAVIGATION & UI ENGINE --- */
+        function toggleSidebarView(open) {
+            document.getElementById('ui-sidebar-drawer').classList.toggle('visible', open);
+            document.getElementById('ui-sidebar-mask').classList.toggle('visible', open);
         }
 
-        function uiView(target) {
-            uiSidebar(false);
-            // RESET ALL PAGES
-            document.getElementById('page-feed').classList.add('hidden');
-            document.getElementById('page-profile').classList.add('hidden');
-            document.getElementById('app-viewport').scrollTop = 0;
+        function navigateTo(target) {
+            toggleSidebarView(false);
+            
+            // RESET VISTE PRINCIPALI
+            document.getElementById('ui-view-feed').classList.add('hidden');
+            document.getElementById('ui-view-profile').classList.add('hidden');
+            document.getElementById('ui-scroll-container').scrollTop = 0;
 
             if (target === 'feed') {
-                document.getElementById('page-feed').classList.remove('hidden');
-                apiLoadFeed();
+                document.getElementById('ui-view-feed').classList.remove('hidden');
+                loadFeedSystem();
             } else if (target === 'profile') {
-                document.getElementById('page-profile').classList.remove('hidden');
-                apiLoadProfile(SESSION.id);
+                document.getElementById('ui-view-profile').classList.remove('hidden');
+                loadProfileSystem(GLOBAL_USER.id);
             }
         }
 
-        function uiModal(id) { document.getElementById(id).classList.add('active'); }
-        function uiCloseModal(id) { document.getElementById(id).classList.remove('active'); }
-        function uiSafe(s) { return (s || '').replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
-
-        /* --- FEED ENGINE --- */
-        async function apiLoadFeed() {
-            const container = document.getElementById('feed-render'), loader = document.getElementById('feed-loader');
-            container.innerHTML = ''; loader.classList.remove('hidden');
-
-            const { data: follows } = await _db.from('follows').select('followed_id').eq('follower_id', SESSION.id);
-            let ids = [SESSION.id];
-            if(follows) ids = [...ids, ...follows.map(f => f.followed_id)];
-
-            let query = _db.from('posts').select(`*, profiles(username, avatar_url), likes(count), comments(count)`).order('created_at', { ascending: false }).limit(50);
-            if (ids.length > 1) query = query.in('user_id', ids);
-
-            const { data: posts } = await query;
-            loader.classList.add('hidden');
-
-            if (!posts || posts.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-500 py-10">Inizia a seguire qualcuno per vedere i suoi post.</div>';
-                const { data: glob } = await _db.from('posts').select(`*, profiles(username, avatar_url), likes(count), comments(count)`).order('created_at', { ascending: false }).limit(20);
-                if (glob) renderPosts(glob, container);
+        function toggleModalView(id, open = true) {
+            const el = document.getElementById(id);
+            if(open) {
+                el.classList.add('active');
+                if(id === 'modal-search') document.getElementById('input-search-field').focus();
             } else {
-                renderPosts(posts, container);
+                el.classList.remove('active');
             }
         }
 
-        function renderPosts(data, container) {
-            data.forEach(p => {
-                const u = p.profiles || { username: 'user', avatar_url: null };
-                const lk = p.likes?.[0]?.count || 0, cm = p.comments?.[0]?.count || 0;
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `
-                    <div class="card-top">
-                        <div class="card-user" onclick="apiLoadProfile('${p.user_id}')">
-                            <img src="${u.avatar_url || 'https://via.placeholder.com/50'}" class="p-av-sm">
-                            <span class="font-bold text-sm">@${uiSafe(u.username)}</span>
+        function uiEscape(s) { return (s || '').replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+        /* --- FEED MODULE (FAIL-SAFE) --- */
+        async function loadFeedSystem() {
+            const container = document.getElementById('ui-feed-list');
+            const loader = document.getElementById('ui-feed-status');
+            
+            container.innerHTML = '';
+            loader.classList.remove('hidden');
+
+            try {
+                // 1. Carica lista seguiti
+                const { data: followRel } = await _db.from('follows').select('followed_id').eq('follower_id', GLOBAL_USER.id);
+                let filterIds = [GLOBAL_USER.id];
+                if(followRel) filterIds = [...filterIds, ...followRel.map(f => f.followed_id)];
+
+                // 2. Query Post con JOIN su Profiles
+                let query = _db.from('posts')
+                    .select(`
+                        *,
+                        profiles (username, avatar_url, full_name),
+                        likes (count),
+                        comments (count)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(60);
+
+                // Applica filtro follower se esistente
+                if (filterIds.length > 1) query = query.in('user_id', filterIds);
+
+                const { data: results, error } = await query;
+                loader.classList.add('hidden');
+
+                if (error) throw error;
+
+                if (!results || results.length === 0) {
+                    container.innerHTML = '<div class="text-center text-zinc-500 py-12 px-6">Non segui ancora nessuno.<br>Ecco i post più caldi della community:</div>';
+                    // Discovery Fallback (Feed Globale)
+                    const { data: globalPosts } = await _db.from('posts').select(`*, profiles(username, avatar_url), likes(count), comments(count)`).order('created_at', { ascending: false }).limit(25);
+                    if(globalPosts) renderPostCards(globalPosts, container);
+                } else {
+                    renderPostCards(results, container);
+                }
+            } catch (err) {
+                console.error("Feed Error:", err);
+                loader.classList.add('hidden');
+                container.innerHTML = '<div class="text-center text-red-800 p-10">Errore di rete. Riprova tra poco.</div>';
+            }
+        }
+
+        function renderPostCards(posts, container) {
+            posts.forEach(p => {
+                // Fallback profili nulli per evitare crash del rendering
+                const userObj = p.profiles || { username: 'Membro Hawenish', avatar_url: null };
+                const likes = p.likes?.[0]?.count || 0;
+                const comments = p.comments?.[0]?.count || 0;
+
+                const card = document.createElement('div');
+                card.className = 'post-card fade-in';
+                card.innerHTML = `
+                    <div class="post-head">
+                        <div class="post-user-info" onclick="loadProfileSystem('${p.user_id}')">
+                            <img src="${userObj.avatar_url || 'https://via.placeholder.com/60'}" class="avatar-circle-sm">
+                            <span class="post-user-name">@${uiEscape(userObj.username)}</span>
                         </div>
-                        ${p.user_id === SESSION.id ? `<i class="fa-solid fa-trash-can text-gray-700 hover:text-red-500 cursor-pointer" onclick="apiKillPost('${p.id}')"></i>` : ''}
+                        ${p.user_id === GLOBAL_USER.id ? `<i class="fa-solid fa-trash-can text-zinc-700 hover:text-red-500 cursor-pointer" onclick="handleApiPostDelete('${p.id}')"></i>` : ''}
                     </div>
-                    ${p.image_url ? `<div class="card-img-box"><img src="${p.image_url}" class="card-img" ondblclick="apiHeart('${p.id}')"></div>` : ''}
-                    <div class="card-actions">
-                        <i class="fa-regular fa-heart btn-icon" id="h-btn-${p.id}" onclick="apiHeart('${p.id}')"></i>
-                        <i class="fa-regular fa-comment btn-icon" onclick="apiInspectPost('${p.id}')"></i>
+                    ${p.image_url ? `<div class="post-image-box"><img src="${p.image_url}" class="post-image-main" ondblclick="handleApiHeart('${p.id}')"></div>` : ''}
+                    <div class="post-action-row">
+                        <i class="fa-regular fa-heart post-btn" id="ui-heart-btn-${p.id}" onclick="handleApiHeart('${p.id}')"></i>
+                        <i class="fa-regular fa-comment post-btn" onclick="handleApiPostInspect('${p.id}')"></i>
+                        <i class="fa-regular fa-paper-plane post-btn"></i>
                     </div>
-                    <div class="card-info">
-                        <span class="num-likes"><span id="h-num-${p.id}">${lk}</span> Mi piace</span>
-                        <div class="caption">
-                            <span class="author-inline" onclick="apiLoadProfile('${p.user_id}')">@${uiSafe(u.username)}</span>
-                            ${uiSafe(p.caption)}
+                    <div class="post-meta-area">
+                        <span class="post-likes-total"><span id="ui-heart-val-${p.id}">${likes}</span> Mi piace</span>
+                        <div class="post-caption-box">
+                            <span class="post-author-label" onclick="loadProfileSystem('${p.user_id}')">@${uiEscape(userObj.username)}</span>
+                            ${uiEscape(p.caption)}
                         </div>
-                        ${cm > 0 ? `<span class="p-comm-trigger" onclick="apiInspectPost('${p.id}')">Mostra commenti (${cm})</span>` : ''}
+                        ${comments > 0 ? `<span class="post-comments-link" onclick="handleApiPostInspect('${p.id}')">Visualizza tutti e ${comments} i commenti</span>` : ''}
                     </div>
                 `;
-                container.appendChild(div);
-                syncHeart(p.id);
+                container.appendChild(card);
+                syncHeartState(p.id);
             });
         }
 
-        /* --- PROFILE & SECURITY ENGINE --- */
-        async function apiLoadProfile(uid) {
-            VIEW_PROFILE_ID = uid;
-            const isMe = (uid === SESSION.id);
-            document.getElementById('btn-back').classList.toggle('hidden', isMe);
-            document.getElementById('p-settings-box').classList.add('hidden');
+        /* --- PROFILE MODULE (IPAD OPTIMIZED) --- */
+        async function loadProfileSystem(uid) {
+            ACTIVE_VIEW_UID = uid;
+            const isMe = (uid === GLOBAL_USER.id);
 
-            const { data: pData } = await _db.from('profiles').select('*').eq('id', uid).single();
-            if (pData) {
-                document.getElementById('p-img').src = pData.avatar_url || 'https://via.placeholder.com/150';
-                document.getElementById('p-user').innerText = '@' + pData.username;
-                document.getElementById('p-realname').innerText = pData.full_name;
-                if (isMe) {
-                    document.getElementById('upd-name').value = pData.full_name;
-                    document.getElementById('upd-user').value = pData.username;
-                    document.getElementById('curr-email').innerText = SESSION.email;
+            // Switch UI Profile Mode
+            document.getElementById('ui-back-nav').classList.toggle('hidden', isMe);
+            document.getElementById('ui-settings-panel').classList.add('hidden');
+
+            try {
+                // Carica Dati Profilo
+                const { data: profile } = await _db.from('profiles').select('*').eq('id', uid).single();
+                if (profile) {
+                    document.getElementById('ui-p-avatar').src = profile.avatar_url || 'https://via.placeholder.com/180';
+                    document.getElementById('ui-p-username').innerText = '@' + profile.username;
+                    document.getElementById('ui-p-fullname').innerText = profile.full_name;
+                    
+                    if (isMe) {
+                        document.getElementById('input-upd-name').value = profile.full_name;
+                        document.getElementById('input-upd-user').value = profile.username;
+                        document.getElementById('ui-display-email').innerText = GLOBAL_USER.email;
+                    }
                 }
+
+                // Conteggi Stats
+                const { count: cFoll } = await _db.from('follows').select('*', {count:'exact', head:true}).eq('followed_id', uid);
+                const { count: cFing } = await _db.from('follows').select('*', {count:'exact', head:true}).eq('follower_id', uid);
+                const { count: cPost } = await _db.from('posts').select('*', {count:'exact', head:true}).eq('user_id', uid);
+
+                document.getElementById('ui-stat-followers').innerText = cFoll || 0;
+                document.getElementById('ui-stat-following').innerText = cFing || 0;
+                document.getElementById('ui-stat-posts').innerText = cPost || 0;
+
+                // Bottoni di interazione Profilo
+                const actionBox = document.getElementById('ui-profile-actions-area');
+                actionBox.innerHTML = '';
+                
+                if (isMe) {
+                    const btn = document.createElement('button'); btn.className = 'btn-fashion'; btn.innerText = 'Gestisci Profilo';
+                    btn.onclick = () => { document.getElementById('ui-settings-panel').classList.toggle('hidden'); };
+                    actionBox.appendChild(btn);
+                } else {
+                    const { data: followRel } = await _db.from('follows').select('*').eq('follower_id', GLOBAL_USER.id).eq('followed_id', uid);
+                    const following = followRel && followRel.length > 0;
+                    const btn = document.createElement('button'); btn.className = following ? 'btn-fashion' : 'btn-fashion active';
+                    btn.innerText = following ? 'Segui già' : 'Segui Profilo'; 
+                    btn.onclick = () => handleApiFollow(uid, following);
+                    actionBox.appendChild(btn);
+                }
+
+                // Carica Post personali
+                const feedGrid = document.getElementById('ui-profile-posts-render');
+                feedGrid.innerHTML = '<div class="text-center text-zinc-700 py-10"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+                
+                const { data: posts } = await _db.from('posts')
+                    .select(`*, profiles(username, avatar_url), likes(count), comments(count)`)
+                    .eq('user_id', uid)
+                    .order('created_at', { ascending: false });
+                
+                feedGrid.innerHTML = '';
+                if (!posts || posts.length === 0) {
+                    feedGrid.innerHTML = '<div class="text-center text-zinc-600 py-20 border border-zinc-900 rounded-xl">Nessun post pubblicato in questo portfolio.</div>';
+                } else {
+                    renderPostCards(posts, feedGrid);
+                }
+
+                // Naviga nella vista corretta
+                document.getElementById('ui-view-feed').classList.add('hidden');
+                document.getElementById('ui-view-profile').classList.remove('hidden');
+                navigateTo('logic_bypass'); 
+            } catch (error) {
+                console.error("Profile Logic Error:", error);
             }
+        }
 
-            const { count: followers } = await _db.from('follows').select('*', { count: 'exact', head: true }).eq('followed_id', uid);
-            const { count: following } = await _db.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', uid);
-            const { count: pc } = await _db.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', uid);
-            document.getElementById('st-followers').innerText = followers || 0;
-            document.getElementById('st-following').innerText = following || 0;
-            document.getElementById('st-posts').innerText = pc || 0;
+        /* --- ACCOUNT SECURITY MODULE (SUPABASE OFFICIAL) --- */
+        async function handleApiMetadataUpdate() {
+            const n = document.getElementById('input-upd-name').value.trim();
+            const u = document.getElementById('input-upd-user').value.trim().toLowerCase();
+            if(!u) return alert("Lo username è obbligatorio.");
 
-            const actions = document.getElementById('p-actions'); actions.innerHTML = '';
-            if (!isMe) {
-                const { data: r } = await _db.from('follows').select('*').eq('follower_id', SESSION.id).eq('followed_id', uid);
-                const isF = r && r.length > 0;
-                const b = document.createElement('button'); b.className = isF ? 'btn-ui' : 'btn-ui fill';
-                b.innerText = isF ? 'Segui già' : 'Segui Profilo'; b.onclick = () => apiExecFollow(uid, isF); actions.appendChild(b);
+            const { error } = await _db.from('profiles').update({ full_name: n, username: u }).eq('id', GLOBAL_USER.id);
+            if (error) alert("Errore nel salvataggio: " + error.message);
+            else { alert("Informazioni aggiornate."); loadProfileSystem(GLOBAL_USER.id); }
+        }
+
+        async function handleApiEmailUpdate() {
+            const email = prompt("Inserisci il nuovo indirizzo email ufficiale:");
+            if (email) {
+                const { error } = await _db.auth.updateUser({ email: email });
+                if (error) alert("Errore: " + error.message);
+                else alert("Riceverai un link di conferma sulla nuova email. L'account verrà aggiornato dopo la conferma.");
+            }
+        }
+
+        async function handleApiPasswordUpdate() {
+            if (confirm("Inviare un'email sicura per reimpostare la tua password?")) {
+                const { error } = await _db.auth.resetPasswordForEmail(GLOBAL_USER.email);
+                alert(error ? "Errore: " + error.message : "Email di ripristino inviata con successo.");
+            }
+        }
+
+        /* --- INTERACTION SYSTEM (LIKES & COMMENTS) --- */
+        async function syncHeartState(pid) {
+            const { data } = await _db.from('likes').select('*').eq('post_id', pid).eq('user_id', GLOBAL_USER.id);
+            const btn = document.getElementById(`ui-heart-btn-${pid}`);
+            if (btn && data.length > 0) { btn.classList.add('liked', 'fa-solid'); btn.classList.remove('fa-regular'); }
+        }
+
+        async function handleApiHeart(pid) {
+            const btn = document.getElementById(`ui-heart-btn-${pid}`), num = document.getElementById(`ui-heart-val-${pid}`);
+            const liked = btn.classList.contains('liked'); let count = parseInt(num.innerText);
+            
+            // UI Optimistic
+            if (liked) {
+                btn.classList.remove('liked', 'fa-solid'); btn.classList.add('fa-regular'); num.innerText = Math.max(0, count - 1);
+                await _db.from('likes').delete().eq('post_id', pid).eq('user_id', GLOBAL_USER.id);
             } else {
-                const b = document.createElement('button'); b.className = 'btn-ui'; b.innerText = 'Impostazioni';
-                b.onclick = () => { document.getElementById('p-settings-box').classList.toggle('hidden'); }; actions.appendChild(b);
-            }
-
-            const grid = document.getElementById('p-posts-grid'); grid.innerHTML = '';
-            const { data: uPosts } = await _db.from('posts').select(`*, profiles(username, avatar_url), likes(count), comments(count)`).eq('user_id', uid).order('created_at', { ascending: false });
-            if (!uPosts || uPosts.length === 0) grid.innerHTML = '<div class="text-center text-gray-700 py-16">Nessun contenuto nel portfolio.</div>';
-            else renderPosts(uPosts, grid);
-
-            document.getElementById('page-feed').classList.add('hidden');
-            document.getElementById('page-profile').classList.remove('hidden');
-        }
-
-        function uiTriggerAvatar() { if (VIEW_PROFILE_ID === SESSION.id) document.getElementById('av-file').click(); }
-        async function apiAvatarUpload() {
-            const f = document.getElementById('av-file').files[0]; if (!f) return;
-            const path = `${SESSION.id}/${Date.now()}`; await _db.storage.from('avatars').upload(path, f);
-            const { data } = _db.storage.from('avatars').getPublicUrl(path);
-            await _db.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', SESSION.id);
-            apiLoadProfile(SESSION.id);
-        }
-
-        async function apiUpdateMetadata() {
-            const f = document.getElementById('upd-name').value, u = document.getElementById('upd-user').value;
-            await _db.from('profiles').update({ full_name: f, username: u.toLowerCase() }).eq('id', SESSION.id);
-            alert('Dati aggiornati con successo.'); apiLoadProfile(SESSION.id);
-        }
-
-        /* --- ADVANCED SECURITY ENGINE --- */
-        async function apiInitEmailChange() {
-            const m = prompt("Inserisci il nuovo indirizzo email per l'account:");
-            if (m) {
-                const { error } = await _db.auth.updateUser({ email: m });
-                if (error) alert(error.message);
-                else alert("Una mail di conferma è stata inviata al nuovo indirizzo. Devi cliccare sul link per confermare.");
-            }
-        }
-        async function apiInitPasswordReset() {
-            if (confirm("Vuoi ricevere una mail sicura per reimpostare la tua password?")) {
-                const { error } = await _db.auth.resetPasswordForEmail(SESSION.email);
-                alert(error ? error.message : "Email di ripristino inviata.");
+                btn.classList.add('liked', 'fa-solid'); btn.classList.remove('fa-regular'); num.innerText = count + 1;
+                await _db.from('likes').insert([{ post_id: pid, user_id: GLOBAL_USER.id }]);
             }
         }
 
-        /* --- INTERACTIONS ENGINE --- */
-        async function apiHeart(pid) {
-            const b = document.getElementById(`h-btn-${pid}`), n = document.getElementById(`h-num-${pid}`);
-            const act = b.classList.contains('liked'); let v = parseInt(n.innerText);
-            if (act) {
-                b.classList.remove('liked', 'fa-solid'); b.classList.add('fa-regular'); n.innerText = Math.max(0, v - 1);
-                await _db.from('likes').delete().eq('post_id', pid).eq('user_id', SESSION.id);
+        async function handleApiPostInspect(pid) {
+            ACTIVE_DETAIL_POST_ID = pid; 
+            toggleModalView('modal-detail');
+            const box = document.getElementById('ui-detail-comments-render'); box.innerHTML = 'Recupero interazioni...';
+            
+            const { data: postData } = await _db.from('posts').select(`caption, profiles(username)`).eq('id', pid).single();
+            if (postData) {
+                document.getElementById('ui-detail-author-top').innerText = '@' + postData.profiles.username;
+                document.getElementById('ui-detail-caption-top').innerText = postData.caption;
+            }
+
+            const { data: comments } = await _db.from('comments').select(`*, profiles(username, avatar_url)`).eq('post_id', pid).order('created_at', { ascending: true });
+            box.innerHTML = '';
+            if (!comments || comments.length === 0) {
+                box.innerHTML = '<div class="text-center text-zinc-700 py-10 text-sm italic">Sii il primo a commentare questo stile.</div>';
             } else {
-                b.classList.add('liked', 'fa-solid'); b.classList.remove('fa-regular'); n.innerText = v + 1;
-                await _db.from('likes').insert([{ post_id: pid, user_id: SESSION.id }]);
+                comments.forEach(c => {
+                    const row = document.createElement('div'); row.className = 'comment-item-row';
+                    row.innerHTML = `
+                        <img src="${c.profiles.avatar_url || 'https://via.placeholder.com/40'}" class="comment-user-avatar" onclick="toggleModalView('modal-detail', false); loadProfileSystem('${c.user_id}')">
+                        <div class="comment-body">
+                            <span class="comment-user-name" onclick="toggleModalView('modal-detail', false); loadProfileSystem('${c.user_id}')">@${uiEscape(c.profiles.username)}</span>
+                            <span class="comment-text">${uiEscape(c.content)}</span>
+                        </div>
+                    `;
+                    box.appendChild(row);
+                });
             }
-        }
-        async function syncHeart(pid) {
-            const { data } = await _db.from('likes').select('*').eq('post_id', pid).eq('user_id', SESSION.id);
-            const b = document.getElementById(`h-btn-${pid}`);
-            if (b && data.length > 0) { b.classList.add('liked', 'fa-solid'); b.classList.remove('fa-regular'); }
+            setTimeout(() => { const p = document.getElementById('ui-detail-scroll-pane'); p.scrollTop = p.scrollHeight; }, 100);
         }
 
-        async function apiInspectPost(pid) {
-            ACTIVE_POST_ID = pid; uiModal('modal-detail');
-            const box = document.getElementById('d-comments'); box.innerHTML = 'Caricamento interazioni...';
-            const { data: p } = await _db.from('posts').select(`caption, profiles(username)`).eq('id', pid).single();
-            if (p) {
-                document.getElementById('d-user-top').innerText = '@' + p.profiles.username;
-                document.getElementById('d-caption-top').innerText = p.caption;
-            }
-            const { data: c } = await _db.from('comments').select(`*, profiles(username, avatar_url)`).eq('post_id', pid).order('created_at', { ascending: true });
-            box.innerHTML = ''; if (!c || c.length === 0) box.innerHTML = '<p class="text-center py-10 text-gray-600">Nessun commento presente.</p>';
-            else c.forEach(x => {
-                box.insertAdjacentHTML('beforeend', `
-                    <div class="comm-row">
-                        <img src="${x.profiles.avatar_url || 'https://via.placeholder.com/40'}" class="comm-avatar cursor-pointer" onclick="uiCloseModal('modal-detail'); apiLoadProfile('${x.user_id}')">
-                        <div class="comm-text"><span class="font-bold mr-2 cursor-pointer" onclick="uiCloseModal('modal-detail'); apiLoadProfile('${x.user_id}')">@${uiSafe(x.profiles.username)}</span><span>${uiSafe(x.content)}</span></div>
-                    </div>
-                `);
-            });
-            setTimeout(() => { const s = document.getElementById('d-scroll'); s.scrollTop = s.scrollHeight; }, 100);
+        async function handleApiCommentSubmit() {
+            const f = document.getElementById('input-detail-comment-msg');
+            const txt = f.value.trim(); if (!txt) return;
+            await _db.from('comments').insert([{ post_id: ACTIVE_DETAIL_POST_ID, user_id: GLOBAL_USER.id, content: txt }]);
+            f.value = ''; handleApiPostInspect(ACTIVE_DETAIL_POST_ID);
         }
 
-        async function apiSubmitComment() {
-            const f = document.getElementById('d-input'); const t = f.value.trim(); if (!t) return;
-            await _db.from('comments').insert([{ post_id: ACTIVE_POST_ID, user_id: SESSION.id, content: t }]);
-            f.value = ''; apiInspectPost(ACTIVE_POST_ID);
-        }
-
-        /* --- MEMBER EXPLORATION ENGINE --- */
-        async function apiHandleSearch() {
-            const q = document.getElementById('s-input').value.trim(), o = document.getElementById('s-results');
-            if (q.length < 2) { o.innerHTML = ''; return; }
+        /* --- EXPLORATION & SEARCH SYSTEM --- */
+        async function handleApiUserSearch() {
+            const q = document.getElementById('input-search-field').value.trim();
+            const out = document.getElementById('ui-search-results-list');
+            if (q.length < 2) { out.innerHTML = ''; return; }
             const { data } = await _db.from('profiles').select('*').ilike('username', `%${q}%`).limit(15);
-            o.innerHTML = ''; data.forEach(u => {
-                o.insertAdjacentHTML('beforeend', `
-                    <div class="search-item" onclick="uiCloseModal('modal-search'); apiLoadProfile('${u.id}')">
-                        <img src="${u.avatar_url || 'https://via.placeholder.com/50'}" class="p-av-sm">
-                        <span class="font-bold text-sm">@${uiSafe(u.username)}</span>
-                        <span class="text-xs text-gray-600 ml-auto">${uiSafe(u.full_name)}</span>
-                    </div>
-                `);
+            out.innerHTML = ''; 
+            if(data) data.forEach(u => {
+                const div = document.createElement('div'); div.className = 'search-result-row';
+                div.onclick = () => { toggleModalView('modal-search', false); loadProfileSystem(u.id); };
+                div.innerHTML = `<img src="${u.avatar_url || 'https://via.placeholder.com/60'}" class="avatar-circle-sm"><div class="flex flex-col"><span class="font-bold">@${uiEscape(u.username)}</span><span class="text-xs text-zinc-600">${uiEscape(u.full_name)}</span></div>`;
+                out.appendChild(div);
             });
         }
 
-        async function apiShowFollowers(type) {
-            uiModal('modal-list'); document.getElementById('l-title').innerText = type === 'followers' ? 'Membri Follower' : 'Seguiti dal Profilo';
-            const o = document.getElementById('l-results'); o.innerHTML = 'Interrogazione database...';
-            const t = type === 'followers' ? 'follower_id' : 'followed_id', s = type === 'followers' ? 'followed_id' : 'follower_id';
-            const { data: r } = await _db.from('follows').select(t).eq(s, VIEW_PROFILE_ID);
-            if (!r || r.length === 0) { o.innerHTML = '<p class="text-center py-10 text-gray-600">Nessun membro trovato.</p>'; return; }
-            const ids = r.map(x => x[t]); const { data: users } = await _db.from('profiles').select('*').in('id', ids);
-            o.innerHTML = ''; users.forEach(u => {
-                o.insertAdjacentHTML('beforeend', `
-                    <div class="search-item" onclick="uiCloseModal('modal-list'); apiLoadProfile('${u.id}')">
-                        <img src="${u.avatar_url || 'https://via.placeholder.com/50'}" class="p-av-sm">
-                        <span class="font-bold text-sm">@${uiSafe(u.username)}</span>
-                    </div>
-                `);
+        async function fetchFollowerList(type) {
+            toggleModalView('modal-list');
+            document.getElementById('ui-list-title').innerText = type === 'followers' ? 'Followers' : 'Seguiti';
+            const out = document.getElementById('ui-list-results-render'); out.innerHTML = 'Ricerca nel club...';
+            
+            const colTarget = type === 'followers' ? 'follower_id' : 'followed_id';
+            const colSource = type === 'followers' ? 'followed_id' : 'follower_id';
+            
+            const { data: list } = await _db.from('follows').select(colTarget).eq(colSource, ACTIVE_VIEW_UID);
+            if (!list || list.length === 0) { out.innerHTML = '<div class="p-10 text-center text-zinc-600">Nessuno trovato.</div>'; return; }
+            
+            const ids = list.map(i => i[colTarget]);
+            const { data: users } = await _db.from('profiles').select('*').in('id', ids);
+            out.innerHTML = '';
+            if(users) users.forEach(u => {
+                const row = document.createElement('div'); row.className = 'search-result-row';
+                row.onclick = () => { toggleModalView('modal-list', false); loadProfileSystem(u.id); };
+                row.innerHTML = `<img src="${u.avatar_url || 'https://via.placeholder.com/50'}" class="avatar-circle-sm"><span class="font-bold">@${uiEscape(u.username)}</span>`;
+                out.appendChild(row);
             });
         }
 
-        /* --- PUBLISHING ENGINE --- */
-        async function apiPublish() {
-            const cap = document.getElementById('c-caption').value, file = document.getElementById('c-file').files[0];
-            if (!cap && !file) return alert("Inserisci contenuti per il post.");
+        /* --- CONTENT PUBLISHING MODULE --- */
+        function triggerProfileImageUpload() { if (ACTIVE_VIEW_UID === GLOBAL_USER.id) document.getElementById('input-avatar-file').click(); }
+        async function handleApiAvatarUpload() {
+            const f = document.getElementById('input-avatar-file').files[0]; if (!f) return;
+            const p = `${GLOBAL_USER.id}/av_${Date.now()}`; await _db.storage.from('avatars').upload(p, f);
+            const { data } = _db.storage.from('avatars').getPublicUrl(p);
+            await _db.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', GLOBAL_USER.id);
+            loadProfileSystem(GLOBAL_USER.id);
+        }
+
+        async function handleApiPublishPost() {
+            const cap = document.getElementById('input-create-caption').value.trim();
+            const file = document.getElementById('input-create-file').files[0];
+
+            if(!cap && !file) return alert("Inserisci contenuti validi.");
+
             let url = null;
-            if (file) {
-                const p = `${SESSION.id}/post_${Date.now()}`; await _db.storage.from('posts').upload(p, file);
-                url = _db.storage.from('posts').getPublicUrl(p).data.publicUrl;
+            if(file) {
+                const path = `${GLOBAL_USER.id}/post_${Date.now()}`;
+                const { error: upErr } = await _db.storage.from('posts').upload(path, file);
+                if(upErr) return alert("Errore upload: " + upErr.message);
+                const { data } = _db.storage.from('posts').getPublicUrl(path);
+                url = data.publicUrl;
             }
-            const { error } = await _db.from('posts').insert([{ user_id: SESSION.id, image_url: url, caption: cap }]);
-            if (error) alert("Errore di rete."); else { uiCloseModal('modal-create'); apiLoadProfile(SESSION.id); }
+
+            const { error: dbErr } = await _db.from('posts').insert([{
+                user_id: GLOBAL_USER.id, image_url: url, caption: cap
+            }]);
+
+            if(dbErr) return alert("Errore database: " + dbErr.message);
+
+            // Reset UI
+            toggleModalView('modal-create', false);
+            document.getElementById('input-create-caption').value = '';
+            document.getElementById('input-create-file').value = '';
+            
+            // REDIRECT IMMEDIATO AL PROFILO PER VERIFICA
+            loadProfileSystem(GLOBAL_USER.id);
         }
 
-        async function apiKillPost(pid) { if (confirm("Sei sicuro di voler rimuovere questa creazione dal tuo portfolio?")) { await _db.from('posts').delete().eq('id', pid); apiLoadProfile(SESSION.id); } }
-        async function apiExecFollow(uid, f) {
-            if (f) await _db.from('follows').delete().eq('follower_id', SESSION.id).eq('followed_id', uid);
-            else await _db.from('follows').insert([{ follower_id: SESSION.id, followed_id: uid }]);
-            apiLoadProfile(uid);
+        async function handleApiPostDelete(pid) {
+            if (confirm("Vuoi rimuovere permanentemente questo post dal tuo club?")) {
+                await _db.from('posts').delete().eq('id', pid);
+                loadProfileSystem(GLOBAL_USER.id);
+            }
+        }
+
+        async function handleApiFollow(uid, isFollowing) {
+            if (isFollowing) await _db.from('follows').delete().eq('follower_id', GLOBAL_USER.id).eq('followed_id', uid);
+            else await _db.from('follows').insert([{ follower_id: GLOBAL_USER.id, followed_id: uid }]);
+            loadProfileSystem(uid);
         }
     </script>
 </body>
