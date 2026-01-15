@@ -60,7 +60,9 @@
     .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
     .user-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
     .avatar-sm { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #222; border: 1px solid #333; }
-    .username-bold { font-weight: 600; font-size: 14px; color: #fff; }
+    .username-container { display: flex; flex-direction: column; }
+    .username-bold { font-weight: 600; font-size: 14px; color: #fff; line-height: 1.2; }
+    .post-date { font-size: 11px; color: #737373; margin-top: 2px; }
     
     .post-image { 
       width: 100%; border-radius: 4px; border: 1px solid #262626; 
@@ -114,7 +116,7 @@
     .comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer; }
     .pm-footer { padding: 14px; border-top: 1px solid #262626; }
 
-    /* AUTH SCREEN - RESTORED ORIGINAL STYLES */
+    /* AUTH SCREEN - SLIDER RESTORED */
     .auth-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: #000; display: flex; transition: transform 0.8s ease-in-out; }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
     @media (min-width:768px){ .visual-side{display:block} }
@@ -310,7 +312,7 @@
   let viewingUserId = null;
 
   window.addEventListener('load', async () => {
-    // Auth Animation RESTORED
+    // Auth Animation
     let i = 0;
     const imgs = document.querySelectorAll('.visual-side img');
     if (imgs.length) {
@@ -326,27 +328,22 @@
     else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  // --- SHARE FUNCTIONALITY ADDED ---
+  // --- SHARE FUNCTIONALITY ---
   async function sharePost(postId, caption) {
-    // Copia il link negli appunti o usa share nativo se su mobile
     const textToShare = `Guarda questo post su Hawenishland: ${caption || ''}`;
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Hawenishland Post',
-          text: textToShare,
-          url: window.location.href
-        });
-      } catch (err) { console.log('Share canceled'); }
+      try { await navigator.share({ title: 'Hawenishland Post', text: textToShare, url: window.location.href }); } catch (err) { console.log('Share canceled'); }
     } else {
-      // Fallback: copia negli appunti
-      try {
-        await navigator.clipboard.writeText(textToShare);
-        alert("Link copiato negli appunti! Condividilo con i tuoi amici.");
-      } catch (err) {
-        alert("Impossibile copiare il link.");
-      }
+      try { await navigator.clipboard.writeText(textToShare); alert("Link copiato negli appunti! Condividilo con i tuoi amici."); } catch (err) { alert("Impossibile copiare il link."); }
     }
+  }
+
+  // --- DELETE FUNCTIONALITY ADDED ---
+  async function deletePost(id) {
+    if (!confirm("Eliminare definitivamente questo post?")) return;
+    const { error } = await sb.from('posts').delete().eq('id', id);
+    if (error) alert("Errore eliminazione: " + error.message);
+    else renderFeedView(); // Refresh feed
   }
 
   // --- NAVIGATION ---
@@ -381,15 +378,23 @@
   function createPostHTML(post, counts, liked) {
     const user = post.profiles || { username: 'Unknown', avatar_url: null };
     const likeClass = liked ? 'fa-solid text-red-500' : 'fa-regular';
-    // ADDED: Share icon with onclick function
+    
+    // Check if I am the owner
+    const isMine = post.user_id === currentUser.id;
+    // Format Date
+    const dateStr = new Date(post.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute:'2-digit' });
+
     return `
       <div class="post-card">
         <div class="post-header">
           <div class="user-info" onclick="openUserProfile('${post.user_id}')">
             <img src="${user.avatar_url || 'https://via.placeholder.com/150'}" class="avatar-sm">
-            <span class="username-bold">${user.username}</span>
+            <div class="username-container">
+              <span class="username-bold">${user.username}</span>
+              <span class="post-date">${dateStr}</span>
+            </div>
           </div>
-          <i class="fa-solid fa-ellipsis text-gray-500 cursor-pointer"></i>
+          ${isMine ? `<i class="fa-solid fa-trash text-gray-500 cursor-pointer hover:text-red-500" onclick="deletePost('${post.id}')" title="Elimina post"></i>` : '<i class="fa-solid fa-ellipsis text-gray-500"></i>'}
         </div>
         ${post.image_url ? `<img src="${post.image_url}" class="post-image" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="post-actions">
