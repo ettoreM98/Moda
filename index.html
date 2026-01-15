@@ -1,23 +1,121 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — Social</title>
+  <title>HAWENISHLAND — Professional Social</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body { background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif; margin:0; height:100vh; overflow-x:hidden; }
-    .serif { font-family:'Playfair Display',serif }
-    .hidden { display:none!important }
+    /* BASE STYLES & RESET */
+    body { background-color: #000; color: #e5e5e5; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+    .hidden { display: none !important; }
+    
+    /* UTILITY */
+    .btn-primary {
+      background: #fff; color: #000; padding: 8px 16px; border-radius: 8px; 
+      font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
+      text-align: center; border: 1px solid #fff;
+    }
+    .btn-primary:hover { background: #ccc; border-color: #ccc; }
+    
+    .btn-secondary {
+      background: transparent; color: #fff; padding: 8px 16px; border-radius: 8px;
+      font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
+      border: 1px solid #333; text-align: center;
+    }
+    .btn-secondary:hover { background: #1a1a1a; border-color: #666; }
 
-    /* AUTH */
-    .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:50; background:#0a0a0a; transition:transform .8s ease-in-out; }
+    /* LAYOUT */
+    .app-wrapper { display: flex; min-height: 100vh; max-width: 1300px; margin: 0 auto; }
+    
+    /* SIDEBAR */
+    .sidebar { 
+      width: 245px; height: 100vh; position: sticky; top: 0; 
+      border-right: 1px solid #262626; padding: 20px 12px;
+      display: flex; flex-direction: column; background: #000; z-index: 50;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      border-radius: 8px; cursor: pointer; transition: 0.2s;
+      font-size: 16px; color: #f5f5f5; margin-bottom: 4px;
+    }
+    .nav-link:hover { background-color: #121212; }
+    .nav-link i { font-size: 20px; width: 24px; text-align: center; }
+    .brand-logo { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 24px; margin-bottom: 30px; padding-left: 16px; letter-spacing: -1px; }
+
+    /* FEED */
+    .main-feed { flex: 1; max-width: 630px; margin: 0 auto; padding: 20px 0; width: 100%; }
+    
+    /* POST CARD */
+    .post-card { border-bottom: 1px solid #262626; padding-bottom: 20px; margin-bottom: 20px; }
+    .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
+    .user-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .avatar-sm { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #222; border: 1px solid #333; }
+    .username-bold { font-weight: 600; font-size: 14px; color: #fff; }
+    
+    .post-image { 
+      width: 100%; border-radius: 4px; border: 1px solid #262626; 
+      object-fit: cover; cursor: pointer; aspect-ratio: 1/1;
+      background: #050505;
+    }
+    .post-actions { display: flex; gap: 16px; margin-top: 12px; font-size: 22px; padding: 0 4px; }
+    .action-btn { cursor: pointer; transition: 0.2s; color: #fff; }
+    .action-btn:hover { color: #a8a8a8; }
+    .like-active { color: #ff3040 !important; animation: pop 0.2s ease-in-out; }
+    .post-stats { font-weight: 600; font-size: 14px; margin-top: 8px; padding: 0 4px; cursor: pointer; }
+    .post-caption { margin-top: 6px; padding: 0 4px; font-size: 14px; }
+    .caption-user { font-weight: 600; margin-right: 6px; cursor: pointer; }
+    .view-comments { color: #737373; font-size: 14px; margin-top: 6px; padding: 0 4px; cursor: pointer; }
+
+    /* PROFILE PAGE */
+    .profile-header { padding: 30px 20px; border-bottom: 1px solid #262626; display: flex; gap: 30px; align-items: flex-start; }
+    .profile-avatar-lg { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 1px solid #333; cursor: pointer; }
+    .profile-info { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+    .profile-top { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .profile-username { font-size: 20px; font-weight: 400; }
+    .profile-stats { display: flex; gap: 30px; font-size: 16px; }
+    .stat-item { cursor: pointer; }
+    .stat-value { font-weight: 700; color: #fff; }
+    
+    .posts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 20px; }
+    .grid-item { position: relative; aspect-ratio: 1/1; cursor: pointer; group: hover; }
+    .grid-item img { width: 100%; height: 100%; object-fit: cover; }
+    .grid-overlay { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; 
+      opacity: 0; transition: 0.2s; gap: 15px; color: #fff; font-weight: bold;
+    }
+    .grid-item:hover .grid-overlay { opacity: 1; }
+
+    /* MODALS */
+    .modal-overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.85); z-index: 100; 
+      display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px);
+    }
+    
+    /* Post Detail Modal */
+    .post-modal-layout { display: flex; width: 90vw; max-width: 1000px; height: 85vh; background: #000; border: 1px solid #333; border-radius: 4px; }
+    .pm-image-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; border-right: 1px solid #262626; }
+    .pm-image-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .pm-info-side { flex: 1; display: flex; flex-direction: column; min-width: 300px; }
+    .pm-header { padding: 14px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; }
+    .pm-comments-list { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+    .comment-row { display: flex; gap: 10px; font-size: 14px; }
+    .comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+    .pm-footer { padding: 14px; border-top: 1px solid #262626; }
+
+    /* AUTH SCREEN - RESTORED ORIGINAL STYLES */
+    .auth-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: #000; display: flex; transition: transform 0.8s ease-in-out; }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
     @media (min-width:768px){ .visual-side{display:block} }
     .visual-side img{
@@ -29,360 +127,190 @@
     .visual-side img.active{ opacity:1; z-index:1; pointer-events:auto; }
     .visual-side img.active:hover{ filter:grayscale(0%); cursor:crosshair; }
 
-    .form-side{
-      flex:1; display:flex; flex-direction:column; justify-content:center;
-      padding:60px; background:#0a0a0a; max-width:600px; margin:auto
-    }
-    .input-group{ margin-bottom:25px }
-    .input-label{
-      display:block; font-size:10px; text-transform:uppercase;
-      letter-spacing:2px; color:#555; margin-bottom:8px
-    }
-    input{
-      background:transparent; border-bottom:1px solid #222;
-      padding:10px 0; color:#fff; width:100%; outline:none; font-size:14px
-    }
-    input:focus{ border-bottom-color:#fff }
-    .btn-white{
-      background:#fff; color:#000; padding:18px; font-weight:500;
-      text-transform:uppercase; width:100%; cursor:pointer;
-      border:1px solid #fff; transition:.3s; margin-top:10px
-    }
-    .btn-white:hover{ background:#000; color:#fff }
-    #msg-box{
-      display:none; padding:12px; border:1px solid #333;
-      font-size:11px; text-transform:uppercase;
-      margin-bottom:20px; text-align:center
-    }
-    .link-small{
-      text-align:center; margin-top:20px;
-      font-size:10px; color:#555; cursor:pointer;
-      text-transform:uppercase; letter-spacing:1px
-    }
+    .auth-form-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+    .auth-box { width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 15px; }
+    .input-field { background: #121212; border: 1px solid #333; padding: 10px; border-radius: 4px; color: #fff; width: 100%; font-size: 14px; }
+    .input-field:focus { border-color: #777; outline: none; }
 
-    /* APP */
-    #app-interface { display:none; min-height:100vh; background:#000; }
-    .app-layout { display:flex; max-width:1400px; margin:0 auto; min-height:100vh; }
-    .sidebar { width:250px; border-right:1px solid #262626; height:100vh; position:sticky; top:0; padding:20px; display:flex; flex-direction:column; background:#000; }
-    .nav-item { display:flex; align-items:center; gap:15px; padding:15px; border-radius:10px; cursor:pointer; transition:.2s; color:#f5f5f5; margin-bottom:6px; }
-    .nav-item:hover { background:#141414; }
-    .shell { flex:1; display:flex; flex-direction:column; min-height:100vh; }
-    .topbar{
-      height:64px; border-bottom:1px solid #262626; display:flex; align-items:center;
-      justify-content:space-between; padding:0 24px; position:sticky; top:0; background:#000; z-index:10;
-    }
-    .topbar .title{ font-size:12px; letter-spacing:.25em; text-transform:uppercase; color:#777; }
-    .avatar-btn{
-      width:40px; height:40px; border-radius:999px; overflow:hidden; border:1px solid #333;
-      cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.2s; background:#111;
-    }
-    .avatar-btn:hover{ border-color:#fff; }
-    .avatar-btn img{ width:100%; height:100%; object-fit:cover; display:block; }
+    /* User List Modal */
+    .user-list-modal { width: 400px; max-width: 90vw; background: #262626; border-radius: 12px; overflow: hidden; border: 1px solid #333; max-height: 400px; display: flex; flex-direction: column; }
+    .ul-header { padding: 12px; text-align: center; border-bottom: 1px solid #363636; font-weight: 600; position: relative; }
+    .ul-close { position: absolute; right: 12px; top: 12px; cursor: pointer; }
+    .ul-body { overflow-y: auto; flex: 1; }
+    .user-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; }
+    .user-row:hover { background: rgba(255,255,255,0.05); }
 
-    .main-content{ flex:1; padding:28px 24px; overflow-y:auto; }
-    .feed-container{ max-width:600px; margin:0 auto; }
-    .post-card{ background:#000; border:1px solid #262626; border-radius:10px; margin-bottom:26px; padding:15px; }
-    .post-header{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-    .user-avatar{ width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #333; background:#111; cursor:pointer; transition:.2s; }
-    .user-avatar:hover{ border-color:#fff; }
-    .post-img{ width:100%; border-radius:6px; cursor:pointer; border:1px solid #262626; margin-top:10px; }
-    .post-textonly{ margin-top:10px; padding:14px; border:1px solid #262626; border-radius:6px; color:#bdbdbd; font-size:14px; }
-    .post-actions{ display:flex; gap:8px; margin-top:12px; align-items:center; font-size:14px; }
-    .action-item{ display:flex; align-items:center; gap:6px; cursor:pointer; transition:.15s; color:#bdbdbd; }
-    .action-item:hover{ color:#fff; }
-    .action-count{ font-size:12px; color:#999; }
-    .icon-btn{ cursor:pointer; transition:.15s; }
-    .icon-btn:hover{ color:#fff; }
-
-    .profile-header{ text-align:center; border-bottom:1px solid #262626; padding-bottom:26px; margin-bottom:26px; }
-    .big-avatar{ width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #333; margin:0 auto 12px; cursor:pointer; transition:.3s; background:#111; }
-    .big-avatar:hover { border-color:#fff; opacity:.9; }
-    .edit-box{
-      max-width:520px; margin:18px auto 0; background:#0b0b0b; border:1px solid #262626; border-radius:10px;
-      padding:16px; text-align:left;
+    @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    @media (max-width: 768px) {
+      .sidebar { width: 70px; padding: 10px; }
+      .nav-link span, .brand-logo { display: none; }
+      .nav-link i { font-size: 24px; margin: 0 auto; }
+      .post-modal-layout { flex-direction: column; width: 100%; height: 100%; border: none; }
+      .pm-image-side { flex: 1; background: #111; }
+      .pm-info-side { flex: 1; }
+      .app-wrapper { justify-content: center; }
     }
-    .edit-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    @media (max-width:640px){ .edit-grid{ grid-template-columns:1fr; } }
-    .edit-box label{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:2px; color:#666; margin-bottom:8px; }
-    .edit-box input{
-      background:transparent; border:1px solid #262626; border-radius:8px; padding:10px; color:#fff; width:100%;
-      outline:none; font-size:14px;
-    }
-    .edit-box input:focus{ border-color:#fff; }
-    .btn-mini{
-      background:#fff; color:#000; padding:10px 12px; font-weight:600; text-transform:uppercase; cursor:pointer;
-      border:1px solid #fff; transition:.2s; font-size:11px; letter-spacing:1px; border-radius:10px;
-    }
-    .btn-mini:hover{ background:#000; color:#fff; }
-
-    .stats-row{ display:flex; gap:30px; justify-content:center; margin:16px 0; font-size:14px; }
-    .stat-item{ display:flex; flex-direction:column; align-items:center; cursor:pointer; transition:.2s; }
-    .stat-item:hover{ color:#aaa; }
-    .stat-number{ font-weight:bold; font-size:18px; color:#fff; }
-    .stat-label{ font-size:12px; color:#999; text-transform:uppercase; }
-
-    /* Modali */
-    .modal-overlay{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(5px); }
-    .post-modal-box{ background:#000; width:90%; max-width:900px; height:80vh; border:1px solid #333; display:flex; border-radius:6px; overflow:hidden; }
-    .modal-img-side{ flex:1.5; background:#000; display:flex; align-items:center; justify-content:center; border-right:1px solid #262626; }
-    .modal-img-side img{ max-width:100%; max-height:100%; object-fit:contain; }
-    .modal-info-side{ flex:1; display:flex; flex-direction:column; padding:20px; }
-    .comment-list{ flex:1; overflow-y:auto; margin:20px 0; border-top:1px solid #262626; padding-top:10px; font-size:13px; }
-    .comment-item{ display:flex; gap:8px; margin-bottom:12px; align-items:flex-start; }
-    .comment-avatar{ width:28px; height:28px; border-radius:50%; object-fit:cover; flex-shrink:0; cursor:pointer; border:1px solid #333; }
-    .comment-content{ flex:1; }
-    .comment-author{ font-weight:bold; color:#fff; cursor:pointer; text-decoration:none; transition:.2s; font-size:13px; }
-    .comment-author:hover{ color:#aaa; }
-    .comment-text{ color:#bdbdbd; margin-top:4px; word-wrap:break-word; }
-
-    .follower-modal-content{ max-width:500px; width:90%; background:#000; border:1px solid #333; border-radius:10px; padding:20px; }
-    .follower-list{ max-height:400px; overflow-y:auto; }
-    .follower-item{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #262626; }
-    .follower-item:last-child{ border-bottom:none; }
-    .follower-avatar{ width:40px; height:40px; border-radius:50%; object-fit:cover; cursor:pointer; border:1px solid #333; }
-    .follower-info{ flex:1; }
-    .follower-username{ font-weight:bold; color:#fff; cursor:pointer; transition:.2s; }
-    .follower-username:hover{ color:#aaa; }
-    .follower-fullname{ font-size:12px; color:#999; }
   </style>
 </head>
-
 <body>
 
-<!-- AUTH -->
-<div id="auth-container" class="split-layout">
+<div id="auth-container" class="auth-container">
   <div class="visual-side">
     <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
     <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
   </div>
+  <div class="auth-form-wrapper">
+    <div class="auth-box">
+      <h1 class="text-3xl font-bold mb-6 text-center italic">Hawenishland</h1>
+      <div id="msg-box" class="hidden text-xs text-center p-2 mb-2 border rounded"></div>
 
-  <div class="form-side">
-    <h1 class="serif text-6xl mb-12 italic">Hawenishland</h1>
-    <div id="msg-box"></div>
-
-    <div id="login-form">
-      <div class="input-group"><label class="input-label">Email</label><input type="email" id="l-email"></div>
-      <div class="input-group"><label class="input-label">Password</label><input type="password" id="l-pass"></div>
-      <button onclick="faiLogin()" class="btn-white">Entra</button>
-      <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
-      <p onclick="rinviaConferma()" class="link-small">non hai ricevuto la mail di conferma?</p>
-      <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
-    </div>
-
-    <div id="signup-form" class="hidden">
-      <div class="input-group"><label class="input-label">Username (Pubblico)</label><input type="text" id="r-username"></div>
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div><label class="input-label">Nome</label><input type="text" id="r-nome"></div>
-        <div><label class="input-label">Cognome</label><input type="text" id="r-cognome"></div>
-      </div>
-      <div class="input-group"><label class="input-label">Data di Nascita</label><input type="date" id="r-nascita" style="color-scheme:dark"></div>
-      <div class="input-group"><label class="input-label">Email</label><input type="email" id="r-email"></div>
-      <div class="input-group"><label class="input-label">Password</label><input type="password" id="r-pass"></div>
-      <button id="btn-reg" onclick="faiRegistrazione()" class="btn-white">Registrati</button>
-      <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app-interface">
-  <div class="app-layout">
-    <div class="sidebar">
-      <h1 class="serif italic text-2xl mb-8 pl-4 cursor-pointer" onclick="switchView('feed')">Hawenishland</h1>
-      <div class="nav-item" onclick="switchView('feed')"><i class="fa-solid fa-house"></i><span>Home / Feed</span></div>
-      <div class="nav-item" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Cerca</span></div>
-      <div class="nav-item" onclick="openUploadModal()"><i class="fa-regular fa-square-plus"></i><span>Nuovo Post</span></div>
-      <div class="nav-item" onclick="switchView('dashboard')"><i class="fa-regular fa-user"></i><span>Il Mio Profilo</span></div>
-      <div class="mt-auto nav-item text-red-500" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Esci</span></div>
-    </div>
-
-    <div class="shell">
-      <div class="topbar">
-        <div class="title" id="topbar-title">Feed</div>
-        <div class="avatar-btn" title="Vai al profilo" onclick="switchView('dashboard')">
-          <img id="top-avatar" src="https://via.placeholder.com/80" alt="avatar">
+      <div id="login-form">
+        <input type="email" id="l-email" placeholder="Email" class="input-field mb-2">
+        <input type="password" id="l-pass" placeholder="Password" class="input-field mb-4">
+        <button onclick="faiLogin()" class="btn-primary w-full">Accedi</button>
+        <div class="mt-6 text-center text-xs text-gray-500">
+          <p class="cursor-pointer hover:text-white mb-2" onclick="recuperoPassword()">Password dimenticata?</p>
+          <p class="cursor-pointer hover:text-white" onclick="vaiA('signup')">Non hai un account? <span class="font-bold text-blue-400">Iscriviti</span></p>
         </div>
       </div>
 
-      <div class="main-content">
-        <div id="view-feed" class="view-section">
-          <h2 class="serif text-2xl mb-6 italic">Home Feed</h2>
-          <div class="feed-container" id="posts-feed"></div>
+      <div id="signup-form" class="hidden">
+        <input type="text" id="r-username" placeholder="Username" class="input-field mb-2">
+        <div class="flex gap-2 mb-2">
+          <input type="text" id="r-nome" placeholder="Nome" class="input-field">
+          <input type="text" id="r-cognome" placeholder="Cognome" class="input-field">
         </div>
-
-        <div id="view-dashboard" class="view-section hidden">
-          <div class="feed-container">
-            <div class="profile-header">
-              <div class="relative inline-block">
-                <img id="dash-avatar" src="https://via.placeholder.com/150" class="big-avatar" onclick="document.getElementById('avatar-upload').click()">
-                <div class="text-xs text-gray-500 mt-2">Clicca la foto per cambiarla</div>
-                <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar()">
-              </div>
-
-              <h2 id="dash-username" class="text-2xl font-light mt-4">...</h2>
-              <p id="dash-fullname" class="font-bold text-gray-400 text-sm mb-2">...</p>
-              <p id="dash-email" class="text-xs text-gray-500">...</p>
-
-              <div class="stats-row">
-                <div class="stat-item" onclick="openFollowersModal('mine')">
-                  <span class="stat-number" id="my-followers-count">0</span>
-                  <span class="stat-label">Follower</span>
-                </div>
-                <div class="stat-item" onclick="openFollowersModal('following')">
-                  <span class="stat-number" id="my-following-count">0</span>
-                  <span class="stat-label">Seguiti</span>
-                </div>
-              </div>
-
-              <div class="edit-box">
-                <div class="edit-grid">
-                  <div><label>Nome</label><input id="edit-first" type="text" placeholder="Nome"></div>
-                  <div><label>Cognome</label><input id="edit-last" type="text" placeholder="Cognome"></div>
-                </div>
-                <div style="height:12px"></div>
-                <div class="edit-grid">
-                  <div><label>Username</label><input id="edit-username" type="text" placeholder="username pubblico"></div>
-                  <div><label>Email</label><input id="edit-email" type="email" placeholder="nuova email (verifica via link)"></div>
-                </div>
-                <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-                  <button class="btn-mini" onclick="saveProfile()">Salva Dati</button>
-                  <button class="btn-mini" onclick="changeEmail()">Cambia Email</button>
-                </div>
-              </div>
-            </div>
-
-            <h3 class="serif text-xl mb-6 italic text-center">I Miei Post</h3>
-            <div id="my-posts-feed"></div>
-          </div>
-        </div>
-
-        <div id="view-user-profile" class="view-section hidden">
-          <div class="feed-container">
-            <div class="profile-header">
-              <img id="user-profile-avatar" src="https://via.placeholder.com/150" class="big-avatar">
-              <h2 id="user-profile-username" class="text-2xl font-light mt-4">...</h2>
-              <p id="user-profile-fullname" class="font-bold text-gray-400 text-sm mb-2">...</p>
-
-              <div class="stats-row">
-                <div class="stat-item" onclick="openFollowersModal('user-followers')">
-                  <span class="stat-number" id="user-followers-count">0</span>
-                  <span class="stat-label">Follower</span>
-                </div>
-                <div class="stat-item" onclick="openFollowersModal('user-following')">
-                  <span class="stat-number" id="user-following-count">0</span>
-                  <span class="stat-label">Seguiti</span>
-                </div>
-              </div>
-
-              <button id="follow-btn" class="btn-mini mt-4" onclick="toggleFollow()">Segui</button>
-            </div>
-
-            <h3 class="serif text-xl mb-6 italic text-center">Post</h3>
-            <div id="user-posts-feed"></div>
-          </div>
-        </div>
+        <input type="date" id="r-nascita" class="input-field mb-2" style="color-scheme: dark;">
+        <input type="email" id="r-email" placeholder="Email" class="input-field mb-2">
+        <input type="password" id="r-pass" placeholder="Password" class="input-field mb-4">
+        <button id="btn-reg" onclick="faiRegistrazione()" class="btn-primary w-full">Iscriviti</button>
+        <p class="mt-4 text-center text-xs cursor-pointer hover:text-white" onclick="vaiA('login')">Hai già un account? <span class="font-bold text-blue-400">Accedi</span></p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Upload post -->
+<div id="app-interface" class="hidden">
+  <div class="app-wrapper">
+    
+    <nav class="sidebar">
+      <div class="brand-logo italic cursor-pointer" onclick="goHome()">Hawenishland</div>
+      <div class="nav-link" onclick="goHome()">
+        <i class="fa-solid fa-house"></i> <span>Home</span>
+      </div>
+      <div class="nav-link" onclick="openSearchModal()">
+        <i class="fa-solid fa-magnifying-glass"></i> <span>Cerca</span>
+      </div>
+      <div class="nav-link" onclick="openUploadModal()">
+        <i class="fa-regular fa-square-plus"></i> <span>Crea</span>
+      </div>
+      <div class="nav-link" onclick="goToMyProfile()">
+        <i class="fa-regular fa-user"></i> <span>Profilo</span>
+      </div>
+      <div class="mt-auto nav-link text-red-500 hover:bg-red-900/20" onclick="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> <span>Esci</span>
+      </div>
+    </nav>
+
+    <main class="main-feed" id="main-content-area"></main>
+  </div>
+</div>
+
 <div id="upload-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="background:#111; padding:30px; max-width:420px; width:90%; position:relative;">
-    <i class="fa-solid fa-xmark absolute top-4 right-4 cursor-pointer text-xl" onclick="closeModal('upload-modal')"></i>
-    <h2 class="serif text-xl mb-4 italic">Crea Post</h2>
-
-    <label class="block mb-4 text-center border border-dashed border-gray-500 p-6 rounded cursor-pointer hover:border-white">
-      <span class="text-xs uppercase block mb-2">Seleziona Foto (opzionale)</span>
-      <input type="file" id="post-file" accept="image/*">
-    </label>
-
-    <input type="text" id="post-caption" placeholder="Scrivi qualcosa..." class="w-full bg-black border-b border-gray-600 p-2 mb-4 text-white outline-none">
-    <button onclick="submitPost()" class="btn-white">Pubblica</button>
+  <div class="bg-[#262626] rounded-xl p-4 w-[400px] border border-[#333]">
+    <div class="text-center font-bold border-b border-[#333] pb-3 mb-3 relative">
+      Crea nuovo post
+      <i class="fa-solid fa-xmark absolute right-0 top-0 cursor-pointer" onclick="closeModal('upload-modal')"></i>
+    </div>
+    <div class="flex flex-col gap-3">
+      <label class="flex flex-col items-center justify-center h-48 border-2 border-dashed border-[#444] rounded-lg cursor-pointer hover:bg-[#333]">
+        <i class="fa-solid fa-image text-2xl mb-2 text-gray-400"></i>
+        <span class="text-sm text-gray-400">Trascina foto o clicca</span>
+        <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
+      </label>
+      <img id="upload-preview" class="hidden w-full h-48 object-cover rounded-lg">
+      <textarea id="post-caption" rows="2" placeholder="Scrivi una didascalia..." class="input-field resize-none"></textarea>
+      <button onclick="submitPost()" class="btn-primary w-full">Condividi</button>
+    </div>
   </div>
 </div>
 
-<!-- Dettaglio post -->
+<div id="search-modal" class="modal-overlay hidden">
+  <div class="user-list-modal">
+    <div class="ul-header">Cerca <i class="fa-solid fa-xmark ul-close" onclick="closeModal('search-modal')"></i></div>
+    <div class="p-3 border-b border-[#333]"><input type="text" id="search-query" class="input-field" placeholder="Cerca utenti..." onkeyup="performSearch()"></div>
+    <div id="search-results" class="ul-body"></div>
+  </div>
+</div>
+
+<div id="user-list-modal" class="modal-overlay hidden">
+  <div class="user-list-modal">
+    <div class="ul-header"><span id="ul-title">Lista</span> <i class="fa-solid fa-xmark ul-close" onclick="closeModal('user-list-modal')"></i></div>
+    <div id="ul-content" class="ul-body"></div>
+  </div>
+</div>
+
 <div id="post-detail-modal" class="modal-overlay hidden">
-  <div class="post-modal-box">
-    <div class="modal-img-side">
-      <img id="detail-img" src="" style="display:none;">
-      <div id="detail-noimg" class="text-gray-500 text-sm" style="display:none;">Nessuna immagine</div>
+  <div class="post-modal-layout">
+    <div class="pm-image-side">
+      <img id="detail-img" src="">
+      <div id="detail-noimg" class="hidden text-gray-500">Solo Testo</div>
     </div>
-    <div class="modal-info-side relative">
-      <i class="fa-solid fa-xmark absolute top-4 right-4 cursor-pointer text-xl" onclick="closeModal('post-detail-modal')"></i>
-
-      <div class="flex items-center gap-3 mb-4">
-        <img id="detail-avatar" src="" class="w-8 h-8 rounded-full bg-gray-700 cursor-pointer" onclick="goToUserProfile(currentPostUserId)">
-        <span id="detail-username" class="font-bold text-sm cursor-pointer" onclick="goToUserProfile(currentPostUserId)" style="text-decoration:underline;">User</span>
-
-        <div class="ml-auto flex gap-6 text-lg">
-          <div class="flex items-center gap-2 cursor-pointer" onclick="toggleLike(currentPostId)">
-            <i id="detail-like" class="fa-regular fa-heart hover:text-red-500"></i>
-            <span id="detail-like-count" class="text-sm text-gray-400">0</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <i class="fa-regular fa-comment"></i>
-            <span id="detail-comment-count" class="text-sm text-gray-400">0</span>
-          </div>
+    <div class="pm-info-side bg-black relative">
+      <div class="pm-header">
+        <div class="flex items-center gap-3 cursor-pointer" id="detail-user-link">
+          <img id="detail-avatar" src="" class="avatar-sm">
+          <span id="detail-username" class="font-bold text-sm"></span>
+        </div>
+        <i class="fa-solid fa-xmark cursor-pointer text-lg" onclick="closeModal('post-detail-modal')"></i>
+      </div>
+      <div class="pm-comments-list" id="detail-comments"></div>
+      <div class="pm-footer bg-black">
+        <div class="flex gap-4 text-2xl mb-2">
+          <i id="detail-like-btn" class="fa-regular fa-heart cursor-pointer hover:text-gray-400"></i>
+          <i class="fa-regular fa-comment cursor-pointer"></i>
+        </div>
+        <div class="font-bold text-sm mb-2"><span id="detail-likes-count">0</span> Mi piace</div>
+        <div class="flex gap-2">
+          <input type="text" id="new-comment" placeholder="Aggiungi un commento..." class="bg-transparent text-sm w-full outline-none text-white">
+          <button onclick="inviaCommento()" class="text-blue-500 font-semibold text-sm">Pubblica</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
-      <p id="detail-caption" class="text-sm text-gray-300 mb-4"></p>
-      <div class="comment-list" id="detail-comments"></div>
-
-      <div class="mt-auto flex gap-2">
-        <input type="text" id="new-comment" placeholder="Scrivi un commento..." class="flex-1 bg-black border border-gray-700 p-2 rounded text-sm text-white">
-        <button onclick="inviaCommento()" class="text-blue-400 font-bold text-sm uppercase">Invia</button>
+<div id="edit-profile-modal" class="modal-overlay hidden">
+  <div class="bg-[#262626] rounded-xl p-6 w-[400px] border border-[#333]">
+    <h2 class="text-xl font-bold mb-4">Modifica Profilo</h2>
+    <div class="flex flex-col gap-4">
+      <div class="text-center">
+        <img id="edit-avatar-preview" src="" class="w-20 h-20 rounded-full mx-auto mb-2 object-cover border border-gray-600">
+        <label class="text-blue-500 text-sm font-bold cursor-pointer hover:text-white">Cambia foto <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)"></label>
+      </div>
+      <div><label class="text-xs text-gray-500 uppercase">Username</label><input id="edit-username" type="text" class="input-field"></div>
+      <div><label class="text-xs text-gray-500 uppercase">Nome Completo</label><input id="edit-fullname" type="text" class="input-field"></div>
+      <div class="flex gap-2 mt-2">
+        <button onclick="saveProfile()" class="btn-primary flex-1">Salva</button>
+        <button onclick="closeModal('edit-profile-modal')" class="btn-secondary flex-1">Annulla</button>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Followers Modal -->
-<div id="followers-modal" class="modal-overlay hidden">
-  <div class="follower-modal-content">
-    <div class="flex items-center justify-between mb-4">
-      <h2 id="followers-modal-title" class="serif text-lg italic">Follower</h2>
-      <i class="fa-solid fa-xmark cursor-pointer text-xl" onclick="closeModal('followers-modal')"></i>
-    </div>
-    <div class="follower-list" id="followers-list"></div>
-  </div>
-</div>
-
-<!-- Search -->
-<div id="search-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="background:#111; padding:20px; width:90%; max-width:520px; position:relative;">
-    <i class="fa-solid fa-xmark absolute top-4 right-4 cursor-pointer" onclick="closeModal('search-modal')"></i>
-    <h2 class="serif text-xl mb-4">Cerca Utenti</h2>
-    <input type="text" id="search-query" class="w-full bg-black border border-gray-700 p-2 text-white mb-4" placeholder="Nome o Username..." onkeyup="performSearch()">
-    <div id="search-results" class="max-h-60 overflow-y-auto"></div>
   </div>
 </div>
 
 <script>
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
-
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
 
-  const FK_POSTS_PROFILES = 'posts_user_id_fkey';
-  const FK_COMMENTS_PROFILES = 'comments_user_id_fkey';
-
   let currentUser = null;
   let currentPostId = null;
-  let currentPostUserId = null;
-  let currentViewingUserId = null;
-  let currentFollowersType = null;
-  let currentFollowersUserId = null;
+  let viewingUserId = null;
 
   window.addEventListener('load', async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) enterApp(session.user);
-
+    // Auth Animation RESTORED
     let i = 0;
     const imgs = document.querySelectorAll('.visual-side img');
     if (imgs.length) {
@@ -392,512 +320,273 @@
         imgs[i].classList.add('active');
       }, 5000);
     }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) enterApp(session.user);
+    else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  function mess(t, err=false) {
-    const b = document.getElementById('msg-box');
-    b.innerText = t; b.style.display = 'block';
-    b.style.color = err ? '#ff4444' : '#44ff44';
+  // --- SHARE FUNCTIONALITY ADDED ---
+  async function sharePost(postId, caption) {
+    // Copia il link negli appunti o usa share nativo se su mobile
+    const textToShare = `Guarda questo post su Hawenishland: ${caption || ''}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Hawenishland Post',
+          text: textToShare,
+          url: window.location.href
+        });
+      } catch (err) { console.log('Share canceled'); }
+    } else {
+      // Fallback: copia negli appunti
+      try {
+        await navigator.clipboard.writeText(textToShare);
+        alert("Link copiato negli appunti! Condividilo con i tuoi amici.");
+      } catch (err) {
+        alert("Impossibile copiare il link.");
+      }
+    }
   }
-  function vaiA(m) {
-    document.getElementById('login-form').classList.toggle('hidden', m === 'signup');
-    document.getElementById('signup-form').classList.toggle('hidden', m === 'login');
-    document.getElementById('msg-box').style.display = 'none';
-  }
+
+  // --- NAVIGATION ---
+  function goHome() { renderFeedView(); }
+  function goToMyProfile() { openUserProfile(currentUser.id); }
+  function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
+  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); document.getElementById('upload-preview').classList.add('hidden'); document.getElementById('post-file').value = ""; }
   function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-  function openSearch(){ document.getElementById('search-modal').classList.remove('hidden'); }
-  function openUploadModal(){ document.getElementById('upload-modal').classList.remove('hidden'); }
-  function setTopbarTitle(t){ document.getElementById('topbar-title').innerText = t; }
-  function escapeHtml(str){ return (str||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-  function switchView(name) {
-    ['view-feed','view-dashboard','view-user-profile'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    document.getElementById(`view-${name}`).classList.remove('hidden');
-    if (name === 'feed') { setTopbarTitle('Feed'); loadFeedFollowed('posts-feed'); }
-    if (name === 'dashboard') { setTopbarTitle('Profilo'); loadProfile(true); }
-    if (name === 'user-profile') { setTopbarTitle('Profilo Utente'); loadUserProfile(currentViewingUserId, true); }
-  }
+  // --- FEED ---
+  async function renderFeedView() {
+    const main = document.getElementById('main-content-area');
+    main.innerHTML = `<div class="flex justify-center mt-10"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-gray-500"></i></div>`;
+    
+    const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
+    const followingIds = follows ? follows.map(f => f.followed_id) : [];
+    followingIds.push(currentUser.id);
 
-  async function faiRegistrazione() {
-    const u = document.getElementById('r-username').value.trim();
-    const e = document.getElementById('r-email').value.trim();
-    const p = document.getElementById('r-pass').value;
-    const n = document.getElementById('r-nome').value.trim();
-    const c = document.getElementById('r-cognome').value.trim();
-    const d = document.getElementById('r-nascita').value;
+    const { data: posts, error } = await sb.from('posts').select(`*, profiles:user_id (username, avatar_url)`).in('user_id', followingIds).order('created_at', { ascending: false });
 
-    if (!u || !e || !p || !n || !c || !d) return mess("Compila tutti i campi.", true);
+    if (error) return main.innerHTML = `<div class="text-center mt-10 text-red-500">Errore caricamento feed</div>`;
+    if (!posts || posts.length === 0) return main.innerHTML = `<div class="text-center mt-20 text-gray-500"><i class="fa-regular fa-compass text-4xl mb-4"></i><p>Il feed è vuoto.</p><button onclick="openSearchModal()" class="btn-primary mt-4">Cerca Persone</button></div>`;
 
-    const nascita = new Date(d);
-    const oggi = new Date();
-    let eta = oggi.getFullYear() - nascita.getFullYear();
-    if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta--;
-    if (eta < 16) return mess("Devi avere almeno 16 anni.", true);
-    if (p.length < 8) return mess("Password minimo 8 caratteri.", true);
-
-    document.getElementById('btn-reg').disabled = true;
-    document.getElementById('btn-reg').style.opacity = '0.6';
-
-    try {
-      const { data, error } = await sb.auth.signUp({
-        email: e, password: p,
-        options: { data: { first_name: n, last_name: c, birthday: d } }
-      });
-      if (error) throw error;
-
-      if (data.user) {
-        const ins = await sb.from('profiles').upsert([{
-          id: data.user.id,
-          username: u.toLowerCase(),
-          full_name: `${n} ${c}`,
-          avatar_url: null
-        }], { onConflict: 'id' });
-        if (ins.error) throw ins.error;
-      }
-
-      mess("Registrazione OK! Controlla l'email per confermare.");
-      setTimeout(() => vaiA('login'), 3000);
-    } catch(err) {
-      mess("Errore: " + (err?.message || err), true);
-    } finally {
-      document.getElementById('btn-reg').disabled = false;
-      document.getElementById('btn-reg').style.opacity = '1';
+    main.innerHTML = '';
+    for (const post of posts) {
+      const counts = await getPostCounts(post.id);
+      const likedByMe = await isLikedByMe(post.id);
+      main.insertAdjacentHTML('beforeend', createPostHTML(post, counts, likedByMe));
     }
   }
 
-  async function faiLogin() {
-    const e = document.getElementById('l-email').value.trim();
-    const p = document.getElementById('l-pass').value;
-    const { data, error } = await sb.auth.signInWithPassword({ email: e, password: p });
-    if (error) return mess("Errore: " + error.message, true);
-    enterApp(data.user);
-  }
-
-  async function recuperoPassword() {
-    const email = prompt("Email per recupero:");
-    if (email) {
-      const { error } = await sb.auth.resetPasswordForEmail(email);
-      alert(error ? error.message : "Controlla la tua email.");
-    }
-  }
-
-  async function rinviaConferma() {
-    const email = document.getElementById('l-email').value.trim();
-    if (!email) return mess("Scrivi prima la tua email.", true);
-    const { error } = await sb.auth.resend({ type: 'signup', email });
-    if (error) mess("Errore: " + error.message, true);
-    else mess("Email di conferma inviata. Controlla anche lo spam.");
-  }
-
-  async function logout() { await sb.auth.signOut(); location.reload(); }
-
-  async function enterApp(user) {
-    currentUser = user;
-    document.getElementById('auth-container').style.transform = "translateY(-100vh)";
-    setTimeout(async () => {
-      document.getElementById('auth-container').style.display = 'none';
-      document.getElementById('app-interface').style.display = 'block';
-      switchView('feed');
-      await loadProfile(false);
-    }, 600);
-  }
-
-  async function getMyProfileRow() {
-    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id);
-    if (error) throw error;
-    return data && data[0] ? data[0] : null;
-  }
-
-  async function loadProfile(renderMyPosts=true) {
-    try {
-      const prof = await getMyProfileRow();
-      if (!prof) return;
-
-      document.getElementById('dash-username').innerText = prof.username || '—';
-      document.getElementById('dash-fullname').innerText = prof.full_name || '—';
-      document.getElementById('dash-email').innerText = currentUser.email || '—';
-      document.getElementById('edit-first').value = prof.full_name ? prof.full_name.split(' ')[0] : '';
-      document.getElementById('edit-last').value = prof.full_name ? prof.full_name.split(' ').slice(1).join(' ') : '';
-      document.getElementById('edit-username').value = prof.username || '';
-      document.getElementById('edit-email').value = currentUser.email || '';
-
-      const avatarUrl = prof.avatar_url || 'https://via.placeholder.com/150';
-      document.getElementById('dash-avatar').src = avatarUrl;
-      document.getElementById('top-avatar').src = avatarUrl;
-
-      const { data: followers } = await sb.from('follows').select('id').eq('followed_id', currentUser.id);
-      const { data: following } = await sb.from('follows').select('id').eq('follower_id', currentUser.id);
-      document.getElementById('my-followers-count').innerText = followers ? followers.length : 0;
-      document.getElementById('my-following-count').innerText = following ? following.length : 0;
-
-      if (renderMyPosts) await loadFeed('my-posts-feed', true);
-    } catch (err) {
-      alert("Errore profilo: " + (err?.message || err));
-    }
-  }
-
-  async function loadUserProfile(userId, renderPosts=true) {
-    try {
-      const { data: prof } = await sb.from('profiles').select('*').eq('id', userId).single();
-      if (!prof) return;
-
-      currentViewingUserId = userId;
-      document.getElementById('user-profile-username').innerText = prof.username || '—';
-      document.getElementById('user-profile-fullname').innerText = prof.full_name || '—';
-
-      const avatarUrl = prof.avatar_url || 'https://via.placeholder.com/150';
-      document.getElementById('user-profile-avatar').src = avatarUrl;
-
-      const { data: followers } = await sb.from('follows').select('id').eq('followed_id', userId);
-      const { data: following } = await sb.from('follows').select('id').eq('follower_id', userId);
-      document.getElementById('user-followers-count').innerText = followers ? followers.length : 0;
-      document.getElementById('user-following-count').innerText = following ? following.length : 0;
-
-      const { data: isFollowing } = await sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('followed_id', userId);
-      const followBtn = document.getElementById('follow-btn');
-      if (isFollowing && isFollowing.length) {
-        followBtn.innerText = 'Segui Già';
-        followBtn.style.opacity = '0.6';
-      } else {
-        followBtn.innerText = 'Segui';
-        followBtn.style.opacity = '1';
-      }
-
-      if (renderPosts) {
-        const { data: posts, error } = await sb.from('posts')
-          .select(`id,user_id,image_url,caption,created_at,profiles:profiles!posts_user_id_fkey(username,avatar_url)`)
-          .eq('user_id', userId)
-          .order('created_at', { ascending:false });
-        if (!error) renderPostsInto(document.getElementById('user-posts-feed'), posts || [], false);
-      }
-    } catch (err) {
-      alert("Errore caricamento profilo: " + (err?.message || err));
-    }
-  }
-
-  async function toggleFollow() {
-    try {
-      const { data: isFollowing } = await sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('followed_id', currentViewingUserId);
-      if (isFollowing && isFollowing.length) {
-        await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', currentViewingUserId);
-      } else {
-        await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: currentViewingUserId }]);
-      }
-      await loadUserProfile(currentViewingUserId, false);
-    } catch (err) {
-      alert("Errore: " + err.message);
-    }
-  }
-
-  async function goToUserProfile(userId) {
-    if (userId === currentUser.id) {
-      switchView('dashboard');
-    } else {
-      currentViewingUserId = userId;
-      switchView('user-profile');
-      await loadUserProfile(userId, true);
-    }
-  }
-
-  async function openFollowersModal(type) {
-    currentFollowersType = type;
-    if (type === 'mine') currentFollowersUserId = currentUser.id;
-    else if (type === 'user-followers') currentFollowersUserId = currentViewingUserId;
-    else if (type === 'user-following') currentFollowersUserId = currentViewingUserId;
-    else if (type === 'following') currentFollowersUserId = currentUser.id;
-
-    const title = document.getElementById('followers-modal-title');
-    if (type === 'mine' || type === 'user-followers') {
-      title.innerText = 'Follower';
-    } else {
-      title.innerText = 'Seguiti';
-    }
-
-    document.getElementById('followers-modal').classList.remove('hidden');
-    await loadFollowersList();
-  }
-
-  async function loadFollowersList() {
-    const list = document.getElementById('followers-list');
-    list.innerHTML = 'Caricamento...';
-
-    try {
-      let query;
-      if (currentFollowersType === 'mine' || currentFollowersType === 'user-followers') {
-        query = sb.from('follows')
-          .select(`follower_id,profiles!follows_follower_id_fkey(id,username,avatar_url,full_name)`)
-          .eq('followed_id', currentFollowersUserId);
-      } else {
-        query = sb.from('follows')
-          .select(`followed_id,profiles!follows_followed_id_fkey(id,username,avatar_url,full_name)`)
-          .eq('follower_id', currentFollowersUserId);
-      }
-
-      const { data, error } = await query;
-      if (error) return list.innerHTML = error.message;
-
-      list.innerHTML = '';
-      if (!data || !data.length) return list.innerHTML = '<p class="text-gray-500 text-center py-4">Nessuno ancora.</p>';
-
-      data.forEach(item => {
-        const prof = currentFollowersType === 'mine' || currentFollowersType === 'user-followers' ? item.profiles : item.profiles;
-        if (!prof) return;
-        const avatarUrl = prof.avatar_url || 'https://via.placeholder.com/40';
-        list.insertAdjacentHTML('beforeend', `
-          <div class="follower-item">
-            <img src="${avatarUrl}" class="follower-avatar" onclick="goToUserProfile('${prof.id}')">
-            <div class="follower-info">
-              <div class="follower-username" onclick="goToUserProfile('${prof.id}')">${prof.username || 'user'}</div>
-              <div class="follower-fullname">${prof.full_name || ''}</div>
-            </div>
+  function createPostHTML(post, counts, liked) {
+    const user = post.profiles || { username: 'Unknown', avatar_url: null };
+    const likeClass = liked ? 'fa-solid text-red-500' : 'fa-regular';
+    // ADDED: Share icon with onclick function
+    return `
+      <div class="post-card">
+        <div class="post-header">
+          <div class="user-info" onclick="openUserProfile('${post.user_id}')">
+            <img src="${user.avatar_url || 'https://via.placeholder.com/150'}" class="avatar-sm">
+            <span class="username-bold">${user.username}</span>
           </div>
-        `);
-      });
-    } catch (err) {
-      list.innerHTML = 'Errore: ' + err.message;
-    }
-  }
-
-  async function saveProfile() {
-    try {
-      const first = document.getElementById('edit-first').value.trim();
-      const last = document.getElementById('edit-last').value.trim();
-      const username = document.getElementById('edit-username').value.trim().toLowerCase();
-      const full_name = (first + " " + last).trim();
-      if (!username) return alert("Username obbligatorio.");
-      const { error } = await sb.from('profiles').update({ username, full_name }).eq('id', currentUser.id);
-      if (error) throw error;
-      alert("Dati aggiornati.");
-      await loadProfile(true);
-    } catch (err) {
-      alert("Errore salvataggio: " + (err?.message || err));
-    }
-  }
-
-  async function changeEmail() {
-    try {
-      const newEmail = document.getElementById('edit-email').value.trim();
-      if (!newEmail) return alert("Inserisci una nuova email.");
-      const { error } = await sb.auth.updateUser({ email: newEmail });
-      if (error) throw error;
-      alert("Link di conferma inviato alla nuova email. Dopo la conferma, esci e rientra.");
-      document.getElementById('edit-email').value = '';
-    } catch (err) {
-      alert("Errore cambio email: " + (err?.message || err));
-    }
-  }
-
-  async function uploadAvatar() {
-    const file = document.getElementById('avatar-upload').files[0];
-    if (!file) return;
-    try {
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${currentUser.id}/avatar_${Date.now()}.${ext}`;
-      const { error: upErr } = await sb.storage.from(BUCKET_AVATARS).upload(path, file, { upsert:true });
-      if (upErr) throw upErr;
-      const { data: pub } = sb.storage.from(BUCKET_AVATARS).getPublicUrl(path);
-      const { error: dbErr } = await sb.from('profiles').update({ avatar_url: pub.publicUrl }).eq('id', currentUser.id);
-      if (dbErr) throw dbErr;
-      document.getElementById('dash-avatar').src = pub.publicUrl;
-      document.getElementById('top-avatar').src = pub.publicUrl;
-    } catch (err) {
-      alert("Errore avatar: " + (err?.message || err));
-    } finally {
-      document.getElementById('avatar-upload').value = "";
-    }
-  }
-
-  async function loadFeedFollowed(containerId) {
-    const c = document.getElementById(containerId);
-    c.innerHTML = 'Caricamento...';
-    const f = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
-    let query = sb.from('posts')
-      .select(`id,user_id,image_url,caption,created_at,profiles:profiles!posts_user_id_fkey(username,avatar_url)`)
-      .order('created_at', { ascending:false });
-    if (!f.error && f.data) {
-      const ids = [currentUser.id, ...f.data.map(x=>x.followed_id)];
-      query = query.in('user_id', ids);
-    }
-    const { data, error } = await query;
-    if (error) return c.innerHTML = error.message;
-    renderPostsInto(c, data || [], false);
-  }
-
-  async function loadFeed(containerId, onlyMine) {
-    const c = document.getElementById(containerId);
-    c.innerHTML = 'Caricamento...';
-    let query = sb.from('posts')
-      .select(`id,user_id,image_url,caption,created_at,profiles:profiles!posts_user_id_fkey(username,avatar_url)`)
-      .order('created_at', { ascending:false });
-    if (onlyMine) query = query.eq('user_id', currentUser.id);
-    const { data, error } = await query;
-    if (error) return c.innerHTML = error.message;
-    renderPostsInto(c, data || [], onlyMine);
-  }
-
-  async function renderPostsInto(containerEl, posts, allowDelete) {
-    containerEl.innerHTML = '';
-    if (!posts.length) return containerEl.innerHTML = '<p class="text-gray-500 text-center">Nessun post.</p>';
-
-    for (const p of posts) {
-      const prof = p.profiles || {};
-      const imgBlock = p.image_url
-        ? `<img src="${p.image_url}" class="post-img" onclick="openPostDetailById('${p.id}')">`
-        : `<div class="post-textonly">${escapeHtml(p.caption || '')}</div>`;
-      const showCaptionBelow = !!p.image_url;
-
-      const { data: likesCount } = await sb.from('likes').select('id').eq('post_id', p.id);
-      const { data: commentsCount } = await sb.from('comments').select('id').eq('post_id', p.id);
-      const likeCnt = likesCount ? likesCount.length : 0;
-      const commentCnt = commentsCount ? commentsCount.length : 0;
-
-      containerEl.insertAdjacentHTML('beforeend', `
-        <div class="post-card">
-          <div class="post-header">
-            <img src="${prof.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar" onclick="goToUserProfile('${p.user_id}')" title="Vai al profilo">
-            <span class="font-bold text-sm text-white cursor-pointer" onclick="goToUserProfile('${p.user_id}')">${prof.username || 'user'}</span>
-            ${allowDelete ? `<i class="fa-solid fa-trash ml-auto text-gray-600 icon-btn hover:text-red-500" onclick="deletePost('${p.id}')"></i>` : ''}
-          </div>
-          ${imgBlock}
-          <div class="post-actions">
-            <div class="action-item" onclick="toggleLike('${p.id}')">
-              <i class="fa-regular fa-heart"></i>
-              <span class="action-count">${likeCnt}</span>
-            </div>
-            <div class="action-item" onclick="openPostDetailById('${p.id}')">
-              <i class="fa-regular fa-comment"></i>
-              <span class="action-count">${commentCnt}</span>
-            </div>
-          </div>
-          ${showCaptionBelow ? `<div class="mt-2 text-sm text-gray-300"><span class="font-bold text-white mr-2 cursor-pointer" onclick="goToUserProfile('${p.user_id}')">${prof.username || 'user'}</span>${escapeHtml(p.caption || '')}</div>` : ''}
+          <i class="fa-solid fa-ellipsis text-gray-500 cursor-pointer"></i>
         </div>
-      `);
+        ${post.image_url ? `<img src="${post.image_url}" class="post-image" onclick="openPostDetail('${post.id}')">` : ''}
+        <div class="post-actions">
+          <i class="${likeClass} fa-heart action-btn" id="feed-like-${post.id}" onclick="toggleLike('${post.id}', this)"></i>
+          <i class="fa-regular fa-comment action-btn" onclick="openPostDetail('${post.id}')"></i>
+          <i class="fa-regular fa-paper-plane action-btn" onclick="sharePost('${post.id}', '${escapeHtml(post.caption)}')"></i>
+        </div>
+        <div class="post-stats" onclick="openPostDetail('${post.id}')"><span id="feed-likes-count-${post.id}">${counts.likes}</span> Mi piace</div>
+        <div class="post-caption"><span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>${escapeHtml(post.caption)}</div>
+        <div class="view-comments" onclick="openPostDetail('${post.id}')">Mostra tutti i ${counts.comments} commenti</div>
+      </div>
+    `;
+  }
+
+  // --- PROFILE ---
+  async function openUserProfile(userId) {
+    viewingUserId = userId;
+    const main = document.getElementById('main-content-area');
+    main.innerHTML = `<div class="flex justify-center mt-10"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>`;
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (!profile) return main.innerHTML = "Utente non trovato";
+
+    const { count: postsCount } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+    const { count: followersCount } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('followed_id', userId);
+    const { count: followingCount } = await sb.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId);
+    
+    let isFollowing = false;
+    if (userId !== currentUser.id) {
+      const { data } = await sb.from('follows').select('*').eq('follower_id', currentUser.id).eq('followed_id', userId);
+      isFollowing = data && data.length > 0;
+    }
+
+    const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    const isMe = userId === currentUser.id;
+    const actionBtn = isMe ? `<button onclick="openEditProfile()" class="btn-secondary">Modifica</button>` : `<button onclick="toggleFollow('${userId}')" id="follow-btn" class="btn-primary ${isFollowing ? '!bg-transparent !text-white !border-gray-600' : ''}">${isFollowing ? 'Seguito' : 'Segui'}</button>`;
+
+    main.innerHTML = `
+      <div class="profile-header">
+        <img src="${profile.avatar_url || 'https://via.placeholder.com/150'}" class="profile-avatar-lg" onclick="${isMe ? 'openEditProfile()' : ''}">
+        <div class="profile-info">
+          <div class="profile-top"><span class="profile-username">${profile.username}</span>${actionBtn}${isMe ? '<i class="fa-solid fa-gear text-xl cursor-pointer" onclick="logout()"></i>' : ''}</div>
+          <div class="profile-stats">
+            <div class="stat-item"><span class="stat-value">${postsCount || 0}</span> post</div>
+            <div class="stat-item" onclick="showUserList('followers', '${userId}')"><span class="stat-value" id="p-followers">${followersCount || 0}</span> follower</div>
+            <div class="stat-item" onclick="showUserList('following', '${userId}')"><span class="stat-value">${followingCount || 0}</span> seguiti</div>
+          </div>
+          <div class="profile-bio"><div class="profile-fullname">${profile.full_name || ''}</div></div>
+        </div>
+      </div>
+      <div class="posts-grid">${posts.map(p => `<div class="grid-item" onclick="openPostDetail('${p.id}')">${p.image_url ? `<img src="${p.image_url}">` : `<div class="w-full h-full bg-gray-900 flex items-center justify-center text-xs p-2 text-center text-gray-500">${escapeHtml(p.caption).substring(0,30)}...</div>`}<div class="grid-overlay"><span><i class="fa-solid fa-heart"></i> Info</span></div></div>`).join('')}</div>
+    `;
+  }
+
+  // --- ACTIONS ---
+  async function toggleFollow(targetId) {
+    const btn = document.getElementById('follow-btn');
+    const isFollowing = btn.innerText === 'Seguito';
+    if (isFollowing) {
+      await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId);
+      btn.innerText = 'Segui'; btn.classList.remove('!bg-transparent', '!text-white', '!border-gray-600');
+    } else {
+      await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]);
+      btn.innerText = 'Seguito'; btn.classList.add('!bg-transparent', '!text-white', '!border-gray-600');
+    }
+    const countEl = document.getElementById('p-followers');
+    if(countEl) countEl.innerText = isFollowing ? parseInt(countEl.innerText) - 1 : parseInt(countEl.innerText) + 1;
+  }
+
+  async function toggleLike(postId, btnElement) {
+    const isLiked = btnElement.classList.contains('fa-solid');
+    const countSpan = document.getElementById(`feed-likes-count-${postId}`);
+    let currentCount = parseInt(countSpan.innerText);
+    if (isLiked) {
+      await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+      btnElement.classList.remove('fa-solid', 'text-red-500'); btnElement.classList.add('fa-regular');
+      countSpan.innerText = Math.max(0, currentCount - 1);
+    } else {
+      await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+      btnElement.classList.remove('fa-regular'); btnElement.classList.add('fa-solid', 'text-red-500', 'like-active');
+      countSpan.innerText = currentCount + 1;
+      setTimeout(() => btnElement.classList.remove('like-active'), 200);
     }
   }
 
-  async function submitPost() {
-    const file = document.getElementById('post-file').files[0] || null;
-    const caption = (document.getElementById('post-caption').value || '').trim();
-    if (!caption && !file) return alert("Scrivi qualcosa oppure carica una foto.");
-
-    let imageUrl = null;
-    try {
-      if (file) {
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-        const fileName = `${currentUser.id}/post_${Date.now()}.${ext}`;
-        const { error: upErr } = await sb.storage.from(BUCKET_POSTS).upload(fileName, file, { upsert:true });
-        if (upErr) throw upErr;
-        const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(fileName);
-        imageUrl = data.publicUrl;
-      }
-      const { error } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: imageUrl, caption }]);
-      if (error) throw error;
-      document.getElementById('post-file').value = '';
-      document.getElementById('post-caption').value = '';
-      closeModal('upload-modal');
-      loadFeedFollowed('posts-feed');
-    } catch (err) {
-      alert("Errore pubblicazione: " + (err?.message || err));
-    }
-  }
-
-  async function deletePost(id) {
-    if (!confirm("Eliminare questo post?")) return;
-    const { error } = await sb.from('posts').delete().eq('id', id);
-    if (error) alert(error.message);
-    loadFeed('my-posts-feed', true);
-  }
-
-  async function openPostDetailById(postId) {
+  // --- POST DETAIL ---
+  async function openPostDetail(postId) {
     currentPostId = postId;
     document.getElementById('post-detail-modal').classList.remove('hidden');
-    const { data: post, error } = await sb.from('posts')
-      .select(`id,user_id,image_url,caption,profiles:profiles!posts_user_id_fkey(username,avatar_url)`)
-      .eq('id', postId)
-      .maybeSingle();
-    if (error || !post) return alert(error ? error.message : "Post non trovato");
+    document.getElementById('detail-comments').innerHTML = '<div class="text-center text-gray-500 mt-5">Caricamento...</div>';
+    
+    const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
+    if (post.image_url) { document.getElementById('detail-img').src = post.image_url; document.getElementById('detail-img').classList.remove('hidden'); document.getElementById('detail-noimg').classList.add('hidden'); }
+    else { document.getElementById('detail-img').classList.add('hidden'); document.getElementById('detail-noimg').classList.remove('hidden'); }
 
-    currentPostUserId = post.user_id;
+    const user = post.profiles;
+    document.getElementById('detail-avatar').src = user.avatar_url || 'https://via.placeholder.com/32';
+    document.getElementById('detail-username').innerText = user.username;
+    document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
 
-    const img = document.getElementById('detail-img');
-    const noimg = document.getElementById('detail-noimg');
-    if (post.image_url) { img.src = post.image_url; img.style.display='block'; noimg.style.display='none'; }
-    else { img.style.display='none'; noimg.style.display='block'; }
+    const liked = await isLikedByMe(postId);
+    const likeBtn = document.getElementById('detail-like-btn');
+    likeBtn.className = liked ? "fa-solid fa-heart cursor-pointer text-red-500" : "fa-regular fa-heart cursor-pointer hover:text-gray-400";
+    likeBtn.onclick = () => { toggleLike(postId, likeBtn); refreshDetailCounts(postId); };
 
-    const prof = post.profiles || {};
-    document.getElementById('detail-avatar').src = prof.avatar_url || 'https://via.placeholder.com/30';
-    document.getElementById('detail-username').innerText = prof.username || 'user';
-    document.getElementById('detail-caption').innerText = post.caption || '';
+    const commentList = document.getElementById('detail-comments');
+    commentList.innerHTML = '';
+    if (post.caption) commentList.insertAdjacentHTML('beforeend', `<div class="comment-row mb-4"><img src="${user.avatar_url || 'https://via.placeholder.com/32'}" class="comment-avatar" onclick="closeModal('post-detail-modal'); openUserProfile('${post.user_id}')"><div><span class="font-bold mr-2 text-sm cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${post.user_id}')">${user.username}</span><span class="text-sm">${escapeHtml(post.caption)}</span></div></div>`);
 
-    const { data: likesCount } = await sb.from('likes').select('id').eq('post_id', postId);
-    document.getElementById('detail-like-count').innerText = likesCount ? likesCount.length : 0;
-
-    loadComments();
-  }
-
-  async function loadComments() {
-    const list = document.getElementById('detail-comments');
-    list.innerHTML = 'Caricamento...';
-    const { data, error } = await sb.from('comments')
-      .select(`id,content,user_id,created_at,profiles:profiles!comments_user_id_fkey(id,username,avatar_url)`)
-      .eq('post_id', currentPostId)
-      .order('created_at', { ascending:true });
-    if (error) return list.innerHTML = error.message;
-
-    list.innerHTML = '';
-    if (!data || !data.length) return list.innerHTML = '<p class="text-gray-500 text-center mt-4">Nessun commento.</p>';
-
-    const { data: commentsCounts } = await sb.from('comments').select('id').eq('post_id', currentPostId);
-    document.getElementById('detail-comment-count').innerText = commentsCounts ? commentsCounts.length : 0;
-
-    data.forEach(c => {
-      const u = c.profiles || {};
-      const avatarUrl = u.avatar_url || 'https://via.placeholder.com/28';
-      list.insertAdjacentHTML('beforeend', `
-        <div class="comment-item">
-          <img src="${avatarUrl}" class="comment-avatar" onclick="goToUserProfile('${c.user_id}')">
-          <div class="comment-content">
-            <span class="comment-author" onclick="goToUserProfile('${c.user_id}')">${u.username||'user'}</span>
-            <div class="comment-text">${escapeHtml(c.content)}</div>
-          </div>
-        </div>
-      `);
+    const { data: comments } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
+    comments.forEach(c => {
+      const u = c.profiles;
+      commentList.insertAdjacentHTML('beforeend', `<div class="comment-row"><img src="${u.avatar_url || 'https://via.placeholder.com/32'}" class="comment-avatar" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 cursor-pointer hover:text-gray-300" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${u.username}</span><span>${escapeHtml(c.content)}</span></div></div>`);
     });
+    refreshDetailCounts(postId);
   }
 
+  async function refreshDetailCounts(postId) {
+    const counts = await getPostCounts(postId);
+    document.getElementById('detail-likes-count').innerText = counts.likes;
+  }
   async function inviaCommento() {
-    const input = document.getElementById('new-comment');
-    const txt = (input.value||'').trim();
+    const txt = document.getElementById('new-comment').value.trim();
     if (!txt) return;
-    const { error } = await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]);
-    if (error) return alert(error.message);
-    input.value = '';
-    loadComments();
+    await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]);
+    document.getElementById('new-comment').value = '';
+    openPostDetail(currentPostId);
   }
 
-  async function toggleLike(postId) {
-    const { data, error } = await sb.from('likes').select('post_id').eq('post_id', postId).eq('user_id', currentUser.id);
-    if (error) return alert(error.message);
-    if (data && data.length) await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
-    else await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-    if (currentPostId === postId) {
-      const { data: likesCount } = await sb.from('likes').select('id').eq('post_id', postId);
-      document.getElementById('detail-like-count').innerText = likesCount ? likesCount.length : 0;
-    }
+  // --- HELPERS ---
+  async function showUserList(type, userId) {
+    const modal = document.getElementById('user-list-modal');
+    modal.classList.remove('hidden');
+    document.getElementById('ul-title').innerText = type === 'followers' ? 'Follower' : 'Seguiti';
+    const content = document.getElementById('ul-content');
+    content.innerHTML = '<div class="p-4 text-center">Caricamento...</div>';
+    
+    let query = type === 'followers' ? sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`).eq('followed_id', userId) : sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`).eq('follower_id', userId);
+    const { data, error } = await query;
+    if (error || !data.length) return content.innerHTML = '<div class="p-4 text-center text-gray-500">Nessun utente.</div>';
+    
+    content.innerHTML = '';
+    data.map(x => x.profiles).forEach(u => {
+      content.insertAdjacentHTML('beforeend', `<div class="user-row cursor-pointer" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')"><div class="flex items-center gap-3"><img src="${u.avatar_url || 'https://via.placeholder.com/32'}" class="w-10 h-10 rounded-full bg-gray-800 object-cover"><div><div class="font-bold text-sm">${u.username}</div><div class="text-xs text-gray-400">${u.full_name || ''}</div></div></div></div>`);
+    });
   }
 
   async function performSearch() {
     const q = document.getElementById('search-query').value.trim();
-    if (q.length < 2) return;
-    const { data, error } = await sb.from('profiles').select('id,username,avatar_url,full_name').ilike('username', `%${q}%`).limit(20);
-    if (error) return;
-    const c = document.getElementById('search-results');
-    c.innerHTML = '';
-    (data||[]).forEach(u => {
-      const avatarUrl = u.avatar_url || 'https://via.placeholder.com/30';
-      c.insertAdjacentHTML('beforeend', `<div class="p-3 border-b border-gray-700 flex gap-3 items-center text-white cursor-pointer hover:bg-gray-900 transition" onclick="goToUserProfile('${u.id}')"><img src="${avatarUrl}" class="w-8 h-8 rounded-full">@${u.username}</div>`);
-    });
+    const resDiv = document.getElementById('search-results');
+    if (q.length < 2) return resDiv.innerHTML = '';
+    const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10);
+    resDiv.innerHTML = '';
+    data.forEach(u => resDiv.insertAdjacentHTML('beforeend', `<div class="user-row cursor-pointer" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><div class="flex items-center gap-3"><img src="${u.avatar_url || 'https://via.placeholder.com/32'}" class="w-10 h-10 rounded-full bg-gray-800 object-cover"><div class="font-bold text-sm">${u.username}</div></div></div>`));
   }
+
+  async function getPostCounts(postId) {
+    const { count: l } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+    const { count: c } = await sb.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+    return { likes: l || 0, comments: c || 0 };
+  }
+  async function isLikedByMe(postId) { const { data } = await sb.from('likes').select('id').eq('post_id', postId).eq('user_id', currentUser.id); return data && data.length > 0; }
+  function previewUpload(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = function(e) { const img = document.getElementById('upload-preview'); img.src = e.target.result; img.classList.remove('hidden'); }; reader.readAsDataURL(input.files[0]); } }
+  async function submitPost() {
+    const file = document.getElementById('post-file').files[0];
+    const caption = document.getElementById('post-caption').value;
+    if (!file && !caption) return alert("Aggiungi foto o testo");
+    let publicUrl = null;
+    if (file) { const fileName = `${currentUser.id}/${Date.now()}`; await sb.storage.from(BUCKET_POSTS).upload(fileName, file); const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(fileName); publicUrl = data.publicUrl; }
+    await sb.from('posts').insert([{ user_id: currentUser.id, image_url: publicUrl, caption: caption }]);
+    closeModal('upload-modal'); renderFeedView();
+  }
+  function openEditProfile() {
+    document.getElementById('edit-profile-modal').classList.remove('hidden');
+    sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data}) => { document.getElementById('edit-username').value = data.username; document.getElementById('edit-fullname').value = data.full_name; document.getElementById('edit-avatar-preview').src = data.avatar_url || 'https://via.placeholder.com/150'; });
+  }
+  async function saveProfile() {
+    await sb.from('profiles').update({ username: document.getElementById('edit-username').value, full_name: document.getElementById('edit-fullname').value }).eq('id', currentUser.id);
+    closeModal('edit-profile-modal'); openUserProfile(currentUser.id);
+  }
+  async function uploadAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const fileName = `${currentUser.id}/avatar_${Date.now()}`;
+    await sb.storage.from(BUCKET_AVATARS).upload(fileName, file);
+    const { data } = sb.storage.from(BUCKET_AVATARS).getPublicUrl(fileName);
+    document.getElementById('edit-avatar-preview').src = data.publicUrl;
+    await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
+  }
+
+  // --- AUTH UTILS ---
+  function mess(t,e){const b=document.getElementById('msg-box');b.innerText=t;b.classList.remove('hidden');b.style.borderColor=e?'red':'green';b.style.color=e?'red':'green';}
+  function vaiA(m){ document.getElementById('login-form').classList.toggle('hidden',m==='signup'); document.getElementById('signup-form').classList.toggle('hidden',m==='login'); }
+  function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ""; }
+  async function faiLogin() { const { data, error } = await sb.auth.signInWithPassword({ email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value }); if(error) mess(error.message, true); else enterApp(data.user); }
+  async function faiRegistrazione() { const { data, error } = await sb.auth.signUp({email: document.getElementById('r-email').value, password: document.getElementById('r-pass').value}); if(error) return mess(error.message, true); if(data.user) { await sb.from('profiles').insert([{ id: data.user.id, username: document.getElementById('r-username').value }]); } mess("Registrazione ok, controlla email!"); }
+  async function logout() { await sb.auth.signOut(); location.reload(); }
+  function enterApp(user) { currentUser = user; document.getElementById('auth-container').style.transform = "translateY(-100vh)"; setTimeout(() => { document.getElementById('auth-container').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); goHome(); }, 600); }
 </script>
 </body>
 </html>
