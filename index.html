@@ -38,82 +38,52 @@
     ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
     .hidden { display: none !important; }
 
-    /* --- SIDEBAR ICONE --- */
+    /* --- SIDEBAR --- */
     .app-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
 
     .sidebar { 
       width: 80px; 
-      position: sticky; 
-      top: 20px; 
-      height: calc(100vh - 40px);
-      margin-left: 10px;
-      padding: 30px 0;
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      background: var(--bg-panel);
-      backdrop-filter: blur(12px);
-      border: var(--glass-border);
-      border-radius: 40px; 
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      z-index: 50;
+      position: sticky; top: 20px; height: calc(100vh - 40px);
+      margin-left: 10px; padding: 30px 0;
+      display: flex; flex-direction: column; align-items: center; 
+      background: var(--bg-panel); backdrop-filter: blur(12px);
+      border: var(--glass-border); border-radius: 40px; 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 50;
     }
 
     .brand-logo-icon {
-      font-family: 'Playfair Display', serif;
-      font-weight: bold;
-      font-size: 24px;
-      color: var(--gold);
-      margin-bottom: 40px;
-      cursor: pointer;
-      border: 1px solid var(--gold);
-      width: 40px; height: 40px;
+      font-family: 'Playfair Display', serif; font-weight: bold; font-size: 24px;
+      color: var(--gold); margin-bottom: 40px; cursor: pointer;
+      border: 1px solid var(--gold); width: 40px; height: 40px;
       display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-      box-shadow: 0 0 10px var(--gold-glow);
+      border-radius: 50%; box-shadow: 0 0 10px var(--gold-glow);
     }
 
     .nav-item { 
-      width: 48px; height: 48px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%; 
-      cursor: pointer; 
-      transition: all 0.3s ease; 
-      color: var(--text-muted);
-      margin-bottom: 20px;
-      font-size: 20px;
-      position: relative;
+      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; cursor: pointer; transition: all 0.3s ease; 
+      color: var(--text-muted); margin-bottom: 20px; font-size: 20px; position: relative;
     }
-    
     .nav-item:hover, .nav-item.active { 
-      background: rgba(212, 175, 55, 0.15); 
-      color: var(--gold); 
-      box-shadow: 0 0 15px var(--gold-glow);
-      transform: scale(1.1);
+      background: rgba(212, 175, 55, 0.15); color: var(--gold); 
+      box-shadow: 0 0 15px var(--gold-glow); transform: scale(1.1);
     }
-
     .nav-item:hover::after {
-      content: attr(title);
-      position: absolute; left: 60px;
-      background: var(--gold); color: #000;
-      padding: 4px 8px; font-size: 10px;
-      border-radius: 4px; font-weight: bold;
-      white-space: nowrap; opacity: 1; pointer-events: none;
+      content: attr(title); position: absolute; left: 60px;
+      background: var(--gold); color: #000; padding: 4px 8px; font-size: 10px;
+      border-radius: 4px; font-weight: bold; white-space: nowrap; opacity: 1; pointer-events: none;
     }
 
     /* --- FEED & POSTS --- */
     .main-content { flex: 1; padding: 40px; max-width: 700px; margin: 0 auto; }
 
     .post-card { 
-      background: rgba(30, 41, 59, 0.4);
-      margin-bottom: 40px; padding: 20px;
+      background: rgba(30, 41, 59, 0.4); margin-bottom: 40px; padding: 20px;
       border-radius: 20px; border: 1px solid var(--gold);
-      box-shadow: 0 0 20px var(--gold-glow);
-      transition: transform 0.3s ease;
+      box-shadow: 0 0 20px var(--gold-glow); transition: transform 0.3s ease;
     }
     
     .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-    
     .user-badge { display: flex; align-items: center; gap: 12px; cursor: pointer; }
     .user-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); }
     .user-meta { display: flex; flex-direction: column; }
@@ -132,11 +102,12 @@
 
     .empty-feed-box { text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.03); border: 1px dashed var(--gold); border-radius: 20px; color: #ccc; }
 
-    /* BUTTONS */
+    /* AUTH & UI ELEMENTS */
     .btn-gold { background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%); color: #000; padding: 12px 24px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(248, 181, 0, 0.4); transition: 0.3s; }
     .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(248, 181, 0, 0.6); }
+    .btn-white { background:#fff; color:#000; padding:18px; font-weight:500; text-transform:uppercase; width:100%; cursor:pointer; border:1px solid #fff; transition:.3s; margin-top:10px }
+    .btn-white:hover { background:#000; color:#fff }
 
-    /* AUTH */
     .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:200; background:#0a0a0a; transition:transform .8s ease-in-out; }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
     @media (min-width:768px){ .visual-side{display:block} }
@@ -147,18 +118,14 @@
     .input-group{ margin-bottom:25px }
     .input-label{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:2px; color:#555; margin-bottom:8px }
     input.auth-input{ background:transparent; border-bottom:1px solid #222; padding:10px 0; color:#fff; width:100%; outline:none; font-size:14px; border-top:none; border-left:none; border-right:none; border-radius:0; }
-    input.auth-input:focus{ border-bottom-color:#fff }
-    .btn-white{ background:#fff; color:#000; padding:18px; font-weight:500; text-transform:uppercase; width:100%; cursor:pointer; border:1px solid #fff; transition:.3s; margin-top:10px }
-    .btn-white:hover{ background:#000; color:#fff }
-    .link-small{ text-align:center; margin-top:20px; font-size:10px; color:#555; cursor:pointer; text-transform:uppercase; letter-spacing:1px }
-
+    
     /* MODALS */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0, 0.9); backdrop-filter: blur(5px); z-index: 100; display: flex; justify-content: center; align-items: center; }
     .glass-modal { background: #1e293b; border: 1px solid var(--gold); border-radius: 20px; overflow: hidden; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2); }
     .detail-layout { display: flex; width: 90vw; max-width: 1100px; height: 85vh; }
-    .detail-img-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
+    .detail-img-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
     .detail-img-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #1e293b; min-width: 350px; position: relative; }
+    .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #1e293b; min-width: 350px; }
     
     @media (max-width: 800px) {
       .sidebar { width: 100%; height: 60px; position: fixed; bottom: 0; top: auto; left: 0; margin: 0; flex-direction: row; justify-content: space-around; padding: 0; border-radius: 20px 20px 0 0; background: rgba(15, 23, 42, 0.98); border-top: 1px solid var(--gold); border: none; }
@@ -323,7 +290,11 @@
     if(!confirm("Vuoi davvero eliminare questo post?")) return;
     const { error } = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
     if(error) alert("Errore: " + error.message);
-    else { closeModal('post-detail-modal'); if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); else renderFeedView(); }
+    else {
+      closeModal('post-detail-modal'); 
+      if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); 
+      else renderFeedView(); 
+    }
   }
 
   async function renderFeedView() {
@@ -334,6 +305,7 @@
     const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
     const followingIds = follows ? follows.map(f => f.followed_id) : [];
 
+    // Se non segui nessuno, mostra empty state
     if (followingIds.length === 0) {
       return main.innerHTML = `<div class="empty-feed-box"><i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i><h2 class="text-xl font-bold mb-2">Home Vuota</h2><p class="text-gray-400 mb-6">Non segui ancora nessuno.</p><button onclick="openSearchModal()" class="btn-gold">Cerca Persone</button></div>`;
     }
@@ -345,6 +317,7 @@
     }
 
     main.innerHTML = '';
+    // Usa for...of per aspettare correttamente le chiamate asincrone (Likestatus)
     for (const post of posts) {
       const counts = await getPostCounts(post.id);
       const likedByMe = await isLikedByMe(post.id);
@@ -356,11 +329,9 @@
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
     
-    // LOGICA DIRETTA: Se liked è vero, l'icona è fa-solid e rossa. Se falso, fa-regular.
-    const heartClass = liked ? 'fa-solid fa-heart text-[#ef4444]' : 'fa-regular fa-heart';
-    // Attributo data-liked per gestire lo stato
-    const likedState = liked ? 'true' : 'false';
-
+    const iconClass = liked ? 'fa-solid fa-heart text-[#ef4444]' : 'fa-regular fa-heart';
+    
+    // Tasto delete solo se è mio
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
@@ -372,8 +343,8 @@
         </div>
         ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="action-bar">
-          <div class="icon-btn" onclick="toggleLike('${post.id}', this)" data-liked="${likedState}">
-            <i class="${heartClass}"></i>
+          <div class="icon-btn" onclick="toggleLike('${post.id}', this)">
+            <i class="${iconClass}"></i>
             <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
           </div>
           <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
@@ -384,25 +355,49 @@
     `;
   }
 
-  // --- CUORE LOGIC ---
-  async function toggleLike(postId, btn) {
-    const isLiked = btn.getAttribute('data-liked') === 'true';
-    const icon = btn.querySelector('i');
+  // --- NEW ROBUST LIKE LOGIC ---
+  async function toggleLike(postId, btnContainer) {
+    const icon = btnContainer.querySelector('i');
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
-    let count = parseInt(countSpan.innerText);
+    let currentCount = parseInt(countSpan.innerText);
+    
+    // 1. Determina stato ATTUALE visivo
+    const wasLiked = icon.classList.contains('fa-solid');
 
-    if (isLiked) {
-      // UNLIKE
-      btn.setAttribute('data-liked', 'false');
-      icon.className = 'fa-regular fa-heart'; // Torna bianco vuoto
-      countSpan.innerText = Math.max(0, count - 1);
-      await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    // 2. UI Ottimistica (Aggiorna subito)
+    if (wasLiked) {
+      icon.className = 'fa-regular fa-heart';
+      countSpan.innerText = Math.max(0, currentCount - 1);
     } else {
-      // LIKE
-      btn.setAttribute('data-liked', 'true');
-      icon.className = 'fa-solid fa-heart text-[#ef4444]'; // Diventa rosso pieno
-      countSpan.innerText = count + 1;
-      await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+      icon.className = 'fa-solid fa-heart text-[#ef4444]';
+      countSpan.innerText = currentCount + 1;
+    }
+
+    // 3. Chiamata DB con Rollback
+    let error = null;
+    if (wasLiked) {
+      // Stavo mettendo like, ora tolgo
+      const res = await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+      error = res.error;
+    } else {
+      // Stavo togliendo like, ora metto
+      const res = await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+      // Ignora errore duplicati (significa che era già lì, quindi UI ora è corretta)
+      if (res.error && res.error.code !== '23505') error = res.error; 
+    }
+
+    // 4. Rollback se errore
+    if (error) {
+      console.error("Like Error", error);
+      // Revert UI
+      if (wasLiked) {
+        icon.className = 'fa-solid fa-heart text-[#ef4444]';
+        countSpan.innerText = currentCount; 
+      } else {
+        icon.className = 'fa-regular fa-heart';
+        countSpan.innerText = currentCount;
+      }
+      alert("Errore di connessione. Riprova.");
     }
   }
 
@@ -475,33 +470,29 @@
 
     const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
     
-    // Img
+    // Immagine
     const imgEl = document.getElementById('detail-img'); const noImgEl = document.getElementById('detail-noimg');
     if(post.image_url) { imgEl.src = post.image_url; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden'); } else { imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden'); }
 
-    // User
+    // User Info
     const u = post.profiles; 
     document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32'; 
     document.getElementById('detail-username').innerText = u.username; 
     document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
 
-    // Tasto Elimina nella modale
+    // Tasto delete nella modale
     if (post.user_id === currentUser.id) {
         document.getElementById('detail-delete-btn-container').innerHTML = 
             `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
     }
 
-    // Like logic modale
+    // Like logic modale (New Robust Logic)
     const liked = await isLikedByMe(postId);
     const likeWrapper = document.getElementById('detail-like-btn-wrapper');
-    const likedState = liked ? 'true' : 'false';
     const heartIcon = liked ? 'fa-solid fa-heart text-[#ef4444]' : 'fa-regular fa-heart text-white';
     
-    // Imposta stato iniziale
-    likeWrapper.setAttribute('data-liked', likedState);
     likeWrapper.innerHTML = `<i class="${heartIcon}"></i>`;
     
-    // Onclick
     likeWrapper.onclick = () => toggleLike(postId, likeWrapper).then(() => refreshDetailCounts(postId));
 
     // Comments
