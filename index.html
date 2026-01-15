@@ -1,360 +1,515 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — Gold Edition Pro</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg-deep: #0f172a;       
-      --bg-panel: rgba(15, 23, 42, 0.95); 
-      --text-main: #f8fafc;     
-      --text-muted: #94a3b8;    
-      --gold: #d4af37;          
-      --gold-glow: rgba(212, 175, 55, 0.2);
-      --red-like: #ef4444;
-      --glass-border: 1px solid rgba(212, 175, 55, 0.3);
-    }
-
-    body { 
-      background-color: var(--bg-deep); 
-      color: var(--text-main); 
-      font-family: 'Outfit', sans-serif; 
-      margin: 0; 
-      background: radial-gradient(circle at top center, #1e293b 0%, #020617 80%);
-      min-height: 100vh;
-    }
-
-    .hidden { display: none !important; }
-
-    /* --- LAYOUT --- */
-    .app-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
-    .sidebar { 
-      width: 80px; position: sticky; top: 20px; height: calc(100vh - 40px);
-      margin-left: 10px; padding: 30px 0; display: flex; flex-direction: column; align-items: center; 
-      background: var(--bg-panel); backdrop-filter: blur(12px); border: var(--glass-border);
-      border-radius: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 50;
-    }
-
-    .nav-item { 
-      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
-      border-radius: 50%; cursor: pointer; transition: 0.3s; color: var(--text-muted);
-      margin-bottom: 20px; font-size: 20px;
-    }
-    .nav-item:hover, .nav-item.active { background: rgba(212, 175, 55, 0.15); color: var(--gold); transform: scale(1.1); }
-
-    /* --- POSTS --- */
-    .main-content { flex: 1; padding: 40px; max-width: 700px; margin: 0 auto; }
-    .post-card { 
-      background: rgba(30, 41, 59, 0.4); margin-bottom: 40px; padding: 20px;
-      border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.2);
-    }
-    .post-img { width: 100%; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); }
-    
-    /* --- AUTH --- */
-    .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:200; background:#0a0a0a; }
-    .form-side { flex:1; display:flex; flex-direction:column; justify-content:center; padding:60px; max-width:500px; margin:auto; }
-    .auth-input { background:transparent; border-bottom:1px solid #222; padding:10px 0; color:#fff; width:100%; outline:none; margin-bottom:20px; }
-    .btn-white { background:#fff; color:#000; padding:14px; font-weight:600; width:100%; cursor:pointer; transition:.3s; }
-    .btn-white:hover { background: var(--gold); color: #000; }
-
-    /* --- MODALS --- */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-    .glass-modal { background: #1e293b; border: 1px solid var(--gold); border-radius: 24px; max-width: 90%; max-height: 90%; overflow: hidden; }
-    
-    .btn-gold { background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%); color: #000; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-
-    /* Notifications Badge */
-    .notif-badge { position: absolute; top: 0; right: 0; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWENISHLAND — Enterprise Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0f172a; --gold: #d4af37; --text: #f8fafc; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; overflow-x: hidden; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Toast Notification System */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(30, 41, 59, 0.95); border-left: 4px solid var(--gold); padding: 15px 25px; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: white; min-width: 300px; transform: translateX(100%); transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.success { border-left-color: #22c55e; }
+    </style>
 </head>
 <body>
-
-<div id="auth-container" class="split-layout">
-  <div class="form-side">
-    <h1 class="text-5xl italic mb-10 text-white" style="font-family: 'Playfair Display', serif;">Hawenishland</h1>
-    <div id="msg-box" class="hidden p-3 text-center mb-4 text-sm border rounded"></div>
-    
-    <div id="login-form">
-      <input type="email" id="l-email" placeholder="Email" class="auth-input">
-      <input type="password" id="l-pass" placeholder="Password" class="auth-input">
-      <button onclick="faiLogin()" class="btn-white">ACCEDI</button>
-      <p onclick="recuperoPassword()" class="text-center text-xs text-gray-500 mt-6 cursor-pointer hover:text-white uppercase tracking-widest">Password dimenticata?</p>
-      <p onclick="vaiA('signup')" class="text-center text-xs text-gray-500 mt-4 cursor-pointer hover:text-white uppercase tracking-widest">Crea un account</p>
-    </div>
-
-    <div id="signup-form" class="hidden">
-      <input type="text" id="r-username" placeholder="Username" class="auth-input">
-      <input type="email" id="r-email" placeholder="Email" class="auth-input">
-      <input type="password" id="r-pass" placeholder="Password" class="auth-input">
-      <button onclick="faiRegistrazione()" class="btn-white">REGISTRATI</button>
-      <p onclick="vaiA('login')" class="text-center text-xs text-gray-500 mt-6 cursor-pointer hover:text-white uppercase tracking-widest">Torna al login</p>
-    </div>
-  </div>
-</div>
-
-<div id="app-interface" class="hidden">
-  <div class="app-layout">
-    <div class="sidebar">
-      <div class="nav-item active" onclick="renderFeedView()"><i class="fa-solid fa-house"></i></div>
-      <div class="nav-item" onclick="openSearchModal()"><i class="fa-solid fa-magnifying-glass"></i></div>
-      <div class="nav-item" onclick="openUploadModal()"><i class="fa-solid fa-plus"></i></div>
-      <div class="nav-item" onclick="openNotifications()"><i class="fa-solid fa-bell"></i><div id="notif-count" class="hidden notif-badge"></div></div>
-      <div class="nav-item" onclick="openUserProfile(currentUser.id)"><i class="fa-solid fa-user"></i></div>
-      <div class="mt-auto nav-item text-red-500" onclick="logout()"><i class="fa-solid fa-power-off"></i></div>
-    </div>
-    <div class="main-content" id="main-content-area"></div>
-  </div>
-</div>
-
-<div id="post-detail-modal" class="modal-overlay hidden">
-  <div class="glass-modal w-[900px] h-[600px] flex">
-    <div class="flex-1 bg-black flex items-center justify-center">
-      <img id="detail-img" class="max-h-full object-contain">
-    </div>
-    <div class="w-[350px] flex flex-col bg-slate-900 border-l border-gray-800">
-      <div class="p-4 border-b border-gray-800 flex items-center gap-3">
-        <img id="detail-avatar" class="w-8 h-8 rounded-full">
-        <span id="detail-username" class="font-bold text-white"></span>
-        <i class="fa-solid fa-xmark ml-auto cursor-pointer" onclick="closeModal('post-detail-modal')"></i>
-      </div>
-      <div id="detail-comments" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm"></div>
-      <div class="p-4 border-t border-gray-800">
-        <div class="flex gap-4 mb-2">
-          <i id="detail-like-btn" class="fa-regular fa-heart text-2xl cursor-pointer"></i>
-        </div>
-        <div class="text-white font-bold text-xs mb-4"><span id="detail-likes-count">0</span> LIKE</div>
-        <div class="flex gap-2">
-          <input type="text" id="new-comment" placeholder="Aggiungi un commento..." class="bg-transparent text-white text-sm outline-none flex-1">
-          <button onclick="inviaCommento()" class="text-gold font-bold text-xs">PUBBLICA</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="upload-modal" class="modal-overlay hidden">
-    <div class="glass-modal p-8 w-[400px]">
-        <h3 class="text-xl font-bold mb-4 text-white">Nuovo Post</h3>
-        <input type="file" id="post-file" class="mb-4 text-sm text-gray-400">
-        <textarea id="post-caption" placeholder="Scrivi una didascalia..." class="w-full bg-slate-800 p-3 rounded-lg text-white mb-4 outline-none"></textarea>
-        <button onclick="submitPost()" class="btn-gold w-full">CONDIVIDI</button>
-        <button onclick="closeModal('upload-modal')" class="w-full mt-2 text-gray-500 text-xs">ANNULLA</button>
-    </div>
-</div>
+    <div id="root"></div>
+    <div id="toast-container"></div>
 
 <script>
-  // CONFIGURAZIONE
-  const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-  const sb = window.supabase.createClient(SB_URL, SB_KEY);
-  
-  let currentUser = null;
-  let currentPostId = null;
+/**
+ * ==================================================================================
+ * CORE FRAMEWORK LAYER (Simulazione di React/Vue + Redux in Vanilla JS)
+ * Questo livello gestisce il rendering, lo stato globale e il routing.
+ * ==================================================================================
+ */
 
-  window.addEventListener('load', async () => {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) enterApp(session.user);
-  });
-
-  // --- CORE AUTH ---
-  async function faiLogin() {
-    const email = document.getElementById('l-email').value;
-    const password = document.getElementById('l-pass').value;
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if(error) mess(error.message, true); else enterApp(data.user);
-  }
-
-  async function faiRegistrazione() {
-    const email = document.getElementById('r-email').value;
-    const password = document.getElementById('r-pass').value;
-    const username = document.getElementById('r-username').value;
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if(error) return mess(error.message, true);
-    if(data.user) {
-        await sb.from('profiles').insert([{ id: data.user.id, username: username }]);
-        mess("Controlla l'email per confermare!", false);
+// 1. STATE MANAGEMENT (Store Pattern - Singleton)
+class Store {
+    constructor() {
+        if (Store.instance) return Store.instance;
+        this.state = {
+            user: null,
+            feed: [],
+            notifications: [],
+            loading: false,
+            error: null,
+            route: 'auth' // auth, feed, profile, post_detail
+        };
+        this.subscribers = [];
+        Store.instance = this;
     }
-  }
 
-  async function recuperoPassword() {
-    const email = document.getElementById('l-email').value;
-    if(!email) return mess("Inserisci la tua email", true);
-    const { error } = await sb.auth.resetPasswordForEmail(email);
-    if(error) mess(error.message, true);
-    else mess("Email di reset inviata!", false);
-  }
+    getState() { return this.state; }
 
-  function enterApp(user) {
-    currentUser = user;
-    document.getElementById('auth-container').classList.add('hidden');
-    document.getElementById('app-interface').classList.remove('hidden');
-    renderFeedView();
-    checkNotifications();
-  }
-
-  function logout() { sb.auth.signOut(); location.reload(); }
-
-  // --- FEED & POSTS ---
-  async function renderFeedView() {
-    const main = document.getElementById('main-content-area');
-    main.innerHTML = '<p class="text-center text-gray-500">Caricamento...</p>';
-
-    const { data: posts, error } = await sb.from('posts')
-      .select(`*, profiles:user_id (username, avatar_url)`)
-      .order('created_at', { ascending: false });
-
-    if (error) return main.innerHTML = "Errore caricamento.";
-
-    main.innerHTML = '';
-    for (const post of posts) {
-      const { count: likes } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', post.id);
-      const { data: myLike } = await sb.from('likes').select('*').eq('post_id', post.id).eq('user_id', currentUser.id);
-      const isLiked = myLike && myLike.length > 0;
-      
-      main.insertAdjacentHTML('beforeend', `
-        <div class="post-card">
-          <div class="flex items-center gap-3 mb-4">
-            <img src="${post.profiles.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full border border-gold">
-            <span class="font-bold text-white">${post.profiles.username}</span>
-          </div>
-          ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
-          <div class="mt-4 flex gap-4 text-2xl">
-            <i class="${isLiked ? 'fa-solid text-red-500' : 'fa-regular text-white'} fa-heart cursor-pointer" onclick="toggleLike('${post.id}', this)"></i>
-            <i class="fa-regular fa-comment text-white cursor-pointer" onclick="openPostDetail('${post.id}')"></i>
-          </div>
-          <div class="text-xs font-bold text-white mt-2">${likes || 0} LIKE</div>
-          <div class="text-sm mt-2"><span class="font-bold text-gold mr-2">${post.profiles.username}</span> ${post.caption || ''}</div>
-        </div>
-      `);
-    }
-  }
-
-  async function toggleLike(postId, el) {
-    const isLiked = el.classList.contains('fa-solid');
-    if (isLiked) {
-        await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
-        el.className = 'fa-regular fa-heart text-white cursor-pointer';
-    } else {
-        await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-        el.className = 'fa-solid fa-heart text-red-500 cursor-pointer';
+    dispatch(action, payload) {
+        console.log(`[DISPATCH] ${action}`, payload);
+        const prevState = { ...this.state };
         
-        // Notifica al proprietario del post
-        const { data: p } = await sb.from('posts').select('user_id').eq('id', postId).single();
-        if(p.user_id !== currentUser.id) {
-            createNotification(p.user_id, 'like', postId);
+        // Reducer Logic
+        switch(action) {
+            case 'SET_USER': this.state.user = payload; break;
+            case 'SET_LOADING': this.state.loading = payload; break;
+            case 'SET_FEED': this.state.feed = payload; break;
+            case 'ADD_POST': this.state.feed = [payload, ...this.state.feed]; break;
+            case 'UPDATE_POST_LIKE': 
+                this.state.feed = this.state.feed.map(p => p.id === payload.id ? {...p, ...payload.changes} : p);
+                break;
+            case 'SET_ROUTE': this.state.route = payload; break;
+            case 'SET_ERROR': this.state.error = payload; break;
+        }
+
+        this.notify(prevState);
+    }
+
+    subscribe(callback) {
+        this.subscribers.push(callback);
+        return () => { this.subscribers = this.subscribers.filter(cb => cb !== callback); };
+    }
+
+    notify(prevState) {
+        this.subscribers.forEach(cb => cb(this.state, prevState));
+    }
+}
+
+// 2. COMPONENT SYSTEM (Base Class)
+class Component {
+    constructor(props = {}) {
+        this.props = props;
+        this.state = {};
+        this.element = null;
+    }
+
+    setState(newState) {
+        this.state = { ...this.state, ...newState };
+        this.update();
+    }
+
+    render() { throw new Error("Component must implement render method"); }
+
+    mount(container) {
+        this.element = this.render();
+        if (container) container.appendChild(this.element);
+        this.componentDidMount();
+        return this.element;
+    }
+
+    update() {
+        const newElement = this.render();
+        if (this.element && this.element.parentNode) {
+            this.element.parentNode.replaceChild(newElement, this.element);
+        }
+        this.element = newElement;
+    }
+
+    componentDidMount() {}
+}
+
+// 3. SERVICE LAYER (API Calls Abstracted)
+const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
+const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+class AuthService {
+    static async login(email, password) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return data.user;
+    }
+    static async signup(email, password, username) {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data.user) {
+            await supabase.from('profiles').insert([{ id: data.user.id, username }]);
+        }
+        return data.user;
+    }
+    static async logout() { await supabase.auth.signOut(); }
+    static async getSession() { const { data } = await supabase.auth.getSession(); return data.session?.user; }
+}
+
+class PostService {
+    static async getFeed() {
+        const { data, error } = await supabase.from('posts')
+            .select('*, profiles:user_id(*), likes(user_id), comments(count)')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data.map(post => ({
+            ...post,
+            likeCount: post.likes.length,
+            isLiked: post.likes.some(l => l.user_id === store.getState().user?.id),
+            commentCount: post.comments[0]?.count || 0
+        }));
+    }
+
+    static async toggleLike(postId, userId) {
+        // Optimistic Update logic handled in Controller
+        const { data } = await supabase.from('likes').select('*').eq('post_id', postId).eq('user_id', userId).maybeSingle();
+        if (data) {
+            await supabase.from('likes').delete().eq('id', data.id);
+            return false;
+        } else {
+            await supabase.from('likes').insert([{ post_id: postId, user_id: userId }]);
+            return true;
         }
     }
-    // Refresh locale conteggio se necessario o ri-render
-  }
+}
 
-  // --- COMMENTI ---
-  async function openPostDetail(postId) {
-    currentPostId = postId;
-    document.getElementById('post-detail-modal').classList.remove('hidden');
-    
-    const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
-    const { data: comments } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
-    const { count: likes } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
-    const { data: myLike } = await sb.from('likes').select('*').eq('post_id', postId).eq('user_id', currentUser.id);
-
-    document.getElementById('detail-img').src = post.image_url || '';
-    document.getElementById('detail-username').innerText = post.profiles.username;
-    document.getElementById('detail-avatar').src = post.profiles.avatar_url || 'https://via.placeholder.com/40';
-    document.getElementById('detail-likes-count').innerText = likes || 0;
-    
-    const likeBtn = document.getElementById('detail-like-btn');
-    likeBtn.className = (myLike && myLike.length > 0) ? 'fa-solid fa-heart text-red-500 text-2xl cursor-pointer' : 'fa-regular fa-heart text-white text-2xl cursor-pointer';
-
-    const cDiv = document.getElementById('detail-comments');
-    cDiv.innerHTML = post.caption ? `<div class="mb-4"><b>${post.profiles.username}</b> ${post.caption}</div>` : '';
-    comments.forEach(c => {
-        cDiv.insertAdjacentHTML('beforeend', `<div><b class="text-gold">${c.profiles.username}</b> ${c.content}</div>`);
-    });
-  }
-
-  async function inviaCommento() {
-    const input = document.getElementById('new-comment');
-    const text = input.value.trim();
-    if(!text) return;
-
-    const { error } = await sb.from('comments').insert([{ 
-        post_id: currentPostId, 
-        user_id: currentUser.id, 
-        content: text 
-    }]);
-
-    if(!error) {
-        input.value = '';
-        // Notifica
-        const { data: p } = await sb.from('posts').select('user_id').eq('id', currentPostId).single();
-        if(p.user_id !== currentUser.id) createNotification(p.user_id, 'comment', currentPostId);
-        openPostDetail(currentPostId); 
+// 4. UTILS (Toast System)
+class Toaster {
+    static show(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerText = message;
+        container.appendChild(el);
+        setTimeout(() => el.classList.add('show'), 10);
+        setTimeout(() => {
+            el.classList.remove('show');
+            setTimeout(() => el.remove(), 300);
+        }, 3000);
     }
-  }
+}
 
-  // --- NOTIFICHE & UTILS ---
-  async function createNotification(receiverId, type, postId = null) {
-    await sb.from('notifications').insert([{
-        sender_id: currentUser.id,
-        receiver_id: receiverId,
-        type: type,
-        post_id: postId
-    }]);
-  }
+/**
+ * ==================================================================================
+ * APPLICATION LAYER (Components)
+ * Qui costruiamo la UI usando le classi del Core Framework.
+ * ==================================================================================
+ */
 
-  async function checkNotifications() {
-    const { count } = await sb.from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', currentUser.id)
-        .eq('read', false);
-    
-    const badge = document.getElementById('notif-count');
-    if(count > 0) {
-        badge.innerText = count;
-        badge.classList.remove('hidden');
+const store = new Store();
+
+// --- ATOMIC COMPONENTS ---
+
+class Button extends Component {
+    constructor(props) { super(props); }
+    render() {
+        const btn = document.createElement('button');
+        btn.className = `w-full py-3 rounded font-bold uppercase tracking-wider transition transform active:scale-95 ${this.props.variant === 'outline' ? 'border border-white text-white hover:bg-white hover:text-black' : 'bg-[#d4af37] text-black hover:bg-[#b8952b]'}`;
+        btn.innerText = this.props.text;
+        if(this.props.onClick) btn.onclick = this.props.onClick;
+        if(this.props.disabled) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        return btn;
     }
-  }
+}
 
-  function mess(t, err) {
-    const m = document.getElementById('msg-box');
-    m.innerText = t;
-    m.classList.remove('hidden');
-    m.style.color = err ? 'red' : '#d4af37';
-    m.style.borderColor = err ? 'red' : '#d4af37';
-  }
+class Input extends Component {
+    constructor(props) { super(props); }
+    render() {
+        const div = document.createElement('div');
+        div.className = "mb-4";
+        if(this.props.label) {
+            const label = document.createElement('label');
+            label.className = "block text-xs uppercase text-gray-500 mb-1 tracking-widest";
+            label.innerText = this.props.label;
+            div.appendChild(label);
+        }
+        const inp = document.createElement('input');
+        inp.type = this.props.type || 'text';
+        inp.className = "w-full bg-transparent border-b border-gray-700 p-2 text-white outline-none focus:border-[#d4af37] transition";
+        inp.placeholder = this.props.placeholder || '';
+        if(this.props.onInput) inp.oninput = (e) => this.props.onInput(e.target.value);
+        div.appendChild(inp);
+        return div;
+    }
+}
 
-  function vaiA(screen) {
-    document.getElementById('login-form').classList.toggle('hidden', screen === 'signup');
-    document.getElementById('signup-form').classList.toggle('hidden', screen === 'login');
-  }
+// --- COMPLEX COMPONENTS ---
 
-  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
+class PostCard extends Component {
+    constructor(props) { super(props); }
 
-  async function submitPost() {
-    const file = document.getElementById('post-file').files[0];
-    const caption = document.getElementById('post-caption').value;
-    let url = null;
+    async handleLike() {
+        const { id, isLiked, likeCount } = this.props.post;
+        // Optimistic UI Update (Aggiorna subito l'interfaccia prima del server)
+        store.dispatch('UPDATE_POST_LIKE', { 
+            id, 
+            changes: { isLiked: !isLiked, likeCount: isLiked ? likeCount - 1 : likeCount + 1 } 
+        });
 
-    if(file) {
-        const name = `${currentUser.id}/${Date.now()}`;
-        await sb.storage.from('posts').upload(name, file);
-        const { data } = sb.storage.from('posts').getPublicUrl(name);
-        url = data.publicUrl;
+        try {
+            await PostService.toggleLike(id, store.getState().user.id);
+        } catch (e) {
+            // Revert on error
+            store.dispatch('UPDATE_POST_LIKE', { 
+                id, 
+                changes: { isLiked: isLiked, likeCount: likeCount } 
+            });
+            Toaster.show("Errore like", "error");
+        }
     }
 
-    await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: caption }]);
-    closeModal('upload-modal');
-    renderFeedView();
-  }
+    render() {
+        const p = this.props.post;
+        const card = document.createElement('div');
+        card.className = "bg-slate-800/50 border border-gray-700 rounded-xl p-4 mb-6 fade-in";
+        
+        const header = `
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-gray-700 overflow-hidden border border-[#d4af37]">
+                    <img src="${p.profiles?.avatar_url || 'https://via.placeholder.com/40'}" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <div class="font-bold text-white">${p.profiles?.username || 'Unknown'}</div>
+                    <div class="text-xs text-gray-500">${new Date(p.created_at).toLocaleDateString()}</div>
+                </div>
+            </div>
+        `;
+
+        const image = p.image_url ? `<div class="rounded-lg overflow-hidden mb-3 border border-gray-700"><img src="${p.image_url}" class="w-full object-cover"></div>` : '';
+        
+        const actions = document.createElement('div');
+        actions.className = "flex items-center gap-6 text-xl text-gray-300";
+        
+        // Like Button Logic
+        const likeBtn = document.createElement('button');
+        likeBtn.className = `flex items-center gap-2 transition ${p.isLiked ? 'text-[#ef4444]' : 'hover:text-[#d4af37]'}`;
+        likeBtn.innerHTML = `<i class="${p.isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i> <span class="text-sm font-bold">${p.likeCount}</span>`;
+        likeBtn.onclick = () => this.handleLike();
+
+        actions.appendChild(likeBtn);
+        actions.innerHTML += `<button class="flex items-center gap-2 hover:text-[#d4af37]"><i class="fa-regular fa-comment"></i> <span class="text-sm font-bold">${p.commentCount}</span></button>`;
+
+        card.innerHTML = header + image;
+        
+        const caption = document.createElement('div');
+        caption.className = "mt-3 text-sm leading-relaxed";
+        caption.innerHTML = `<span class="font-bold text-[#d4af37] mr-2">${p.profiles?.username}</span>${p.caption}`;
+        
+        card.appendChild(actions);
+        card.appendChild(caption);
+
+        return card;
+    }
+}
+
+class FeedView extends Component {
+    constructor(props) { 
+        super(props);
+        // Subscribe to store updates to re-render when feed changes
+        this.unsubscribe = store.subscribe((state, prevState) => {
+            if (state.feed !== prevState.feed) this.update();
+        });
+    }
+
+    componentDidMount() {
+        this.loadData();
+    }
+
+    async loadData() {
+        if(store.getState().feed.length > 0) return; // Cache check
+        store.dispatch('SET_LOADING', true);
+        try {
+            const posts = await PostService.getFeed();
+            store.dispatch('SET_FEED', posts);
+        } catch(e) {
+            Toaster.show("Impossibile caricare il feed", "error");
+        } finally {
+            store.dispatch('SET_LOADING', false);
+        }
+    }
+
+    render() {
+        const container = document.createElement('div');
+        container.className = "max-w-2xl mx-auto pb-20 pt-6 px-4";
+        
+        const state = store.getState();
+
+        if (state.loading && state.feed.length === 0) {
+            container.innerHTML = `<div class="flex justify-center mt-20"><div class="w-10 h-10 border-4 border-[#d4af37] border-t-transparent rounded-full spin"></div></div>`;
+            return container;
+        }
+
+        if (state.feed.length === 0) {
+            container.innerHTML = `<div class="text-center text-gray-500 mt-20">Nessun post trovato.</div>`;
+            return container;
+        }
+
+        state.feed.forEach(post => {
+            const card = new PostCard({ post });
+            card.mount(container);
+        });
+
+        return container;
+    }
+}
+
+class Sidebar extends Component {
+    render() {
+        const nav = document.createElement('nav');
+        nav.className = "fixed bottom-0 left-0 w-full md:w-20 md:h-screen bg-[#0f172a]/95 backdrop-blur border-t md:border-t-0 md:border-r border-gray-800 flex md:flex-col justify-around md:justify-center items-center py-3 md:py-0 z-50";
+        
+        const items = [
+            { icon: 'fa-house', action: () => store.dispatch('SET_ROUTE', 'feed') },
+            { icon: 'fa-magnifying-glass', action: () => Toaster.show("Funzione Cerca: Coming Soon") },
+            { icon: 'fa-plus', action: () => Toaster.show("Upload: Coming Soon") },
+            { icon: 'fa-user', action: () => Toaster.show("Profilo: Coming Soon") },
+            { icon: 'fa-power-off', color: 'text-red-500', action: () => AuthController.logout() }
+        ];
+
+        items.forEach(item => {
+            const btn = document.createElement('div');
+            btn.className = `p-3 text-xl cursor-pointer hover:bg-white/5 rounded-full transition ${item.color || 'text-gray-400 hover:text-[#d4af37]'}`;
+            btn.innerHTML = `<i class="fa-solid ${item.icon}"></i>`;
+            btn.onclick = item.action;
+            nav.appendChild(btn);
+        });
+
+        return nav;
+    }
+}
+
+class AuthView extends Component {
+    constructor() {
+        super();
+        this.state = { mode: 'login', email: '', password: '', username: '' };
+    }
+
+    toggleMode() {
+        this.setState({ mode: this.state.mode === 'login' ? 'signup' : 'login' });
+    }
+
+    async handleSubmit() {
+        try {
+            if (this.state.mode === 'login') {
+                const user = await AuthService.login(this.state.email, this.state.password);
+                store.dispatch('SET_USER', user);
+                Toaster.show("Benvenuto!", "success");
+            } else {
+                await AuthService.signup(this.state.email, this.state.password, this.state.username);
+                Toaster.show("Registrato! Controlla la mail.", "success");
+            }
+        } catch (e) {
+            Toaster.show(e.message, "error");
+        }
+    }
+
+    render() {
+        const container = document.createElement('div');
+        container.className = "min-h-screen flex items-center justify-center p-6 relative overflow-hidden";
+        
+        // Background Effect
+        const bg = document.createElement('div');
+        bg.className = "absolute inset-0 z-0 opacity-20";
+        bg.style.background = "radial-gradient(circle at center, #1e293b 0%, #000 100%)";
+        container.appendChild(bg);
+
+        const formBox = document.createElement('div');
+        formBox.className = "w-full max-w-md bg-black/50 backdrop-blur-md p-8 rounded-2xl border border-gray-800 shadow-2xl z-10 fade-in";
+        
+        const title = document.createElement('h1');
+        title.className = "text-4xl font-light text-center mb-8 text-white";
+        title.innerHTML = "Hawenish<span class='text-[#d4af37] font-bold'>Land</span>";
+        formBox.appendChild(title);
+
+        if (this.state.mode === 'signup') {
+            const userInp = new Input({ 
+                placeholder: 'Username', 
+                label: 'Nome Utente',
+                onInput: (v) => this.state.username = v 
+            });
+            userInp.mount(formBox);
+        }
+
+        const emailInp = new Input({ 
+            type: 'email', placeholder: 'nome@esempio.com', label: 'Email',
+            onInput: (v) => this.state.email = v
+        });
+        const passInp = new Input({ 
+            type: 'password', placeholder: '••••••••', label: 'Password',
+            onInput: (v) => this.state.password = v
+        });
+
+        emailInp.mount(formBox);
+        passInp.mount(formBox);
+
+        const btn = new Button({
+            text: this.state.mode === 'login' ? 'Accedi' : 'Registrati',
+            onClick: () => this.handleSubmit()
+        });
+        formBox.appendChild(btn.render()); // Direct render for simplicity here
+
+        const toggle = document.createElement('p');
+        toggle.className = "text-center text-sm text-gray-500 mt-6 cursor-pointer hover:text-white transition";
+        toggle.innerText = this.state.mode === 'login' ? "Non hai un account? Registrati" : "Hai già un account? Accedi";
+        toggle.onclick = () => this.toggleMode();
+        formBox.appendChild(toggle);
+
+        container.appendChild(formBox);
+        return container;
+    }
+}
+
+class MainLayout extends Component {
+    constructor() {
+        super();
+        store.subscribe(() => this.update()); // Rerender on route/user change
+    }
+
+    render() {
+        const root = document.createElement('div');
+        const state = store.getState();
+
+        if (!state.user) {
+            const auth = new AuthView();
+            return auth.render();
+        }
+
+        // App Layout
+        const layout = document.createElement('div');
+        layout.className = "md:pl-20 min-h-screen";
+
+        const sidebar = new Sidebar();
+        layout.appendChild(sidebar.render());
+
+        const content = document.createElement('main');
+        
+        // Router Switch Logic
+        switch(state.route) {
+            case 'feed':
+                const feed = new FeedView();
+                feed.mount(content);
+                break;
+            default:
+                content.innerText = "404 Not Found";
+        }
+
+        layout.appendChild(content);
+        return layout;
+    }
+}
+
+// 5. BOOTSTRAPPER (Init)
+const AuthController = {
+    async init() {
+        const user = await AuthService.getSession();
+        store.dispatch('SET_USER', user);
+        
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            store.dispatch('SET_USER', session?.user || null);
+        });
+
+        const app = new MainLayout();
+        app.mount(document.getElementById('root'));
+    }
+};
+
+// Start App
+AuthController.init();
+
 </script>
-
 </body>
 </html>
