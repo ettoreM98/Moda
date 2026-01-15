@@ -14,13 +14,13 @@
     /* --- VARIABILI DESIGN --- */
     :root {
       --bg-deep: #0f172a;       
-      --bg-panel: rgba(15, 23, 42, 0.85); 
+      --bg-panel: rgba(15, 23, 42, 0.95); 
       --text-main: #f8fafc;     
       --text-muted: #94a3b8;    
       --gold: #d4af37;          
-      --gold-glow: rgba(212, 175, 55, 0.15);
+      --gold-glow: rgba(212, 175, 55, 0.2);
       --red-like: #ef4444;
-      --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+      --glass-border: 1px solid rgba(212, 175, 55, 0.3);
     }
 
     body { 
@@ -44,8 +44,8 @@
     .sidebar { 
       width: 80px; 
       position: sticky; 
-      top: 40px; 
-      height: calc(100vh - 80px);
+      top: 20px; 
+      height: calc(100vh - 40px);
       margin-left: 10px;
       padding: 30px 0;
       display: flex; 
@@ -70,6 +70,7 @@
       width: 40px; height: 40px;
       display: flex; align-items: center; justify-content: center;
       border-radius: 50%;
+      box-shadow: 0 0 10px var(--gold-glow);
     }
 
     .nav-item { 
@@ -85,7 +86,7 @@
     }
     
     .nav-item:hover, .nav-item.active { 
-      background: rgba(212, 175, 55, 0.1); 
+      background: rgba(212, 175, 55, 0.15); 
       color: var(--gold); 
       box-shadow: 0 0 15px var(--gold-glow);
       transform: scale(1.1);
@@ -103,6 +104,7 @@
       font-weight: bold;
       white-space: nowrap;
       opacity: 1;
+      pointer-events: none;
     }
 
     /* --- FEED & POSTS --- */
@@ -118,10 +120,6 @@
       transition: transform 0.3s ease;
     }
     
-    .post-card:hover {
-        box-shadow: 0 0 30px rgba(212, 175, 55, 0.25);
-    }
-
     .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
     
     .user-badge { display: flex; align-items: center; gap: 12px; cursor: pointer; }
@@ -149,18 +147,16 @@
     }
     .icon-btn:hover { opacity: 1; transform: translateY(-2px); color: var(--gold); }
     
-    /* FIX LIKE CSS */
-    .like-active i { 
-      font-weight: 900 !important; /* Forza FontAwesome Solid */
-      color: var(--red-like) !important;
-    }
-    .like-active { color: var(--red-like) !important; opacity: 1 !important; }
+    /* FIX LIKE CSS DEFINITIVO */
+    /* Quando il pulsante ha la classe 'liked', l'icona interna diventa rossa e solida */
+    .icon-btn.liked { opacity: 1 !important; color: var(--red-like) !important; }
+    .icon-btn.liked i { font-weight: 900 !important; color: var(--red-like) !important; }
 
     .likes-count { font-size: 14px; font-weight: 600; color: #fff; }
     .caption-box { margin-top: 15px; padding: 0 5px; font-size: 15px; line-height: 1.6; color: #cbd5e1; }
     .caption-user { font-weight: 700; color: var(--gold); margin-right: 8px; cursor: pointer; }
 
-    /* --- BUTTONS --- */
+    /* --- BUTTONS & EMPTY STATE --- */
     .btn-gold {
       background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%);
       color: #000; padding: 12px 24px; border-radius: 12px;
@@ -170,14 +166,13 @@
     }
     .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(248, 181, 0, 0.6); }
 
-    /* EMPTY STATE */
     .empty-feed-box {
       text-align: center; padding: 60px 20px;
       background: rgba(255,255,255,0.03); border: 1px dashed var(--gold);
       border-radius: 20px; color: #ccc;
     }
 
-    /* --- LOGIN (ORIGINALE) --- */
+    /* --- LOGIN (INTATTO) --- */
     .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:200; background:#0a0a0a; transition:transform .8s ease-in-out; }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
     @media (min-width:768px){ .visual-side{display:block} }
@@ -198,9 +193,9 @@
     .glass-modal { background: #1e293b; border: 1px solid var(--gold); border-radius: 20px; overflow: hidden; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2); }
     
     .detail-layout { display: flex; width: 90vw; max-width: 1100px; height: 85vh; }
-    .detail-img-box { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
-    .detail-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .detail-info { flex: 1; display: flex; flex-direction: column; background: #1e293b; min-width: 350px; }
+    .detail-img-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
+    .detail-img-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #1e293b; min-width: 350px; position: relative; }
     
     @media (max-width: 800px) {
       .sidebar { 
@@ -253,7 +248,7 @@
   <div class="app-layout">
     <div class="sidebar">
       <div class="brand-logo-icon" onclick="renderFeedView()" title="Home">H</div>
-      <div class="nav-item active" onclick="renderFeedView()" title="Home Feed">
+      <div class="nav-item active" onclick="renderFeedView()" title="Feed">
         <i class="fa-solid fa-house"></i>
       </div>
       <div class="nav-item" onclick="openSearchModal()" title="Cerca">
@@ -315,17 +310,20 @@
 
 <div id="post-detail-modal" class="modal-overlay hidden">
   <div class="glass-modal detail-layout">
-    <div class="detail-img-box">
+    <div class="detail-img-side">
       <img id="detail-img" src="">
       <div id="detail-noimg" class="hidden text-gray-500">Solo Testo</div>
     </div>
-    <div class="detail-info relative">
+    <div class="detail-info-side">
       <div class="p-4 border-b border-gray-700 flex justify-between items-center">
         <div class="flex items-center gap-3 cursor-pointer" id="detail-user-link">
           <img id="detail-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-[#d4af37]">
           <span id="detail-username" class="font-bold text-sm text-white"></span>
         </div>
-        <i class="fa-solid fa-xmark cursor-pointer text-lg hover:text-white text-gray-400" onclick="closeModal('post-detail-modal')"></i>
+        <div class="flex items-center gap-4">
+          <div id="detail-delete-btn-container"></div>
+          <i class="fa-solid fa-xmark cursor-pointer text-lg hover:text-white text-gray-400" onclick="closeModal('post-detail-modal')"></i>
+        </div>
       </div>
       <div id="detail-comments" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
       <div class="p-4 border-t border-gray-700 bg-slate-900">
@@ -387,20 +385,25 @@
     if(!confirm("Vuoi davvero eliminare questo post?")) return;
     const { error } = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
     if(error) alert("Errore: " + error.message);
-    else renderFeedView();
+    else {
+      closeModal('post-detail-modal'); // Chiudi modale se aperto
+      if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); // Aggiorna profilo se sei lì
+      else renderFeedView(); // Altrimenti feed
+    }
   }
 
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
+    // Rimuovo marcatore profilo
+    if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
+
     main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
 
     const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
     const followingIds = follows ? follows.map(f => f.followed_id) : [];
-    
-    // RIMOSSO IL PUSH DI CURRENTUSER.ID -> ORA VEDI SOLO I FOLLOWERS
 
+    // EMPTY STATE 1: Non segui nessuno
     if (followingIds.length === 0) {
-      // EMPTY STATE 1: Non segui nessuno
       return main.innerHTML = `
         <div class="empty-feed-box">
           <i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i>
@@ -416,8 +419,8 @@
       .in('user_id', followingIds)
       .order('created_at', { ascending: false });
 
+    // EMPTY STATE 2: Nessun post dai seguiti
     if (error || !posts || posts.length === 0) {
-      // EMPTY STATE 2: Segui gente ma nessuno ha postato
       return main.innerHTML = `
         <div class="empty-feed-box">
           <i class="fa-solid fa-ghost text-4xl mb-4 text-[#d4af37]"></i>
@@ -440,12 +443,10 @@
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
     
-    // FIX LIKE: Classi esplicite
-    const activeClass = liked ? 'like-active' : '';
+    // Assegno la classe 'liked' se l'utente ha messo like. Il CSS farà il resto.
+    const likedClass = liked ? 'liked' : '';
+    // L'icona parte giusta in base allo stato
     const iconClass = liked ? 'fa-solid' : 'fa-regular';
-
-    const deleteIcon = (post.user_id === currentUser.id) 
-      ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
     return `
       <div class="post-card">
@@ -454,11 +455,10 @@
             <img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar">
             <div class="user-meta"><span class="username">${user.username}</span><span class="post-date">${dateStr}</span></div>
           </div>
-          ${deleteIcon}
         </div>
         ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="action-bar">
-          <div class="icon-btn ${activeClass}" onclick="toggleLike('${post.id}', this)">
+          <div class="icon-btn ${likedClass}" onclick="toggleLike('${post.id}', this)">
             <i class="${iconClass} fa-heart"></i>
             <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
           </div>
@@ -474,16 +474,22 @@
     const icon = btnContainer.querySelector('i');
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
     let currentCount = parseInt(countSpan.innerText);
-    const isLiked = btnContainer.classList.contains('like-active'); // Usa la classe contenitore come state of truth
+    
+    // Controllo lo stato dalla classe 'liked'
+    const isLiked = btnContainer.classList.contains('liked');
 
     if (isLiked) {
-      btnContainer.classList.remove('like-active');
-      icon.classList.remove('fa-solid'); icon.classList.add('fa-regular');
+      // Tolgo il like
+      btnContainer.classList.remove('liked'); // Rimuove rosso
+      icon.classList.remove('fa-solid'); 
+      icon.classList.add('fa-regular');
       countSpan.innerText = Math.max(0, currentCount - 1);
       await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
     } else {
-      btnContainer.classList.add('like-active');
-      icon.classList.remove('fa-regular'); icon.classList.add('fa-solid');
+      // Metto il like
+      btnContainer.classList.add('liked'); // Aggiunge rosso
+      icon.classList.remove('fa-regular'); 
+      icon.classList.add('fa-solid');
       countSpan.innerText = currentCount + 1;
       await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
     }
@@ -494,12 +500,18 @@
     const { count: c } = await sb.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', postId);
     return { likes: l || 0, comments: c || 0 };
   }
-  async function isLikedByMe(postId) { const { data } = await sb.from('likes').select('id').eq('post_id', postId).eq('user_id', currentUser.id); return data && data.length > 0; }
+  
+  async function isLikedByMe(postId) { 
+    const { data } = await sb.from('likes').select('id').eq('post_id', postId).eq('user_id', currentUser.id); 
+    return data && data.length > 0; 
+  }
   
   // --- PROFILO ---
   async function openUserProfile(userId) {
     const main = document.getElementById('main-content-area');
-    main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
+    // Marcatore nascosto per sapere che siamo nel profilo
+    main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
+    
     const { data: profile } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return main.innerHTML = "<p class='text-center mt-10 text-white'>Utente non trovato.</p>";
 
@@ -518,6 +530,7 @@
     const btn = isMe ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : `<button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>`;
 
     main.innerHTML = `
+      <div id="view-profile-active" class="hidden"></div>
       <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl">
         <img src="${profile.avatar_url || 'https://via.placeholder.com/150'}" class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition" onclick="${isMe?'openEditProfile()':''}">
         <div class="flex-1">
@@ -547,20 +560,53 @@
     currentPostId = postId;
     document.getElementById('post-detail-modal').classList.remove('hidden');
     document.getElementById('detail-comments').innerHTML = '<p class="text-center text-gray-500 mt-4">Caricamento...</p>';
+    
+    // Pulisci il container del delete button
+    document.getElementById('detail-delete-btn-container').innerHTML = '';
+
     const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
+    
+    // Immagine
     const imgEl = document.getElementById('detail-img'); const noImgEl = document.getElementById('detail-noimg');
     if(post.image_url) { imgEl.src = post.image_url; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden'); } else { imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden'); }
-    const u = post.profiles; document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32'; document.getElementById('detail-username').innerText = u.username; document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
+
+    // User Info
+    const u = post.profiles; 
+    document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32'; 
+    document.getElementById('detail-username').innerText = u.username; 
+    document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
+
+    // INIETTA TASTO ELIMINA SE IL POST È MIO
+    if (post.user_id === currentUser.id) {
+        document.getElementById('detail-delete-btn-container').innerHTML = 
+            `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
+    }
+
+    // Like logic nella modale
     const liked = await isLikedByMe(postId);
     const likeBtn = document.getElementById('detail-like-btn');
     likeBtn.className = liked ? "fa-solid fa-heart cursor-pointer text-red-500" : "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
-    likeBtn.onclick = async () => { const isLikedNow = likeBtn.classList.contains('fa-solid'); if(isLikedNow) { likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white"; await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id); } else { likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500"; await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]); } refreshDetailCounts(postId); };
+    
+    likeBtn.onclick = async () => { 
+        const isLikedNow = likeBtn.classList.contains('fa-solid'); 
+        if(isLikedNow) { 
+            likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white"; 
+            await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id); 
+        } else { 
+            likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500"; 
+            await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]); 
+        } 
+        refreshDetailCounts(postId); 
+    };
+
+    // Comments
     const list = document.getElementById('detail-comments'); list.innerHTML = '';
     if(post.caption) { list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-4 p-2 bg-white/5 rounded-lg border border-white/5"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover"><div><span class="font-bold mr-2 text-[#d4af37]">${u.username}</span><span class="text-gray-300">${escapeHtml(post.caption)}</span></div></div>`); }
     const { data: coms } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
     coms.forEach(c => { const cu = c.profiles; list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-2"><img src="${cu.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 text-white cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${cu.username}</span><span class="text-gray-400">${escapeHtml(c.content)}</span></div></div>`); });
     refreshDetailCounts(postId);
   }
+
   async function refreshDetailCounts(pid) { const c = await getPostCounts(pid); document.getElementById('detail-likes-count').innerText = c.likes; }
   async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
   function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
