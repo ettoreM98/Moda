@@ -79,33 +79,43 @@
     .username { font-weight: 600; font-size: 15px; color: #fff; }
     .post-date { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    .post-img-container { position: relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+    /* --- SHOPPING TAGS CSS (CORRETTO) --- */
+    .post-img-container { 
+      position: relative; width: 100%; border-radius: 12px; overflow: hidden; 
+      border: 1px solid rgba(255,255,255,0.1); cursor: pointer; 
+    }
     .post-img { width: 100%; display: block; transition: 0.3s; }
+    
     .shopping-tag-indicator {
-      position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6);
-      color: var(--gold); padding: 5px 10px; border-radius: 20px; font-size: 12px;
-      backdrop-filter: blur(4px); border: 1px solid var(--gold); pointer-events: none;
-      display: flex; align-items: center; gap: 5px;
+      position: absolute; bottom: 15px; right: 15px; 
+      background: rgba(0, 0, 0, 0.8); color: var(--gold); 
+      padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;
+      border: 1px solid var(--gold); pointer-events: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 10;
+      display: flex; align-items: center; gap: 6px;
     }
 
-    /* MENU A TENDINA PRODOTTI */
+    /* MENU SHOPPING */
     .products-dropdown {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(15, 23, 42, 0.95); border: 1px solid var(--gold);
-      border-radius: 12px; padding: 10px; width: 80%; max-width: 300px;
-      backdrop-filter: blur(10px); z-index: 20; box-shadow: 0 0 30px rgba(0,0,0,0.8);
-      display: none; animation: popIn 0.2s ease-out;
+      position: absolute; bottom: 50px; right: 10px;
+      background: #1e293b; border: 1px solid var(--gold);
+      border-radius: 12px; padding: 5px 0; width: 220px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.8); z-index: 50;
+      display: none; /* Nascosto di base */
+      overflow: hidden;
     }
-    .products-dropdown.active { display: block; }
-    @keyframes popIn { from { transform: translate(-50%, -45%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+    /* Classe per mostrare il menu */
+    .products-dropdown.show-tags { display: block !important; animation: fadeIn 0.2s ease; }
     
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
     .product-link-item {
+      display: block; padding: 10px 15px; color: #fff; text-decoration: none; 
+      border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; transition: 0.2s;
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px; color: white; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.1);
-      transition: 0.2s; font-size: 14px;
     }
     .product-link-item:last-child { border-bottom: none; }
-    .product-link-item:hover { background: rgba(212, 175, 55, 0.1); color: var(--gold); }
+    .product-link-item:hover { background: rgba(212, 175, 55, 0.15); color: var(--gold); }
 
     .action-bar { display: flex; gap: 24px; margin-top: 20px; padding: 0 5px; }
     .icon-btn { font-size: 24px; cursor: pointer; transition: 0.2s; color: var(--text-main); opacity: 0.7; display: flex; align-items: center; gap: 8px; }
@@ -223,10 +233,10 @@
       <img id="upload-preview" class="hidden w-full h-40 object-cover rounded-xl shadow-lg">
       
       <div class="border-t border-gray-700 pt-3">
-        <label class="text-xs text-[#d4af37] uppercase font-bold mb-2 block">Link Prodotti (Opzionale)</label>
+        <label class="text-xs text-[#d4af37] uppercase font-bold mb-2 block">Shopping Links</label>
         <div id="product-list-container" class="space-y-2 mb-2 max-h-[100px] overflow-y-auto"></div>
         <div class="flex gap-2">
-          <input type="text" id="prod-name" placeholder="Es: Jeans" class="flex-1 bg-slate-800 rounded p-2 text-xs text-white outline-none">
+          <input type="text" id="prod-name" placeholder="Es: Maglia Zara" class="flex-1 bg-slate-800 rounded p-2 text-xs text-white outline-none">
           <input type="text" id="prod-link" placeholder="https://..." class="flex-1 bg-slate-800 rounded p-2 text-xs text-white outline-none">
           <button onclick="addProductLink()" class="bg-[#d4af37] text-black px-3 rounded text-xs font-bold">+</button>
         </div>
@@ -336,7 +346,7 @@
   let currentPostId = null;
   let activeChatId = null;
   let chatSub = null;
-  let tempProducts = []; // Array temporaneo per i prodotti nell'upload
+  let tempProducts = []; // Array temporaneo per i prodotti
 
   window.addEventListener('load', async () => {
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
@@ -345,7 +355,7 @@
     if (session && !error) enterApp(session.user); else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  // --- LOGICA PRODOTTI (NUOVA) ---
+  // --- LOGICA PRODOTTI FIXATA ---
   function addProductLink() {
     const name = document.getElementById('prod-name').value.trim();
     const link = document.getElementById('prod-link').value.trim();
@@ -372,24 +382,23 @@
     renderTempProducts();
   }
 
-  function toggleProductMenu(btn) {
-    // Chiudi altri menu
-    document.querySelectorAll('.products-dropdown').forEach(el => {
-      if (el !== btn.nextElementSibling) el.classList.remove('active');
-    });
-    // Toggle corrente
-    const menu = btn.nextElementSibling;
-    menu.classList.toggle('active');
+  function toggleProductMenu(container) {
+    // Chiude tutti gli altri
+    document.querySelectorAll('.products-dropdown').forEach(el => el.classList.remove('show-tags'));
+    
+    // Trova il menu dentro il container cliccato
+    const menu = container.querySelector('.products-dropdown');
+    if(menu) menu.classList.toggle('show-tags');
   }
 
   // Chiusura menu se clicchi fuori
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.post-img-container')) {
-      document.querySelectorAll('.products-dropdown').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.products-dropdown').forEach(el => el.classList.remove('show-tags'));
     }
   });
 
-  // --- FINE LOGICA PRODOTTI ---
+  // --- RESTO DEL CODICE ---
 
   async function openInboxModal() {
     document.getElementById('inbox-modal').classList.remove('hidden');
@@ -480,9 +489,9 @@
     const heart = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
     const delBtn = (post.user_id === currentUser.id) ? `<i class="fa-solid fa-trash hover:text-red-500 cursor-pointer ml-auto" onclick="deletePost('${post.id}')"></i>` : '';
     
-    // LOGICA SHOPPING TAGS
+    // HTML TAG PRODOTTI GENERATO CORRETTAMENTE
     let shoppingHtml = '';
-    if (post.products && post.products.length > 0) {
+    if (post.products && Array.isArray(post.products) && post.products.length > 0) {
       const itemsHtml = post.products.map(p => 
         `<a href="${p.link}" target="_blank" class="product-link-item">
            <span>${escapeHtml(p.name)}</span><i class="fa-solid fa-up-right-from-square text-xs"></i>
@@ -511,7 +520,6 @@
     </div>`;
   }
 
-  // --- SUBMIT POST MODIFICATO ---
   async function submitPost() { 
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
@@ -522,17 +530,17 @@
       const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
       url = data.publicUrl; 
     } 
-    // Inseriamo anche l'array dei prodotti
-    await sb.from('posts').insert([{
+    // SALVATAGGIO ARRAY PRODOTTI NEL DB
+    const { error } = await sb.from('posts').insert([{
       user_id: currentUser.id, caption: c, image_url: url, 
-      products: tempProducts // Array JSON
-    }]); 
+      products: tempProducts
+    }]);
     
-    // Reset
-    tempProducts = []; 
-    renderTempProducts();
-    closeModal('upload-modal'); 
-    renderFeedView(); 
+    if(error) alert("Errore Post: " + error.message);
+    else {
+      tempProducts = []; renderTempProducts();
+      closeModal('upload-modal'); renderFeedView(); 
+    }
   }
 
   // --- ALTRO ---
