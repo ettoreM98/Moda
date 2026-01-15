@@ -1,1290 +1,360 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HAWENISHLAND — Gold Edition</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAWENISHLAND — Gold Edition Pro</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
 
-  <!--
-    ✅ FIX PRINCIPALE (Supabase):
-    In Supabase JS v2 i risultati sono SEMPRE in { data, error, count }.
-    Nel tuo codice c'erano molte destrutturazioni sbagliate tipo:
-      const { posts } = await sb.from('posts')...
-    così data non veniva mai letta e tutto risultava undefined.
-
-    ✅ NOTIFICHE:
-    Questo file implementa:
-      - inserimento notifications lato client (like/comment/follow)
-      - realtime subscription su table "notifications" per mostrare toast
-
-    ⚠️ REQUISITI DB (Supabase) - devi avere queste tabelle e le policy RLS corrette:
-      - profiles (id uuid PK, username text, full_name text, avatar_url text, created_at timestamptz)
-      - posts (id uuid PK, user_id uuid FK->profiles/id, image_url text, caption text, created_at timestamptz)
-      - likes (id uuid PK, post_id uuid FK->posts/id, user_id uuid FK->profiles/id, created_at timestamptz)
-      - comments (id uuid PK, post_id uuid FK->posts/id, user_id uuid FK->profiles/id, content text, created_at timestamptz)
-      - follows (id uuid PK, follower_id uuid FK->profiles/id, followed_id uuid FK->profiles/id, created_at timestamptz)
-      - notifications (id uuid PK, recipient_id uuid, actor_id uuid, type text, post_id uuid null, created_at timestamptz, read boolean default false)
-
-    Se "non arrivano le notifiche", il 99% delle volte è:
-      - table notifications mancante
-      - RLS che blocca insert/select
-      - Realtime non abilitato su notifications (Database -> Replication -> abilita)
-  -->
-
   <style>
-    :root{
-      --bg-deep:#0f172a;
-      --bg-panel:rgba(15,23,42,.95);
-      --text-main:#f8fafc;
-      --text-muted:#94a3b8;
-      --gold:#d4af37;
-      --gold-glow:rgba(212,175,55,.2);
-      --red-like:#ef4444;
-      --glass-border:1px solid rgba(212,175,55,.3);
+    :root {
+      --bg-deep: #0f172a;       
+      --bg-panel: rgba(15, 23, 42, 0.95); 
+      --text-main: #f8fafc;     
+      --text-muted: #94a3b8;    
+      --gold: #d4af37;          
+      --gold-glow: rgba(212, 175, 55, 0.2);
+      --red-like: #ef4444;
+      --glass-border: 1px solid rgba(212, 175, 55, 0.3);
     }
 
-    body{
-      background-color:var(--bg-deep);
-      color:var(--text-main);
-      font-family:'Outfit',sans-serif;
-      margin:0;
-      overflow-x:hidden;
-      background:radial-gradient(circle at top center,#1e293b 0%,#020617 80%);
-      min-height:100vh;
+    body { 
+      background-color: var(--bg-deep); 
+      color: var(--text-main); 
+      font-family: 'Outfit', sans-serif; 
+      margin: 0; 
+      background: radial-gradient(circle at top center, #1e293b 0%, #020617 80%);
+      min-height: 100vh;
     }
 
-    ::-webkit-scrollbar{width:4px}
-    ::-webkit-scrollbar-track{background:var(--bg-deep)}
-    ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:10px}
-    .hidden{display:none!important}
+    .hidden { display: none !important; }
 
-    /* layout */
-    .app-layout{display:flex;max-width:1200px;margin:0 auto;min-height:100vh}
-    .sidebar{
-      width:80px;
-      position:sticky;
-      top:20px;
-      height:calc(100vh - 40px);
-      margin-left:10px;
-      padding:30px 0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      background:var(--bg-panel);
-      backdrop-filter:blur(12px);
-      border:var(--glass-border);
-      border-radius:40px;
-      box-shadow:0 10px 40px rgba(0,0,0,.5);
-      z-index:50;
+    /* --- LAYOUT --- */
+    .app-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+    .sidebar { 
+      width: 80px; position: sticky; top: 20px; height: calc(100vh - 40px);
+      margin-left: 10px; padding: 30px 0; display: flex; flex-direction: column; align-items: center; 
+      background: var(--bg-panel); backdrop-filter: blur(12px); border: var(--glass-border);
+      border-radius: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 50;
     }
 
-    .brand-logo-icon{
-      font-family:'Playfair Display',serif;
-      font-weight:bold;
-      font-size:24px;
-      color:var(--gold);
-      margin-bottom:40px;
-      cursor:pointer;
-      border:1px solid var(--gold);
-      width:40px;height:40px;
-      display:flex;align-items:center;justify-content:center;
-      border-radius:50%;
-      box-shadow:0 0 10px var(--gold-glow);
+    .nav-item { 
+      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; cursor: pointer; transition: 0.3s; color: var(--text-muted);
+      margin-bottom: 20px; font-size: 20px;
     }
+    .nav-item:hover, .nav-item.active { background: rgba(212, 175, 55, 0.15); color: var(--gold); transform: scale(1.1); }
 
-    .nav-item{
-      width:48px;height:48px;
-      display:flex;align-items:center;justify-content:center;
-      border-radius:50%;
-      cursor:pointer;
-      transition:all .3s ease;
-      color:var(--text-muted);
-      margin-bottom:20px;
-      font-size:20px;
-      position:relative;
+    /* --- POSTS --- */
+    .main-content { flex: 1; padding: 40px; max-width: 700px; margin: 0 auto; }
+    .post-card { 
+      background: rgba(30, 41, 59, 0.4); margin-bottom: 40px; padding: 20px;
+      border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.2);
     }
-    .nav-item:hover,.nav-item.active{
-      background:rgba(212,175,55,.15);
-      color:var(--gold);
-      box-shadow:0 0 15px var(--gold-glow);
-      transform:scale(1.1);
-    }
-    .nav-item:hover::after{
-      content:attr(title);
-      position:absolute;
-      left:60px;
-      background:var(--gold);
-      color:#000;
-      padding:4px 8px;
-      font-size:10px;
-      border-radius:4px;
-      font-weight:bold;
-      white-space:nowrap;
-      opacity:1;
-      pointer-events:none;
-    }
+    .post-img { width: 100%; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); }
+    
+    /* --- AUTH --- */
+    .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:200; background:#0a0a0a; }
+    .form-side { flex:1; display:flex; flex-direction:column; justify-content:center; padding:60px; max-width:500px; margin:auto; }
+    .auth-input { background:transparent; border-bottom:1px solid #222; padding:10px 0; color:#fff; width:100%; outline:none; margin-bottom:20px; }
+    .btn-white { background:#fff; color:#000; padding:14px; font-weight:600; width:100%; cursor:pointer; transition:.3s; }
+    .btn-white:hover { background: var(--gold); color: #000; }
 
-    /* feed */
-    .main-content{flex:1;padding:40px;max-width:700px;margin:0 auto}
-    .post-card{
-      background:rgba(30,41,59,.4);
-      margin-bottom:40px;
-      padding:20px;
-      border-radius:20px;
-      border:1px solid var(--gold);
-      box-shadow:0 0 20px var(--gold-glow);
-      transition:transform .3s ease;
-    }
-    .post-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
-    .user-badge{display:flex;align-items:center;gap:12px;cursor:pointer}
-    .user-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
-    .user-meta{display:flex;flex-direction:column}
-    .username{font-weight:600;font-size:15px;color:#fff}
-    .post-date{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
-    .post-img{width:100%;border-radius:12px;cursor:pointer;border:1px solid rgba(255,255,255,.1)}
-    .action-bar{display:flex;gap:24px;margin-top:20px;padding:0 5px}
-    .icon-btn{font-size:24px;cursor:pointer;transition:.2s;color:var(--text-main);opacity:.7;display:flex;align-items:center;gap:8px}
-    .icon-btn:hover{opacity:1;transform:translateY(-2px);color:var(--gold)}
-    .likes-count{font-size:14px;font-weight:600;color:#fff}
-    .caption-box{margin-top:15px;padding:0 5px;font-size:15px;line-height:1.6;color:#cbd5e1}
-    .caption-user{font-weight:700;color:var(--gold);margin-right:8px;cursor:pointer}
+    /* --- MODALS --- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+    .glass-modal { background: #1e293b; border: 1px solid var(--gold); border-radius: 24px; max-width: 90%; max-height: 90%; overflow: hidden; }
+    
+    .btn-gold { background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%); color: #000; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-    /* buttons / empty */
-    .btn-gold{
-      background:linear-gradient(135deg,#fceabb 0%,#f8b500 100%);
-      color:#000;
-      padding:12px 24px;
-      border-radius:12px;
-      font-weight:700;
-      border:none;
-      cursor:pointer;
-      box-shadow:0 4px 15px rgba(248,181,0,.4);
-      transition:.3s;
-    }
-    .btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(248,181,0,.6)}
-
-    .empty-feed-box{
-      text-align:center;
-      padding:60px 20px;
-      background:rgba(255,255,255,.03);
-      border:1px dashed var(--gold);
-      border-radius:20px;
-      color:#ccc;
-    }
-
-    /* login */
-    .split-layout{display:flex;height:100vh;width:100vw;position:fixed;top:0;left:0;z-index:200;background:#0a0a0a;transition:transform .8s ease-in-out}
-    .visual-side{flex:1;position:relative;overflow:hidden;display:none;background:#000}
-    @media(min-width:768px){.visual-side{display:block}}
-    .visual-side img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:grayscale(100%);opacity:0;transition:opacity 1.5s ease,filter .8s ease;z-index:0;pointer-events:none}
-    .visual-side img.active{opacity:1;z-index:1;pointer-events:auto}
-    .visual-side img.active:hover{filter:grayscale(0%);cursor:crosshair}
-    .form-side{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px;background:#0a0a0a;max-width:600px;margin:auto}
-    .input-group{margin-bottom:25px}
-    .input-label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;margin-bottom:8px}
-    input.auth-input{background:transparent;border-bottom:1px solid #222;padding:10px 0;color:#fff;width:100%;outline:none;font-size:14px;border-top:none;border-left:none;border-right:none;border-radius:0}
-    input.auth-input:focus{border-bottom-color:#fff}
-    .btn-white{background:#fff;color:#000;padding:18px;font-weight:500;text-transform:uppercase;width:100%;cursor:pointer;border:1px solid #fff;transition:.3s;margin-top:10px}
-    .btn-white:hover{background:#000;color:#fff}
-    .link-small{text-align:center;margin-top:20px;font-size:10px;color:#555;cursor:pointer;text-transform:uppercase;letter-spacing:1px}
-
-    /* modals */
-    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);backdrop-filter:blur(5px);z-index:100;display:flex;justify-content:center;align-items:center}
-    .glass-modal{background:#1e293b;border:1px solid var(--gold);border-radius:20px;overflow:hidden;box-shadow:0 0 50px rgba(212,175,55,.2)}
-    .detail-layout{display:flex;width:90vw;max-width:1100px;height:85vh}
-    .detail-img-side{flex:1.5;background:#000;display:flex;align-items:center;justify-content:center;position:relative}
-    .detail-img-side img{max-width:100%;max-height:100%;object-fit:contain}
-    .detail-info-side{flex:1;display:flex;flex-direction:column;background:#1e293b;min-width:350px;position:relative}
-
-    /* toast */
-    #toast-container{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
-    .toast{pointer-events:none;min-width:260px;max-width:360px;background:rgba(15,23,42,.92);border:1px solid rgba(212,175,55,.35);border-radius:14px;padding:12px 14px;box-shadow:0 10px 35px rgba(0,0,0,.55)}
-    .toast-title{font-weight:800;color:#fff;font-size:13px}
-    .toast-body{color:#cbd5e1;font-size:12px;margin-top:3px}
-    .toast-time{color:#94a3b8;font-size:10px;margin-top:6px;text-transform:uppercase;letter-spacing:1px}
-
-    @media(max-width:800px){
-      .sidebar{
-        width:100%;height:60px;position:fixed;bottom:0;top:auto;left:0;margin:0;
-        flex-direction:row;justify-content:space-around;padding:0;border-radius:20px 20px 0 0;
-        background:rgba(15,23,42,.98);border-top:1px solid var(--gold);border:none
-      }
-      .brand-logo-icon{display:none}
-      .nav-item{margin:0}
-      .nav-item::after{display:none}
-      .main-content{padding:20px 10px 100px 10px}
-      .detail-layout{flex-direction:column;height:100%;border-radius:0;width:100%}
-      .app-layout{display:block}
-      #toast-container{top:12px;right:12px;left:12px}
-      .toast{min-width:auto;max-width:none}
-    }
+    /* Notifications Badge */
+    .notif-badge { position: absolute; top: 0; right: 0; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body>
 
-<div id="toast-container"></div>
-
 <div id="auth-container" class="split-layout">
-  <div class="visual-side">
-    <img src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200" class="active">
-    <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200">
-  </div>
-
   <div class="form-side">
-    <h1 class="serif text-6xl mb-12 italic text-white" style="font-family:'Playfair Display',serif;">Hawenishland</h1>
-
-    <div id="msg-box" class="hidden p-2 text-center mb-4 text-xs border border-gray-600 rounded"></div>
-
-    <!-- LOGIN -->
+    <h1 class="text-5xl italic mb-10 text-white" style="font-family: 'Playfair Display', serif;">Hawenishland</h1>
+    <div id="msg-box" class="hidden p-3 text-center mb-4 text-sm border rounded"></div>
+    
     <div id="login-form">
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input type="email" id="l-email" class="auth-input" autocomplete="email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Password</label>
-        <input type="password" id="l-pass" class="auth-input" autocomplete="current-password">
-      </div>
-      <button onclick="faiLogin()" class="btn-white">Entra</button>
-      <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
-      <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
+      <input type="email" id="l-email" placeholder="Email" class="auth-input">
+      <input type="password" id="l-pass" placeholder="Password" class="auth-input">
+      <button onclick="faiLogin()" class="btn-white">ACCEDI</button>
+      <p onclick="recuperoPassword()" class="text-center text-xs text-gray-500 mt-6 cursor-pointer hover:text-white uppercase tracking-widest">Password dimenticata?</p>
+      <p onclick="vaiA('signup')" class="text-center text-xs text-gray-500 mt-4 cursor-pointer hover:text-white uppercase tracking-widest">Crea un account</p>
     </div>
 
-    <!-- SIGNUP -->
     <div id="signup-form" class="hidden">
-      <div class="input-group">
-        <label class="input-label">Username</label>
-        <input type="text" id="r-username" class="auth-input" autocomplete="username">
-      </div>
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="input-label">Nome</label>
-          <input type="text" id="r-nome" class="auth-input" autocomplete="given-name">
-        </div>
-        <div>
-          <label class="input-label">Cognome</label>
-          <input type="text" id="r-cognome" class="auth-input" autocomplete="family-name">
-        </div>
-      </div>
-      <div class="input-group">
-        <label class="input-label">Nascita</label>
-        <input type="date" id="r-nascita" class="auth-input" style="color-scheme:dark">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Email</label>
-        <input type="email" id="r-email" class="auth-input" autocomplete="email">
-      </div>
-      <div class="input-group">
-        <label class="input-label">Password</label>
-        <input type="password" id="r-pass" class="auth-input" autocomplete="new-password">
-      </div>
-      <button onclick="faiRegistrazione()" class="btn-white">Registrati</button>
-      <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
+      <input type="text" id="r-username" placeholder="Username" class="auth-input">
+      <input type="email" id="r-email" placeholder="Email" class="auth-input">
+      <input type="password" id="r-pass" placeholder="Password" class="auth-input">
+      <button onclick="faiRegistrazione()" class="btn-white">REGISTRATI</button>
+      <p onclick="vaiA('login')" class="text-center text-xs text-gray-500 mt-6 cursor-pointer hover:text-white uppercase tracking-widest">Torna al login</p>
     </div>
-
-    <!-- RESET PASSWORD (quando arrivi dal link email) -->
-    <div id="reset-form" class="hidden">
-      <div class="input-group">
-        <label class="input-label">Nuova Password</label>
-        <input type="password" id="new-pass" class="auth-input" autocomplete="new-password">
-      </div>
-      <button onclick="salvaNuovaPassword()" class="btn-white">Salva Password</button>
-      <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
-    </div>
-
   </div>
 </div>
 
 <div id="app-interface" class="hidden">
   <div class="app-layout">
     <div class="sidebar">
-      <div class="brand-logo-icon" onclick="renderFeedView()" title="Home">H</div>
-
-      <div class="nav-item active" onclick="renderFeedView()" title="Feed"><i class="fa-solid fa-house"></i></div>
-      <div class="nav-item" onclick="openSearchModal()" title="Cerca"><i class="fa-solid fa-magnifying-glass"></i></div>
-      <div class="nav-item" onclick="openUploadModal()" title="Nuovo Post"><i class="fa-solid fa-plus"></i></div>
-      <div class="nav-item" onclick="openUserProfile(currentUser.id)" title="Profilo"><i class="fa-solid fa-user"></i></div>
-
-      <div style="margin-top:auto"></div>
-
-      <div class="nav-item text-red-400 hover:text-red-500" onclick="logout()" title="Esci"><i class="fa-solid fa-power-off"></i></div>
+      <div class="nav-item active" onclick="renderFeedView()"><i class="fa-solid fa-house"></i></div>
+      <div class="nav-item" onclick="openSearchModal()"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="nav-item" onclick="openUploadModal()"><i class="fa-solid fa-plus"></i></div>
+      <div class="nav-item" onclick="openNotifications()"><i class="fa-solid fa-bell"></i><div id="notif-count" class="hidden notif-badge"></div></div>
+      <div class="nav-item" onclick="openUserProfile(currentUser.id)"><i class="fa-solid fa-user"></i></div>
+      <div class="mt-auto nav-item text-red-500" onclick="logout()"><i class="fa-solid fa-power-off"></i></div>
     </div>
-
     <div class="main-content" id="main-content-area"></div>
   </div>
 </div>
 
-<!-- Upload Modal -->
-<div id="upload-modal" class="modal-overlay hidden">
-  <div class="glass-modal p-6 w-[400px]">
-    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
-      <h3 class="font-bold text-lg text-white">Crea Post</h3>
-      <i class="fa-solid fa-xmark cursor-pointer hover:text-white text-gray-400" onclick="closeModal('upload-modal')"></i>
-    </div>
-    <div class="flex flex-col gap-4">
-      <label class="h-48 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition">
-        <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-[#d4af37]"></i>
-        <span class="text-sm text-gray-400">Clicca per caricare foto</span>
-        <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
-      </label>
-      <img id="upload-preview" class="hidden w-full h-48 object-cover rounded-xl shadow-lg">
-      <textarea id="post-caption" rows="2" placeholder="Scrivi un pensiero..." class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-1 focus:ring-[#d4af37] outline-none"></textarea>
-      <button onclick="submitPost()" class="btn-gold w-full">Pubblica</button>
-    </div>
-  </div>
-</div>
-
-<!-- Search Modal -->
-<div id="search-modal" class="modal-overlay hidden">
-  <div class="glass-modal w-[400px] max-h-[500px] flex flex-col">
-    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-      <input type="text" id="search-query" class="bg-transparent text-white w-full outline-none placeholder-gray-500 text-lg" placeholder="Cerca persone..." onkeyup="performSearch()">
-      <i class="fa-solid fa-xmark cursor-pointer ml-2 text-white" onclick="closeModal('search-modal')"></i>
-    </div>
-    <div id="search-results" class="flex-1 overflow-y-auto p-2"></div>
-  </div>
-</div>
-
-<!-- User list modal -->
-<div id="user-list-modal" class="modal-overlay hidden">
-  <div class="glass-modal w-[400px] max-h-[500px] flex flex-col">
-    <div class="p-4 border-b border-gray-700 flex justify-between font-bold text-white">
-      <span id="ul-title">Lista</span>
-      <i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('user-list-modal')"></i>
-    </div>
-    <div id="ul-content" class="flex-1 overflow-y-auto p-2"></div>
-  </div>
-</div>
-
-<!-- Post detail modal -->
 <div id="post-detail-modal" class="modal-overlay hidden">
-  <div class="glass-modal detail-layout">
-    <div class="detail-img-side">
-      <img id="detail-img" src="">
-      <div id="detail-noimg" class="hidden text-gray-500">Solo Testo</div>
+  <div class="glass-modal w-[900px] h-[600px] flex">
+    <div class="flex-1 bg-black flex items-center justify-center">
+      <img id="detail-img" class="max-h-full object-contain">
     </div>
-    <div class="detail-info-side">
-      <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-        <div class="flex items-center gap-3 cursor-pointer" id="detail-user-link">
-          <img id="detail-avatar" src="" class="w-8 h-8 rounded-full object-cover border border-[#d4af37]">
-          <span id="detail-username" class="font-bold text-sm text-white"></span>
-        </div>
-        <div class="flex items-center gap-4">
-          <div id="detail-delete-btn-container"></div>
-          <i class="fa-solid fa-xmark cursor-pointer text-lg hover:text-white text-gray-400" onclick="closeModal('post-detail-modal')"></i>
-        </div>
+    <div class="w-[350px] flex flex-col bg-slate-900 border-l border-gray-800">
+      <div class="p-4 border-b border-gray-800 flex items-center gap-3">
+        <img id="detail-avatar" class="w-8 h-8 rounded-full">
+        <span id="detail-username" class="font-bold text-white"></span>
+        <i class="fa-solid fa-xmark ml-auto cursor-pointer" onclick="closeModal('post-detail-modal')"></i>
       </div>
-      <div id="detail-comments" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-      <div class="p-4 border-t border-gray-700 bg-slate-900">
-        <div class="flex gap-4 text-2xl mb-3">
-          <i id="detail-like-btn" class="fa-regular fa-heart cursor-pointer transition text-white"></i>
-          <i class="fa-regular fa-comment text-white"></i>
+      <div id="detail-comments" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm"></div>
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex gap-4 mb-2">
+          <i id="detail-like-btn" class="fa-regular fa-heart text-2xl cursor-pointer"></i>
         </div>
-        <div class="font-bold text-sm mb-3 text-white"><span id="detail-likes-count">0</span> Mi piace</div>
+        <div class="text-white font-bold text-xs mb-4"><span id="detail-likes-count">0</span> LIKE</div>
         <div class="flex gap-2">
-          <input type="text" id="new-comment" placeholder="Commenta..." class="flex-1 bg-transparent outline-none text-white text-sm">
-          <button onclick="inviaCommento()" class="text-[#d4af37] font-bold text-sm">INVIA</button>
+          <input type="text" id="new-comment" placeholder="Aggiungi un commento..." class="bg-transparent text-white text-sm outline-none flex-1">
+          <button onclick="inviaCommento()" class="text-gold font-bold text-xs">PUBBLICA</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Edit profile modal -->
-<div id="edit-profile-modal" class="modal-overlay hidden">
-  <div class="glass-modal p-6 w-[400px]">
-    <h2 class="text-xl font-bold mb-4 text-center text-white">Modifica Profilo</h2>
-    <div class="flex flex-col items-center mb-6">
-      <img id="edit-avatar-preview" src="" class="w-24 h-24 rounded-full object-cover border-4 border-[#d4af37] mb-2">
-      <label class="text-[#d4af37] text-sm font-bold cursor-pointer hover:text-white">
-        Cambia Foto
-        <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
-      </label>
+<div id="upload-modal" class="modal-overlay hidden">
+    <div class="glass-modal p-8 w-[400px]">
+        <h3 class="text-xl font-bold mb-4 text-white">Nuovo Post</h3>
+        <input type="file" id="post-file" class="mb-4 text-sm text-gray-400">
+        <textarea id="post-caption" placeholder="Scrivi una didascalia..." class="w-full bg-slate-800 p-3 rounded-lg text-white mb-4 outline-none"></textarea>
+        <button onclick="submitPost()" class="btn-gold w-full">CONDIVIDI</button>
+        <button onclick="closeModal('upload-modal')" class="w-full mt-2 text-gray-500 text-xs">ANNULLA</button>
     </div>
-    <div class="space-y-4">
-      <div>
-        <label class="text-xs text-gray-500 uppercase font-bold">Username</label>
-        <input id="edit-username" type="text" class="w-full bg-slate-800 p-2 rounded text-white border border-slate-700">
-      </div>
-      <div>
-        <label class="text-xs text-gray-500 uppercase font-bold">Nome Completo</label>
-        <input id="edit-fullname" type="text" class="w-full bg-slate-800 p-2 rounded text-white border border-slate-700">
-      </div>
-      <div class="flex gap-3 pt-2">
-        <button onclick="saveProfile()" class="flex-1 btn-gold">Salva</button>
-        <button onclick="closeModal('edit-profile-modal')" class="flex-1 border border-gray-600 py-2 rounded-lg text-white hover:bg-white/10">Annulla</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
-  // --- Supabase ---
+  // CONFIGURAZIONE
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
-
-  // detectSessionInUrl è importante per il flow reset password (type=recovery)
-  const sb = window.supabase.createClient(SB_URL, SB_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-  });
-
-  const BUCKET_POSTS = 'posts';
-  const BUCKET_AVATARS = 'avatars';
-
+  const sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
   let currentUser = null;
   let currentPostId = null;
-  let currentPostOwnerId = null;
-  let notificationsChannel = null;
 
-  // --- boot ---
   window.addEventListener('load', async () => {
-    // slideshow login
-    let i = 0;
-    const imgs = document.querySelectorAll('.visual-side img');
-    if (imgs.length) {
-      setInterval(() => {
-        imgs[i].classList.remove('active');
-        i = (i + 1) % imgs.length;
-        imgs[i].classList.add('active');
-      }, 5000);
-    }
-
-    // se arrivi da email reset: hash contiene type=recovery
-    const isRecovery = (window.location.hash || '').includes('type=recovery');
-
-    // ✅ FIX: destrutturazione corretta
-    const { data, error } = await sb.auth.getSession();
-    if (error) {
-      console.error(error);
-      document.getElementById('auth-container').style.display = 'flex';
-      return;
-    }
-
-    const session = data?.session ?? null;
-
-    if (isRecovery) {
-      // mostra reset form (anche se la session deve essere letta dal link)
-      vaiA('reset');
-      document.getElementById('auth-container').style.display = 'flex';
-      mess("Inserisci una nuova password per completare il recupero.", false);
-      return;
-    }
-
+    const { data: { session } } = await sb.auth.getSession();
     if (session) enterApp(session.user);
-    else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  // --- UI helpers ---
-  function mess(text, isError=false){
-    const b = document.getElementById('msg-box');
-    b.innerText = text;
-    b.classList.remove('hidden');
-    b.style.borderColor = isError ? 'red' : 'green';
-    b.style.color = isError ? 'red' : 'green';
-  }
-
-  function toast(title, body){
-    const wrap = document.getElementById('toast-container');
-    const el = document.createElement('div');
-    const now = new Date();
-    el.className = 'toast';
-    el.innerHTML = `
-      <div class="toast-title">${escapeHtml(title)}</div>
-      <div class="toast-body">${escapeHtml(body || '')}</div>
-      <div class="toast-time">${now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
-    `;
-    wrap.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-6px)'; el.style.transition = 'all .25s ease'; }, 3200);
-    setTimeout(() => el.remove(), 3800);
-  }
-
-  function vaiA(mode){
-    document.getElementById('login-form').classList.toggle('hidden', mode !== 'login');
-    document.getElementById('signup-form').classList.toggle('hidden', mode !== 'signup');
-    document.getElementById('reset-form').classList.toggle('hidden', mode !== 'reset');
-  }
-
-  function escapeHtml(t){
-    if (!t) return "";
-    return t
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;")
-      .replace(/'/g,"&#039;");
-  }
-
-  function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
-
-  // --- AUTH ---
-  async function faiLogin(){
-    const email = document.getElementById('l-email').value.trim();
+  // --- CORE AUTH ---
+  async function faiLogin() {
+    const email = document.getElementById('l-email').value;
     const password = document.getElementById('l-pass').value;
-
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) return mess(error.message, true);
-    enterApp(data.user);
+    if(error) mess(error.message, true); else enterApp(data.user);
   }
 
-  async function faiRegistrazione(){
-    const email = document.getElementById('r-email').value.trim();
+  async function faiRegistrazione() {
+    const email = document.getElementById('r-email').value;
     const password = document.getElementById('r-pass').value;
-    const username = document.getElementById('r-username').value.trim();
-
+    const username = document.getElementById('r-username').value;
     const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) return mess(error.message, true);
-
-    if (data?.user) {
-      // ✅ FIX: insert profiles con data corretta
-      const { error: pErr } = await sb.from('profiles').insert([{
-        id: data.user.id,
-        username,
-        full_name: `${document.getElementById('r-nome').value || ''} ${document.getElementById('r-cognome').value || ''}`.trim() || null
-      }]);
-      if (pErr) console.warn('profiles insert:', pErr.message);
+    if(error) return mess(error.message, true);
+    if(data.user) {
+        await sb.from('profiles').insert([{ id: data.user.id, username: username }]);
+        mess("Controlla l'email per confermare!", false);
     }
-
-    mess("Registrazione OK! Controlla l'email se è richiesta conferma.", false);
-    vaiA('login');
   }
 
-  // ✅ FIX 1: recupero password che funziona (invio email)
-  async function recuperoPassword(){
-    const emailFromField = document.getElementById('l-email').value.trim();
-    const email = emailFromField || prompt("Inserisci la tua email per il recupero password:");
-    if (!email) return;
-
-    // redirectTo deve essere un URL consentito in Auth -> URL Configuration (Supabase)
-    const redirectTo = window.location.origin + window.location.pathname;
-
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
-    if (error) return mess(error.message, true);
-
-    mess("Email inviata! Controlla la posta (anche spam) per il link di recupero.", false);
+  async function recuperoPassword() {
+    const email = document.getElementById('l-email').value;
+    if(!email) return mess("Inserisci la tua email", true);
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    if(error) mess(error.message, true);
+    else mess("Email di reset inviata!", false);
   }
 
-  async function salvaNuovaPassword(){
-    const newPass = document.getElementById('new-pass').value;
-    if (!newPass || newPass.length < 6) return mess("La password deve essere lunga almeno 6 caratteri.", true);
-
-    const { data, error } = await sb.auth.updateUser({ password: newPass });
-    if (error) return mess(error.message, true);
-
-    mess("Password aggiornata! Ora puoi entrare.", false);
-    // pulisci hash e vai al login
-    history.replaceState(null, "", window.location.pathname + window.location.search);
-    vaiA('login');
-  }
-
-  async function logout(){
-    await sb.auth.signOut();
-    location.reload();
-  }
-
-  function enterApp(user){
+  function enterApp(user) {
     currentUser = user;
-
-    document.getElementById('auth-container').style.transform = "translateY(-100vh)";
-    setTimeout(() => {
-      document.getElementById('auth-container').classList.add('hidden');
-      document.getElementById('app-interface').classList.remove('hidden');
-      renderFeedView();
-      initRealtimeNotifications();
-    }, 600);
+    document.getElementById('auth-container').classList.add('hidden');
+    document.getElementById('app-interface').classList.remove('hidden');
+    renderFeedView();
+    checkNotifications();
   }
 
-  // --- NOTIFICATIONS (Realtime) ---
-  function initRealtimeNotifications(){
-    try{
-      if (notificationsChannel) sb.removeChannel(notificationsChannel);
+  function logout() { sb.auth.signOut(); location.reload(); }
 
-      notificationsChannel = sb
-        .channel('notifications:' + currentUser.id)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `recipient_id=eq.${currentUser.id}`
-        }, (payload) => {
-          const n = payload.new || {};
-          const label = n.type === 'like' ? 'Nuovo like'
-                      : n.type === 'comment' ? 'Nuovo commento'
-                      : n.type === 'follow' ? 'Nuovo follower'
-                      : 'Notifica';
-          toast(label, "Hai una nuova notifica.");
-        })
-        .subscribe();
-    }catch(e){
-      console.warn('Realtime notifications error:', e);
-    }
-  }
-
-  async function createNotification({ recipientId, type, postId=null }){
-    if (!recipientId || recipientId === currentUser.id) return; // niente notifica a se stessi
-    // se RLS blocca, non rompe l'app
-    await sb.from('notifications').insert([{
-      recipient_id: recipientId,
-      actor_id: currentUser.id,
-      type,
-      post_id: postId
-    }]);
-  }
-
-  // --- FEED ---
-  async function renderFeedView(){
+  // --- FEED & POSTS ---
+  async function renderFeedView() {
     const main = document.getElementById('main-content-area');
+    main.innerHTML = '<p class="text-center text-gray-500">Caricamento...</p>';
 
-    // marker profilo
-    const marker = document.getElementById('view-profile-active');
-    if (marker) marker.remove();
-
-    main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
-
-    // ✅ FIX: follows -> data
-    const { data: follows, error: fErr } = await sb
-      .from('follows')
-      .select('followed_id')
-      .eq('follower_id', currentUser.id);
-
-    if (fErr) {
-      console.error(fErr);
-      main.innerHTML = `<p class="text-center mt-10 text-red-400">Errore feed: ${escapeHtml(fErr.message)}</p>`;
-      return;
-    }
-
-    const followingIds = (follows || []).map(f => f.followed_id);
-
-    if (followingIds.length === 0) {
-      main.innerHTML = `
-        <div class="empty-feed-box">
-          <i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i>
-          <h2 class="text-xl font-bold mb-2">Home Vuota</h2>
-          <p class="text-gray-400 mb-6">Non segui ancora nessuno. Inizia a seguire qualcuno per arricchire il tuo feed!</p>
-          <button onclick="openSearchModal()" class="btn-gold">Cerca Persone</button>
-        </div>
-      `;
-      return;
-    }
-
-    // ✅ FIX: posts -> data
-    const { data: posts, error } = await sb
-      .from('posts')
+    const { data: posts, error } = await sb.from('posts')
       .select(`*, profiles:user_id (username, avatar_url)`)
-      .in('user_id', followingIds)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error(error);
-      main.innerHTML = `<p class="text-center mt-10 text-red-400">Errore: ${escapeHtml(error.message)}</p>`;
-      return;
-    }
-
-    if (!posts || posts.length === 0) {
-      main.innerHTML = `
-        <div class="empty-feed-box">
-          <i class="fa-solid fa-ghost text-4xl mb-4 text-[#d4af37]"></i>
-          <h2 class="text-xl font-bold mb-2">Tutto tace...</h2>
-          <p class="text-gray-400 mb-6">Le persone che segui non hanno ancora pubblicato nulla.</p>
-          <button onclick="openSearchModal()" class="btn-gold">Cerca altri utenti</button>
-        </div>
-      `;
-      return;
-    }
+    if (error) return main.innerHTML = "Errore caricamento.";
 
     main.innerHTML = '';
     for (const post of posts) {
-      const counts = await getPostCounts(post.id);
-      const likedByMe = await isLikedByMe(post.id);
-      main.insertAdjacentHTML('beforeend', createPostHTML(post, counts, likedByMe));
+      const { count: likes } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', post.id);
+      const { data: myLike } = await sb.from('likes').select('*').eq('post_id', post.id).eq('user_id', currentUser.id);
+      const isLiked = myLike && myLike.length > 0;
+      
+      main.insertAdjacentHTML('beforeend', `
+        <div class="post-card">
+          <div class="flex items-center gap-3 mb-4">
+            <img src="${post.profiles.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full border border-gold">
+            <span class="font-bold text-white">${post.profiles.username}</span>
+          </div>
+          ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
+          <div class="mt-4 flex gap-4 text-2xl">
+            <i class="${isLiked ? 'fa-solid text-red-500' : 'fa-regular text-white'} fa-heart cursor-pointer" onclick="toggleLike('${post.id}', this)"></i>
+            <i class="fa-regular fa-comment text-white cursor-pointer" onclick="openPostDetail('${post.id}')"></i>
+          </div>
+          <div class="text-xs font-bold text-white mt-2">${likes || 0} LIKE</div>
+          <div class="text-sm mt-2"><span class="font-bold text-gold mr-2">${post.profiles.username}</span> ${post.caption || ''}</div>
+        </div>
+      `);
     }
   }
 
-  function createPostHTML(post, counts, liked){
-    const user = post.profiles || { username: 'Utente', avatar_url: null };
-    const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
-    const heartIcon = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
-
-    const deleteIcon = (post.user_id === currentUser.id)
-      ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>`
-      : '';
-
-    // ✅ passiamo anche ownerId al toggleLike, per creare notifica
-    return `
-      <div class="post-card">
-        <div class="post-header">
-          <div class="user-badge" onclick="openUserProfile('${post.user_id}')">
-            <img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar">
-            <div class="user-meta">
-              <span class="username">${escapeHtml(user.username)}</span>
-              <span class="post-date">${escapeHtml(dateStr)}</span>
-            </div>
-          </div>
-          ${deleteIcon}
-        </div>
-
-        ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
-
-        <div class="action-bar">
-          <div class="icon-btn" onclick="toggleLike('${post.id}','${post.user_id}', this)">
-            <i class="${heartIcon}"></i>
-            <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
-          </div>
-
-          <div class="icon-btn" onclick="openPostDetail('${post.id}')">
-            <i class="fa-regular fa-comment"></i>
-            <span class="text-sm ml-2">${counts.comments}</span>
-          </div>
-
-          <div class="icon-btn ml-auto" onclick="sharePost('${post.id}', '${escapeHtml(post.caption || '')}')">
-            <i class="fa-regular fa-paper-plane"></i>
-          </div>
-        </div>
-
-        <div class="caption-box">
-          <span class="caption-user" onclick="openUserProfile('${post.user_id}')">${escapeHtml(user.username)}</span>
-          ${escapeHtml(post.caption || '')}
-        </div>
-      </div>
-    `;
-  }
-
-  async function getPostCounts(postId){
-    const { count: l, error: lErr } = await sb
-      .from('likes')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
-
-    const { count: c, error: cErr } = await sb
-      .from('comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
-
-    if (lErr) console.warn(lErr.message);
-    if (cErr) console.warn(cErr.message);
-
-    return { likes: l || 0, comments: c || 0 };
-  }
-
-  async function isLikedByMe(postId){
-    const { data, error } = await sb
-      .from('likes')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('user_id', currentUser.id)
-      .limit(1);
-
-    if (error) {
-      console.warn(error.message);
-      return false;
-    }
-    return !!(data && data.length);
-  }
-
-  async function toggleLike(postId, ownerId, btnContainer){
-    const icon = btnContainer.querySelector('i');
-    const countSpan = document.getElementById(`feed-likes-count-${postId}`);
-    const currentCount = parseInt(countSpan.innerText || '0', 10);
-
-    const isLiked = icon.classList.contains('fa-solid');
-
+  async function toggleLike(postId, el) {
+    const isLiked = el.classList.contains('fa-solid');
     if (isLiked) {
-      icon.className = 'fa-regular fa-heart';
-      countSpan.innerText = Math.max(0, currentCount - 1);
-
-      const { error } = await sb
-        .from('likes')
-        .delete()
-        .eq('post_id', postId)
-        .eq('user_id', currentUser.id);
-
-      if (error) {
-        // rollback UI
-        icon.className = 'fa-solid fa-heart text-red-500';
-        countSpan.innerText = currentCount;
-        console.warn(error.message);
-      }
-    } else {
-      icon.className = 'fa-solid fa-heart text-red-500';
-      countSpan.innerText = currentCount + 1;
-
-      const { error } = await sb
-        .from('likes')
-        .insert([{ post_id: postId, user_id: currentUser.id }]);
-
-      if (error) {
-        // rollback UI
-        icon.className = 'fa-regular fa-heart';
-        countSpan.innerText = currentCount;
-        console.warn(error.message);
-      } else {
-        // ✅ notifica al proprietario del post
-        createNotification({ recipientId: ownerId, type: 'like', postId });
-      }
-    }
-  }
-
-  async function sharePost(postId, caption){
-    const text = `Guarda questo post su Hawenishland: ${caption || ''}`;
-    if (navigator.share) {
-      try { await navigator.share({ title:'Hawenishland', text, url: window.location.href }); }
-      catch (err) {}
-    } else {
-      try { await navigator.clipboard.writeText(text); alert("Testo copiato!"); }
-      catch (err) { alert("Errore copia."); }
-    }
-  }
-
-  async function deletePost(postId){
-    if(!confirm("Vuoi davvero eliminare questo post?")) return;
-
-    const { error } = await sb
-      .from('posts')
-      .delete()
-      .eq('id', postId)
-      .eq('user_id', currentUser.id);
-
-    if (error) return alert("Errore: " + error.message);
-
-    closeModal('post-detail-modal');
-
-    if (document.getElementById('view-profile-active')) openUserProfile(currentUser.id);
-    else renderFeedView();
-  }
-
-  // --- PROFILO ---
-  async function openUserProfile(userId){
-    const main = document.getElementById('main-content-area');
-    main.innerHTML = `
-      <div id="view-profile-active" class="hidden"></div>
-      <div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>
-    `;
-
-    const { data: profile, error } = await sb
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error || !profile) {
-      main.innerHTML = "<p class='text-center mt-10 text-white'>Utente non trovato.</p>";
-      return;
-    }
-
-    const { count: postsCount } = await sb.from('posts').select('*', { count:'exact', head:true }).eq('user_id', userId);
-    const { count: followersCount } = await sb.from('follows').select('*', { count:'exact', head:true }).eq('followed_id', userId);
-    const { count: followingCount } = await sb.from('follows').select('*', { count:'exact', head:true }).eq('follower_id', userId);
-
-    let isFollowing = false;
-    if (userId !== currentUser.id) {
-      const { data } = await sb
-        .from('follows')
-        .select('id')
-        .eq('follower_id', currentUser.id)
-        .eq('followed_id', userId)
-        .limit(1);
-      isFollowing = !!(data && data.length);
-    }
-
-    const { data: posts, error: pErr } = await sb
-      .from('posts')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending:false });
-
-    if (pErr) console.warn(pErr.message);
-
-    const isMe = userId === currentUser.id;
-    const btn = isMe
-      ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>`
-      : `<button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>`;
-
-    main.innerHTML = `
-      <div id="view-profile-active" class="hidden"></div>
-      <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl">
-        <img src="${profile.avatar_url || 'https://via.placeholder.com/150'}"
-             class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition"
-             onclick="${isMe ? 'openEditProfile()' : ''}">
-        <div class="flex-1">
-          <div class="flex items-center gap-4 mb-4">
-            <h2 class="text-3xl font-light text-white">${escapeHtml(profile.username || '')}</h2>
-            ${btn}
-          </div>
-          <div class="flex gap-8 text-gray-300 mb-4">
-            <div class="text-center">
-              <span class="block font-bold text-white text-lg">${postsCount || 0}</span>
-              <span class="text-xs uppercase">Post</span>
-            </div>
-            <div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('followers','${userId}')">
-              <span class="block font-bold text-white text-lg" id="p-followers">${followersCount || 0}</span>
-              <span class="text-xs uppercase">Follower</span>
-            </div>
-            <div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('following','${userId}')">
-              <span class="block font-bold text-white text-lg">${followingCount || 0}</span>
-              <span class="text-xs uppercase">Seguiti</span>
-            </div>
-          </div>
-          <div class="text-gray-400 font-medium">${escapeHtml(profile.full_name || '')}</div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-3 gap-1">
-        ${(posts || []).map(p => `
-          <div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">
-            ${p.image_url
-              ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">`
-              : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml((p.caption||'').substring(0,40))}...</div>`
-            }
-            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm">
-              <i class="fa-solid fa-eye mr-2"></i> Vedi
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  async function toggleFollow(targetId){
-    const btn = document.getElementById('follow-btn');
-    const isFollowing = btn.innerText === 'Seguito';
-
-    if (isFollowing) {
-      await sb.from('follows')
-        .delete()
-        .eq('follower_id', currentUser.id)
-        .eq('followed_id', targetId);
-
-      btn.innerText = 'Segui';
-      btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition bg-[#d4af37] text-black shadow-lg hover:scale-105";
-    } else {
-      const { error } = await sb.from('follows')
-        .insert([{ follower_id: currentUser.id, followed_id: targetId }]);
-
-      if (!error) {
-        // ✅ notifica follow
-        createNotification({ recipientId: targetId, type: 'follow', postId: null });
-      }
-
-      btn.innerText = 'Seguito';
-      btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition border border-gray-500 text-gray-300";
-    }
-
-    const c = document.getElementById('p-followers');
-    if (c) c.innerText = isFollowing ? (parseInt(c.innerText,10)-1) : (parseInt(c.innerText,10)+1);
-  }
-
-  // --- POST DETAIL ---
-  async function openPostDetail(postId){
-    currentPostId = postId;
-
-    document.getElementById('post-detail-modal').classList.remove('hidden');
-    document.getElementById('detail-comments').innerHTML = '<p class="text-center text-gray-500 mt-4">Caricamento...</p>';
-    document.getElementById('detail-delete-btn-container').innerHTML = '';
-
-    // ✅ FIX: post -> data
-    const { data: post, error } = await sb
-      .from('posts')
-      .select(`*, profiles:user_id(*)`)
-      .eq('id', postId)
-      .single();
-
-    if (error || !post) {
-      document.getElementById('detail-comments').innerHTML = `<p class="text-center text-red-400 mt-4">${escapeHtml(error?.message || 'Post non trovato')}</p>`;
-      return;
-    }
-
-    currentPostOwnerId = post.user_id;
-
-    // image
-    const imgEl = document.getElementById('detail-img');
-    const noImgEl = document.getElementById('detail-noimg');
-    if (post.image_url) {
-      imgEl.src = post.image_url;
-      imgEl.classList.remove('hidden');
-      noImgEl.classList.add('hidden');
-    } else {
-      imgEl.classList.add('hidden');
-      noImgEl.classList.remove('hidden');
-    }
-
-    // user info
-    const u = post.profiles || {};
-    document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32';
-    document.getElementById('detail-username').innerText = u.username || 'Utente';
-    document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
-
-    // delete btn
-    if (post.user_id === currentUser.id) {
-      document.getElementById('detail-delete-btn-container').innerHTML =
-        `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
-    }
-
-    // like btn
-    const liked = await isLikedByMe(postId);
-    const likeBtn = document.getElementById('detail-like-btn');
-    likeBtn.className = liked
-      ? "fa-solid fa-heart cursor-pointer text-red-500"
-      : "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
-
-    likeBtn.onclick = async () => {
-      const isLikedNow = likeBtn.classList.contains('fa-solid');
-      if (isLikedNow) {
-        likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
         await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
-      } else {
-        likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500";
-        const { error } = await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-        if (!error) createNotification({ recipientId: currentPostOwnerId, type: 'like', postId });
-      }
-      refreshDetailCounts(postId);
-      refreshFeedLikeCount(postId);
-    };
-
-    // comments
-    const list = document.getElementById('detail-comments');
-    list.innerHTML = '';
-
-    if (post.caption) {
-      list.insertAdjacentHTML('beforeend', `
-        <div class="flex gap-3 mb-4 p-2 bg-white/5 rounded-lg border border-white/5">
-          <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover">
-          <div>
-            <span class="font-bold mr-2 text-[#d4af37]">${escapeHtml(u.username || '')}</span>
-            <span class="text-gray-300">${escapeHtml(post.caption)}</span>
-          </div>
-        </div>
-      `);
-    }
-
-    // ✅ FIX: coms -> data
-    const { data: coms, error: cErr } = await sb
-      .from('comments')
-      .select(`*, profiles:user_id(username, avatar_url)`)
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true });
-
-    if (cErr) console.warn(cErr.message);
-
-    (coms || []).forEach(c => {
-      const cu = c.profiles || {};
-      list.insertAdjacentHTML('beforeend', `
-        <div class="flex gap-3 mb-2">
-          <img src="${cu.avatar_url || 'https://via.placeholder.com/30'}"
-               class="w-8 h-8 rounded-full object-cover cursor-pointer"
-               onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">
-          <div>
-            <span class="font-bold mr-2 text-white cursor-pointer hover:underline"
-                  onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">
-              ${escapeHtml(cu.username || 'utente')}
-            </span>
-            <span class="text-gray-400">${escapeHtml(c.content || '')}</span>
-          </div>
-        </div>
-      `);
-    });
-
-    refreshDetailCounts(postId);
-  }
-
-  async function refreshDetailCounts(pid){
-    const c = await getPostCounts(pid);
-    document.getElementById('detail-likes-count').innerText = c.likes;
-  }
-
-  function refreshFeedLikeCount(postId){
-    // se il post è visibile nel feed, aggiorna anche il numero (evita mismatch)
-    const span = document.getElementById(`feed-likes-count-${postId}`);
-    if (!span) return;
-    // non sappiamo il valore esatto, lasciamo quello della UI già aggiornato
-  }
-
-  // ✅ FIX 2: commenti che "non si mandano" -> qui gestiamo errori e non ricarichiamo tutto a caso
-  async function inviaCommento(){
-    const input = document.getElementById('new-comment');
-    const txt = (input.value || '').trim();
-    if (!txt) return;
-
-    // disabilita input per evitare doppio invio
-    input.disabled = true;
-
-    const { error } = await sb
-      .from('comments')
-      .insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]);
-
-    input.disabled = false;
-
-    if (error) {
-      mess("Errore invio commento: " + error.message, true);
-      return;
-    }
-
-    // ✅ notifica al proprietario del post
-    createNotification({ recipientId: currentPostOwnerId, type: 'comment', postId: currentPostId });
-
-    input.value = '';
-    openPostDetail(currentPostId); // refresh UI commenti
-  }
-
-  // --- MODALS ---
-  function openSearchModal(){
-    document.getElementById('search-modal').classList.remove('hidden');
-    document.getElementById('search-query').focus();
-  }
-
-  function openUploadModal(){
-    document.getElementById('upload-modal').classList.remove('hidden');
-    document.getElementById('upload-preview').classList.add('hidden');
-    document.getElementById('post-file').value = "";
-  }
-
-  async function showUserList(type, uid){
-    const m = document.getElementById('user-list-modal');
-    m.classList.remove('hidden');
-
-    document.getElementById('ul-title').innerText = (type === 'followers') ? 'Follower' : 'Seguiti';
-    const c = document.getElementById('ul-content');
-    c.innerHTML = 'Caricamento...';
-
-    let q;
-    if (type === 'followers') {
-      q = sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`).eq('followed_id', uid);
+        el.className = 'fa-regular fa-heart text-white cursor-pointer';
     } else {
-      q = sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`).eq('follower_id', uid);
+        await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+        el.className = 'fa-solid fa-heart text-red-500 cursor-pointer';
+        
+        // Notifica al proprietario del post
+        const { data: p } = await sb.from('posts').select('user_id').eq('id', postId).single();
+        if(p.user_id !== currentUser.id) {
+            createNotification(p.user_id, 'like', postId);
+        }
     }
+    // Refresh locale conteggio se necessario o ri-render
+  }
 
-    const { data, error } = await q;
-    if (error) {
-      c.innerHTML = `<p class="text-center text-red-400">${escapeHtml(error.message)}</p>`;
-      return;
-    }
+  // --- COMMENTI ---
+  async function openPostDetail(postId) {
+    currentPostId = postId;
+    document.getElementById('post-detail-modal').classList.remove('hidden');
+    
+    const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
+    const { data: comments } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
+    const { count: likes } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+    const { data: myLike } = await sb.from('likes').select('*').eq('post_id', postId).eq('user_id', currentUser.id);
 
-    c.innerHTML = '';
-    if (!data || !data.length) {
-      c.innerHTML = '<p class="text-center text-gray-500">Nessuno trovato.</p>';
-      return;
-    }
+    document.getElementById('detail-img').src = post.image_url || '';
+    document.getElementById('detail-username').innerText = post.profiles.username;
+    document.getElementById('detail-avatar').src = post.profiles.avatar_url || 'https://via.placeholder.com/40';
+    document.getElementById('detail-likes-count').innerText = likes || 0;
+    
+    const likeBtn = document.getElementById('detail-like-btn');
+    likeBtn.className = (myLike && myLike.length > 0) ? 'fa-solid fa-heart text-red-500 text-2xl cursor-pointer' : 'fa-regular fa-heart text-white text-2xl cursor-pointer';
 
-    data.map(x => x.profiles).forEach(u => {
-      c.insertAdjacentHTML('beforeend', `
-        <div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')">
-          <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover">
-          <div><div class="font-bold text-white">${escapeHtml(u.username || '')}</div></div>
-        </div>
-      `);
+    const cDiv = document.getElementById('detail-comments');
+    cDiv.innerHTML = post.caption ? `<div class="mb-4"><b>${post.profiles.username}</b> ${post.caption}</div>` : '';
+    comments.forEach(c => {
+        cDiv.insertAdjacentHTML('beforeend', `<div><b class="text-gold">${c.profiles.username}</b> ${c.content}</div>`);
     });
   }
 
-  async function performSearch(){
-    const q = document.getElementById('search-query').value.trim();
-    const c = document.getElementById('search-results');
-    if (q.length < 2) return c.innerHTML = '';
+  async function inviaCommento() {
+    const input = document.getElementById('new-comment');
+    const text = input.value.trim();
+    if(!text) return;
 
-    const { data, error } = await sb
-      .from('profiles')
-      .select('*')
-      .ilike('username', `%${q}%`)
-      .limit(10);
+    const { error } = await sb.from('comments').insert([{ 
+        post_id: currentPostId, 
+        user_id: currentUser.id, 
+        content: text 
+    }]);
 
-    if (error) {
-      c.innerHTML = `<p class="text-center text-red-400 p-3">${escapeHtml(error.message)}</p>`;
-      return;
-    }
-
-    c.innerHTML = '';
-    (data || []).forEach(u => c.insertAdjacentHTML('beforeend', `
-      <div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')">
-        <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover">
-        <div class="font-bold text-white">${escapeHtml(u.username || '')}</div>
-      </div>
-    `));
-  }
-
-  function previewUpload(input){
-    if (input.files && input.files[0]) {
-      const r = new FileReader();
-      r.onload = (e) => {
-        const i = document.getElementById('upload-preview');
-        i.src = e.target.result;
-        i.classList.remove('hidden');
-      };
-      r.readAsDataURL(input.files[0]);
+    if(!error) {
+        input.value = '';
+        // Notifica
+        const { data: p } = await sb.from('posts').select('user_id').eq('id', currentPostId).single();
+        if(p.user_id !== currentUser.id) createNotification(p.user_id, 'comment', currentPostId);
+        openPostDetail(currentPostId); 
     }
   }
 
-  async function submitPost(){
-    const f = document.getElementById('post-file').files[0];
+  // --- NOTIFICHE & UTILS ---
+  async function createNotification(receiverId, type, postId = null) {
+    await sb.from('notifications').insert([{
+        sender_id: currentUser.id,
+        receiver_id: receiverId,
+        type: type,
+        post_id: postId
+    }]);
+  }
+
+  async function checkNotifications() {
+    const { count } = await sb.from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', currentUser.id)
+        .eq('read', false);
+    
+    const badge = document.getElementById('notif-count');
+    if(count > 0) {
+        badge.innerText = count;
+        badge.classList.remove('hidden');
+    }
+  }
+
+  function mess(t, err) {
+    const m = document.getElementById('msg-box');
+    m.innerText = t;
+    m.classList.remove('hidden');
+    m.style.color = err ? 'red' : '#d4af37';
+    m.style.borderColor = err ? 'red' : '#d4af37';
+  }
+
+  function vaiA(screen) {
+    document.getElementById('login-form').classList.toggle('hidden', screen === 'signup');
+    document.getElementById('signup-form').classList.toggle('hidden', screen === 'login');
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
+
+  async function submitPost() {
+    const file = document.getElementById('post-file').files[0];
     const caption = document.getElementById('post-caption').value;
-
-    if (!f && !caption) return alert("Metti foto o testo.");
-
     let url = null;
 
-    if (f) {
-      const path = `${currentUser.id}/${Date.now()}_${f.name}`;
-      const { error: upErr } = await sb.storage.from(BUCKET_POSTS).upload(path, f, { upsert: false });
-      if (upErr) return alert("Upload errore: " + upErr.message);
-
-      const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(path);
-      url = data.publicUrl;
+    if(file) {
+        const name = `${currentUser.id}/${Date.now()}`;
+        await sb.storage.from('posts').upload(name, file);
+        const { data } = sb.storage.from('posts').getPublicUrl(name);
+        url = data.publicUrl;
     }
 
-    const { error } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption }]);
-    if (error) return alert("Errore post: " + error.message);
-
+    await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: caption }]);
     closeModal('upload-modal');
     renderFeedView();
   }
-
-  function openEditProfile(){
-    document.getElementById('edit-profile-modal').classList.remove('hidden');
-
-    sb.from('profiles')
-      .select('*')
-      .eq('id', currentUser.id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) return;
-        document.getElementById('edit-username').value = data.username || '';
-        document.getElementById('edit-fullname').value = data.full_name || '';
-        document.getElementById('edit-avatar-preview').src = data.avatar_url || 'https://via.placeholder.com/150';
-      });
-  }
-
-  async function saveProfile(){
-    const username = document.getElementById('edit-username').value.trim();
-    const full_name = document.getElementById('edit-fullname').value.trim();
-
-    const { error } = await sb
-      .from('profiles')
-      .update({ username, full_name })
-      .eq('id', currentUser.id);
-
-    if (error) return alert("Errore profilo: " + error.message);
-
-    closeModal('edit-profile-modal');
-    openUserProfile(currentUser.id);
-  }
-
-  async function uploadAvatar(input){
-    const f = input.files[0];
-    if (!f) return;
-
-    const path = `${currentUser.id}/avatar_${Date.now()}_${f.name}`;
-    const { error: upErr } = await sb.storage.from(BUCKET_AVATARS).upload(path, f, { upsert: true });
-    if (upErr) return alert("Upload avatar errore: " + upErr.message);
-
-    const { data } = sb.storage.from(BUCKET_AVATARS).getPublicUrl(path);
-    const publicUrl = data.publicUrl;
-
-    document.getElementById('edit-avatar-preview').src = publicUrl;
-
-    const { error } = await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
-    if (error) alert("Errore salvataggio avatar: " + error.message);
-  }
 </script>
+
 </body>
 </html>
