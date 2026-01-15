@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — Gold Edition (Fixed)</title>
+  <title>HAWENISHLAND — Gold Edition</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
   <style>
     /* --- VARIABILI DESIGN --- */
@@ -41,7 +38,7 @@
     ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
     .hidden { display: none !important; }
 
-    /* --- SIDEBAR --- */
+    /* --- SIDEBAR ICONE --- */
     .app-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
 
     .sidebar { 
@@ -95,7 +92,6 @@
       transform: scale(1.1);
     }
     
-    /* Tooltip */
     .nav-item:hover::after {
       content: attr(title);
       position: absolute;
@@ -109,7 +105,6 @@
       white-space: nowrap;
       opacity: 1;
       pointer-events: none;
-      z-index: 100;
     }
 
     /* --- FEED & POSTS --- */
@@ -143,7 +138,6 @@
       border-radius: 12px;
       cursor: pointer; 
       border: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 10px;
     }
 
     .action-bar { display: flex; gap: 24px; margin-top: 20px; padding: 0 5px; }
@@ -176,7 +170,7 @@
       border-radius: 20px; color: #ccc;
     }
 
-    /* --- LOGIN --- */
+    /* --- LOGIN (INTATTO) --- */
     .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:200; background:#0a0a0a; transition:transform .8s ease-in-out; }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
     @media (min-width:768px){ .visual-side{display:block} }
@@ -230,8 +224,8 @@
       <div class="input-group"><label class="input-label">Email</label><input type="email" id="l-email" class="auth-input"></div>
       <div class="input-group"><label class="input-label">Password</label><input type="password" id="l-pass" class="auth-input"></div>
       <button onclick="faiLogin()" class="btn-white">Entra</button>
-      <p onclick="recuperoPassword()" class="link-small hover:text-white transition">Password dimenticata?</p>
-      <p onclick="vaiA('signup')" class="link-small hover:text-white transition">Non hai un account? <b>Iscriviti</b></p>
+      <p onclick="recuperoPassword()" class="link-small">Password dimenticata?</p>
+      <p onclick="vaiA('signup')" class="link-small">Non hai un account? <b>Iscriviti</b></p>
     </div>
     <div id="signup-form" class="hidden">
       <div class="input-group"><label class="input-label">Username</label><input type="text" id="r-username" class="auth-input"></div>
@@ -243,7 +237,7 @@
       <div class="input-group"><label class="input-label">Email</label><input type="email" id="r-email" class="auth-input"></div>
       <div class="input-group"><label class="input-label">Password</label><input type="password" id="r-pass" class="auth-input"></div>
       <button onclick="faiRegistrazione()" class="btn-white">Registrati</button>
-      <p onclick="vaiA('login')" class="link-small hover:text-white transition">Torna al Login</p>
+      <p onclick="vaiA('login')" class="link-small">Torna al Login</p>
     </div>
   </div>
 </div>
@@ -338,7 +332,7 @@
         <div class="font-bold text-sm mb-3 text-white"><span id="detail-likes-count">0</span> Mi piace</div>
         <div class="flex gap-2">
           <input type="text" id="new-comment" placeholder="Commenta..." class="flex-1 bg-transparent outline-none text-white text-sm">
-          <button onclick="inviaCommento()" class="text-[#d4af37] font-bold text-sm hover:text-white">INVIA</button>
+          <button onclick="inviaCommento()" class="text-[#d4af37] font-bold text-sm">INVIA</button>
         </div>
       </div>
     </div>
@@ -364,76 +358,21 @@
 </div>
 
 <script>
-  // --- CONFIGURAZIONE ---
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
-  
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
-  
-  let currentUser = null;
-  let currentPostId = null;
+  let currentUser = null, currentPostId = null;
 
-  // --- INIT ---
   window.addEventListener('load', async () => {
-    // Animazione slide login
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
-    if (imgs.length) { 
-      setInterval(() => { 
-        imgs[i].classList.remove('active'); 
-        i = (i + 1) % imgs.length; 
-        imgs[i].classList.add('active'); 
-      }, 5000); 
-    }
-
-    // Controllo Sessione
+    if (imgs.length) { setInterval(() => { imgs[i].classList.remove('active'); i = (i + 1) % imgs.length; imgs[i].classList.add('active'); }, 5000); }
     const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      enterApp(session.user);
-    } else {
-      document.getElementById('auth-container').style.display = 'flex';
-    }
+    if (session) enterApp(session.user);
+    else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  // --- REALTIME NOTIFICATIONS (FIX NOTIFICHE) ---
-  function setupRealtimeListener() {
-    sb.channel('public:posts')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
-        if(payload.new.user_id !== currentUser.id) {
-          Toastify({
-            text: "🔔 Nuovo post pubblicato!",
-            duration: 3000,
-            gravity: "top", 
-            position: "right", 
-            style: { background: "#d4af37", color: "#000" }
-          }).showToast();
-        }
-      })
-      .subscribe();
-      
-    sb.channel('public:comments')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
-        // Se qualcuno commenta (non io)
-        if(payload.new.user_id !== currentUser.id) {
-             Toastify({
-            text: "💬 Nuovo commento!",
-            duration: 3000,
-            gravity: "top", 
-            position: "right", 
-            style: { background: "#333", border: "1px solid #d4af37" }
-          }).showToast();
-          
-          // Se ho il modale aperto su QUEL post, aggiorno
-          if(!document.getElementById('post-detail-modal').classList.contains('hidden') && currentPostId === payload.new.post_id) {
-            refreshDetailComments(currentPostId);
-          }
-        }
-      })
-      .subscribe();
-  }
-
-  // --- FUNZIONI UTILI ---
   async function sharePost(postId, caption) {
     const text = `Guarda questo post su Hawenishland: ${caption || ''}`;
     if (navigator.share) { try { await navigator.share({ title: 'Hawenishland', text: text, url: window.location.href }); } catch (err) {} } 
@@ -445,46 +384,46 @@
     const { error } = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
     if(error) alert("Errore: " + error.message);
     else {
-      closeModal('post-detail-modal'); 
-      if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); 
-      else renderFeedView(); 
+      closeModal('post-detail-modal'); // Chiudi modale se aperto
+      if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); // Aggiorna profilo se sei lì
+      else renderFeedView(); // Altrimenti feed
     }
   }
 
-  // --- FEED CORE ---
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
+    // Rimuovo marcatore profilo
     if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
 
     main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
 
-    // FIX: destrutturazione corretta { data: follows }
-    const { data: follows, error: errFollow } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
+    const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
     const followingIds = follows ? follows.map(f => f.followed_id) : [];
 
+    // EMPTY STATE 1: Non segui nessuno
     if (followingIds.length === 0) {
       return main.innerHTML = `
         <div class="empty-feed-box">
           <i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i>
           <h2 class="text-xl font-bold mb-2">Home Vuota</h2>
-          <p class="text-gray-400 mb-6">Non segui ancora nessuno.</p>
+          <p class="text-gray-400 mb-6">Non segui ancora nessuno. Inizia a seguire qualcuno per arricchire il tuo feed!</p>
           <button onclick="openSearchModal()" class="btn-gold">Cerca Persone</button>
         </div>
       `;
     }
 
-    // FIX: destrutturazione corretta { data: posts }
     const { data: posts, error } = await sb.from('posts')
       .select(`*, profiles:user_id (username, avatar_url)`)
       .in('user_id', followingIds)
       .order('created_at', { ascending: false });
 
+    // EMPTY STATE 2: Nessun post dai seguiti
     if (error || !posts || posts.length === 0) {
       return main.innerHTML = `
         <div class="empty-feed-box">
           <i class="fa-solid fa-ghost text-4xl mb-4 text-[#d4af37]"></i>
           <h2 class="text-xl font-bold mb-2">Tutto tace...</h2>
-          <p class="text-gray-400 mb-6">Nessun post da mostrare.</p>
+          <p class="text-gray-400 mb-6">Le persone che segui non hanno ancora pubblicato nulla.</p>
           <button onclick="openSearchModal()" class="btn-gold">Cerca altri utenti</button>
         </div>
       `;
@@ -501,8 +440,11 @@
   function createPostHTML(post, counts, liked) {
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
+    
+    // FIX DEFINITIVO LIKE: Scriviamo la classe direttamente nell'HTML
     const heartIcon = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
     
+    // Il tasto elimina appare nel feed SOLO se il post è mio (ma nel feed vedo solo quelli degli altri, quindi qui è raro, ma lo lascio per sicurezza)
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
@@ -532,29 +474,55 @@
   async function toggleLike(postId, btnContainer) {
     const icon = btnContainer.querySelector('i');
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
-    let currentCount = parseInt(countSpan.innerText);
-    const isLiked = icon.classList.contains('fa-solid'); // Verifica visiva stato
 
-    if (isLiked) {
-      icon.className = 'fa-regular fa-heart'; 
-      countSpan.innerText = Math.max(0, currentCount - 1);
-      await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+    const wasLiked = icon.classList.contains('fa-solid');
+
+    // UI ottimistica
+    if (wasLiked) {
+      icon.className = 'fa-regular fa-heart';
     } else {
-      icon.className = 'fa-solid fa-heart text-red-500'; 
+      icon.className = 'fa-solid fa-heart text-red-500';
+    }
+
+    // DB (upsert = sicuro con vincolo unique)
+    const { error } = wasLiked
+      ? await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id)
+      : await sb.from('likes').upsert(
+          { post_id: postId, user_id: currentUser.id },
+          { onConflict: 'post_id,user_id' }
+        );
+
+    // rollback se errore
+    if (error) {
+      console.error('LIKE ERROR:', error);
+
+      if (wasLiked) {
+        icon.className = 'fa-solid fa-heart text-red-500';
+      } else {
+        icon.className = 'fa-regular fa-heart';
+      }
+
+      alert("Non riesco a salvare il like (policy RLS / permessi).");
+    }
+
+    // riallineo SEMPRE il conteggio dal DB
+    const counts = await getPostCounts(postId);
+    countSpan.innerText = counts.likes;
+  } else {
+      // Metto il like
+      icon.className = 'fa-solid fa-heart text-red-500'; // Aggiunge rosso e solido
       countSpan.innerText = currentCount + 1;
       await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
     }
   }
 
   async function getPostCounts(postId) {
-    // FIX: destrutturazione non necessaria qui perché usiamo 'count'
     const { count: l } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
     const { count: c } = await sb.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', postId);
     return { likes: l || 0, comments: c || 0 };
   }
   
   async function isLikedByMe(postId) { 
-    // FIX: destrutturazione corretta { data }
     const { data } = await sb.from('likes').select('id').eq('post_id', postId).eq('user_id', currentUser.id); 
     return data && data.length > 0; 
   }
@@ -564,7 +532,6 @@
     const main = document.getElementById('main-content-area');
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
     
-    // FIX: destrutturazione corretta { data: profile }
     const { data: profile } = await sb.from('profiles').select('*').eq('id', userId).single();
     if (!profile) return main.innerHTML = "<p class='text-center mt-10 text-white'>Utente non trovato.</p>";
 
@@ -578,9 +545,7 @@
       isFollowing = data && data.length > 0;
     }
 
-    // FIX: destrutturazione corretta { data: posts }
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    
     const isMe = userId === currentUser.id;
     const btn = isMe ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : `<button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>`;
 
@@ -598,26 +563,16 @@
           <div class="text-gray-400 font-medium">${profile.full_name || ''}</div>
         </div>
       </div>
-      <div class="grid grid-cols-3 gap-1">
-        ${(posts && posts.length) ? posts.map(p => `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(p.caption).substring(0,40)}...</div>`}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`).join('') : '<p class="col-span-3 text-center text-gray-500 py-10">Nessun post.</p>'}
-      </div>
+      <div class="grid grid-cols-3 gap-1">${posts.map(p => `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(p.caption).substring(0,40)}...</div>`}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`).join('')}</div>
     `;
   }
 
   async function toggleFollow(targetId) {
     const btn = document.getElementById('follow-btn');
     const isFollowing = btn.innerText === 'Seguito';
-    if(isFollowing) { 
-        await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId); 
-        btn.innerText = 'Segui'; 
-        btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition bg-[#d4af37] text-black shadow-lg hover:scale-105"; 
-    } else { 
-        await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]); 
-        btn.innerText = 'Seguito'; 
-        btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition border border-gray-500 text-gray-300"; 
-    }
-    const c = document.getElementById('p-followers'); 
-    if(c) c.innerText = isFollowing ? parseInt(c.innerText)-1 : parseInt(c.innerText)+1;
+    if(isFollowing) { await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId); btn.innerText = 'Segui'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition bg-[#d4af37] text-black shadow-lg hover:scale-105"; } 
+    else { await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]); btn.innerText = 'Seguito'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition border border-gray-500 text-gray-300"; }
+    const c = document.getElementById('p-followers'); if(c) c.innerText = isFollowing ? parseInt(c.innerText)-1 : parseInt(c.innerText)+1;
   }
 
   // --- DETAIL MODAL ---
@@ -625,12 +580,12 @@
     currentPostId = postId;
     document.getElementById('post-detail-modal').classList.remove('hidden');
     document.getElementById('detail-comments').innerHTML = '<p class="text-center text-gray-500 mt-4">Caricamento...</p>';
+    
+    // Pulisci il container del delete button
     document.getElementById('detail-delete-btn-container').innerHTML = '';
 
-    // FIX: destrutturazione corretta { data: post }
     const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
-    if(!post) return closeModal('post-detail-modal');
-
+    
     // Immagine
     const imgEl = document.getElementById('detail-img'); const noImgEl = document.getElementById('detail-noimg');
     if(post.image_url) { imgEl.src = post.image_url; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden'); } else { imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden'); }
@@ -641,205 +596,78 @@
     document.getElementById('detail-username').innerText = u.username; 
     document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
 
-    // Tasto Delete se mio post
+    // INIETTA TASTO ELIMINA SE IL POST È MIO
     if (post.user_id === currentUser.id) {
         document.getElementById('detail-delete-btn-container').innerHTML = 
             `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
     }
 
-    // Like logic modale
+    // Like logic nella modale
     const liked = await isLikedByMe(postId);
     const likeBtn = document.getElementById('detail-like-btn');
     likeBtn.className = liked ? "fa-solid fa-heart cursor-pointer text-red-500" : "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
     
     likeBtn.onclick = async () => { 
-        const isLikedNow = likeBtn.classList.contains('fa-solid'); 
-        if(isLikedNow) { 
-            likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white"; 
-            await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id); 
-        } else { 
-            likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500"; 
-            await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]); 
-        } 
+        const wasLiked = likeBtn.classList.contains('fa-solid'); 
+
+        // UI ottimistica
+        if (wasLiked) {
+          likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
+        } else {
+          likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500";
+        }
+
+        // DB (upsert = sicuro con vincolo unique)
+        const { error } = wasLiked
+          ? await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id)
+          : await sb.from('likes').upsert(
+              { post_id: postId, user_id: currentUser.id },
+              { onConflict: 'post_id,user_id' }
+            );
+
+        // rollback se errore
+        if (error) {
+          console.error('DETAIL LIKE ERROR:', error);
+
+          if (wasLiked) {
+            likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500";
+          } else {
+            likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
+          }
+
+          alert("Non riesco a salvare il like (policy RLS / permessi).");
+        }
+
         refreshDetailCounts(postId); 
     };
 
-    // Carica i commenti e caption
+    // Comments
     const list = document.getElementById('detail-comments'); list.innerHTML = '';
     if(post.caption) { list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-4 p-2 bg-white/5 rounded-lg border border-white/5"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover"><div><span class="font-bold mr-2 text-[#d4af37]">${u.username}</span><span class="text-gray-300">${escapeHtml(post.caption)}</span></div></div>`); }
-    
-    await refreshDetailComments(postId);
+    const { data: coms } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
+    coms.forEach(c => { const cu = c.profiles; list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-2"><img src="${cu.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 text-white cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${cu.username}</span><span class="text-gray-400">${escapeHtml(c.content)}</span></div></div>`); });
     refreshDetailCounts(postId);
   }
 
-  // Nuova funzione helper per ricaricare solo i commenti (utile per il Realtime e per l'invio)
-  async function refreshDetailComments(postId) {
-      const list = document.getElementById('detail-comments');
-      // Non puliamo tutto, appendiamo se necessario, ma per semplicità ricarichiamo la lista
-      // FIX: destrutturazione corretta { data: coms }
-      const { data: coms } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
-      
-      // Manteniamo la caption (primo elemento) se c'era? Meglio rigenerare solo i commenti sotto.
-      // Per semplicità qui svuoto e rimetto caption se serve, ma facciamo una cosa più pulita:
-      // Rimuoviamo tutto tranne il primo child se è la caption?
-      // Facciamo reset totale per evitare duplicati
-      
-      // Nota: Per non perdere la caption, la recuperiamo dal DOM o la ricarichiamo.
-      // Per velocità, filtro solo i commenti nuovi.
-      // Reset brutale per sicurezza:
-      const oldHtml = list.innerHTML;
-      const isLoading = oldHtml.includes('Caricamento');
-      
-      // Se non stiamo caricando (quindi aggiornamento realtime), cerchiamo di non far sfarfallare troppo.
-      // Ma dato il codice semplice, rigeneriamo la parte dei commenti.
-      // Rimuovi tutti i div che non sono la caption
-      const children = Array.from(list.children);
-      // Se il primo ha border-white/5 è la caption, lo teniamo
-      let captionHtml = "";
-      if(children.length > 0 && children[0].classList.contains('bg-white/5')) {
-          captionHtml = children[0].outerHTML;
-      }
-
-      list.innerHTML = captionHtml; 
-      
-      if(coms) {
-          coms.forEach(c => { 
-              const cu = c.profiles; 
-              list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-2"><img src="${cu.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 text-white cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${cu.username}</span><span class="text-gray-400">${escapeHtml(c.content)}</span></div></div>`); 
-          }); 
-      }
-  }
-
   async function refreshDetailCounts(pid) { const c = await getPostCounts(pid); document.getElementById('detail-likes-count').innerText = c.likes; }
-  
-  // FIX: Invio commenti rotto nel codice originale
-  async function inviaCommento() { 
-      const input = document.getElementById('new-comment');
-      const txt = input.value.trim(); 
-      if(!txt) return; 
-      
-      const { error } = await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); 
-      if(error) {
-          alert("Errore invio: " + error.message);
-      } else {
-          input.value = ''; 
-          refreshDetailComments(currentPostId); 
-      }
-  }
-
-  // --- ALTRE MODALI ---
+  async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
   function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
   function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); document.getElementById('upload-preview').classList.add('hidden'); document.getElementById('post-file').value = ""; }
   function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-  
-  async function showUserList(type, uid) { 
-      const m = document.getElementById('user-list-modal'); m.classList.remove('hidden'); 
-      document.getElementById('ul-title').innerText = type==='followers'?'Follower':'Seguiti'; 
-      const c = document.getElementById('ul-content'); c.innerHTML='Caricamento...'; 
-      
-      let q = (type==='followers') ? sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`) : sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`);
-      if(type==='followers') q = q.eq('followed_id', uid); else q = q.eq('follower_id', uid);
-
-      // FIX: destrutturazione corretta { data }
-      const { data } = await q; 
-      c.innerHTML = ''; 
-      if(!data || !data.length) return c.innerHTML='<p class="text-center text-gray-500">Nessuno trovato.</p>'; 
-      
-      data.map(x=>x.profiles).forEach(u => { 
-          c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div><div class="font-bold text-white">${u.username}</div></div></div>`); 
-      }); 
-  }
-
-  async function performSearch() { 
-      const q = document.getElementById('search-query').value.trim(); 
-      const c = document.getElementById('search-results'); 
-      if(q.length<2) return c.innerHTML=''; 
-      
-      // FIX: destrutturazione corretta { data }
-      const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); 
-      c.innerHTML = ''; 
-      if(data) {
-          data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); 
-      }
-  }
-
+  async function showUserList(type, uid) { const m = document.getElementById('user-list-modal'); m.classList.remove('hidden'); document.getElementById('ul-title').innerText = type==='followers'?'Follower':'Seguiti'; const c = document.getElementById('ul-content'); c.innerHTML='Caricamento...'; let q = (type==='followers') ? sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`).eq('followed_id', uid) : sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`).eq('follower_id', uid); const { data } = await q; c.innerHTML = ''; if(!data || !data.length) return c.innerHTML='<p class="text-center text-gray-500">Nessuno trovato.</p>'; data.map(x=>x.profiles).forEach(u => { c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div><div class="font-bold text-white">${u.username}</div></div></div>`); }); }
+  async function performSearch() { const q = document.getElementById('search-query').value.trim(); const c = document.getElementById('search-results'); if(q.length<2) return c.innerHTML=''; const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); c.innerHTML = ''; data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); }
   function previewUpload(input) { if(input.files && input.files[0]) { const r = new FileReader(); r.onload = (e) => { const i = document.getElementById('upload-preview'); i.src = e.target.result; i.classList.remove('hidden'); }; r.readAsDataURL(input.files[0]); } }
-  
-  async function submitPost() { 
-      const f = document.getElementById('post-file').files[0]; 
-      const c = document.getElementById('post-caption').value; 
-      if(!f && !c) return alert("Metti foto o testo."); 
-      
-      let url = null; 
-      if(f) { 
-          const n = `${currentUser.id}/${Date.now()}`; 
-          await sb.storage.from(BUCKET_POSTS).upload(n, f); 
-          const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
-          url = data.publicUrl; 
-      } 
-      
-      const { error } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: c }]); 
-      if(error) alert("Errore: " + error.message);
-      else {
-          closeModal('upload-modal'); 
-          renderFeedView(); 
-      }
-  }
-
-  function openEditProfile() { 
-      document.getElementById('edit-profile-modal').classList.remove('hidden'); 
-      // FIX: destrutturazione corretta { data }
-      sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ 
-          if(data) {
-              document.getElementById('edit-username').value=data.username; 
-              document.getElementById('edit-fullname').value=data.full_name; 
-              document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; 
-          }
-      }); 
-  }
-
+  async function submitPost() { const f = document.getElementById('post-file').files[0]; const c = document.getElementById('post-caption').value; if(!f && !c) return alert("Metti foto o testo."); let url = null; if(f) { const n = `${currentUser.id}/${Date.now()}`; await sb.storage.from(BUCKET_POSTS).upload(n, f); const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); url = data.publicUrl; } await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: c }]); closeModal('upload-modal'); renderFeedView(); }
+  function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
   async function saveProfile() { await sb.from('profiles').update({ username:document.getElementById('edit-username').value, full_name:document.getElementById('edit-fullname').value }).eq('id', currentUser.id); closeModal('edit-profile-modal'); openUserProfile(currentUser.id); }
   async function uploadAvatar(i) { const f=i.files[0]; if(!f)return; const n=`${currentUser.id}/avatar_${Date.now()}`; await sb.storage.from(BUCKET_AVATARS).upload(n, f); const {data}=sb.storage.from(BUCKET_AVATARS).getPublicUrl(n); document.getElementById('edit-avatar-preview').src=data.publicUrl; await sb.from('profiles').update({ avatar_url:data.publicUrl }).eq('id',currentUser.id); }
-  
-  // --- AUTH & SYSTEM ---
   function mess(t,e){const b=document.getElementById('msg-box');b.innerText=t;b.classList.remove('hidden');b.style.borderColor=e?'red':'green';b.style.color=e?'red':'green';}
   function vaiA(m){ document.getElementById('login-form').classList.toggle('hidden',m==='signup'); document.getElementById('signup-form').classList.toggle('hidden',m==='login'); }
   function escapeHtml(t) { return t?t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"):""; }
-  
-  // FIX 1: Recupero Password Implementato
-  async function recuperoPassword() {
-      const email = prompt("Inserisci la tua email per il recupero:");
-      if (!email) return;
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-      if (error) alert("Errore: " + error.message);
-      else alert("Controlla la tua email per il link di ripristino.");
-  }
-
-  async function faiLogin() { 
-      const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); 
-      if(error)mess(error.message,true); 
-      else enterApp(data.user); 
-  }
-  
-  async function faiRegistrazione() { 
-      const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); 
-      if(error)return mess(error.message,true); 
-      if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); 
-      mess("Registrazione OK!"); 
-  }
-  
+  async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
+  async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
   async function logout() { await sb.auth.signOut(); location.reload(); }
-  
-  function enterApp(u) { 
-      currentUser=u; 
-      document.getElementById('auth-container').style.transform = "translateY(-100vh)"; 
-      setTimeout(()=>{ 
-          document.getElementById('auth-container').classList.add('hidden'); 
-          document.getElementById('app-interface').classList.remove('hidden'); 
-          renderFeedView();
-          setupRealtimeListener(); // Attiva le notifiche realtime
-      },600); 
-  }
+  function enterApp(u) { currentUser=u; document.getElementById('auth-container').style.transform = "translateY(-100vh)"; setTimeout(()=>{ document.getElementById('auth-container').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); renderFeedView(); },600); }
 </script>
 </body>
 </html>
