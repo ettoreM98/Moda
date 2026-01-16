@@ -117,22 +117,34 @@
       border-radius: 20px;
       border: 1px solid var(--gold);
       box-shadow: 0 0 20px var(--gold-glow);
-      transition: transform 0.3s ease; position: relative;
+      transition: transform 0.3s ease;
+      position: relative;
+      overflow: visible; /* FIX RICHIESTO */
     }
     
     .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+    
     .user-badge { display: flex; align-items: center; gap: 12px; cursor: pointer; }
     .user-avatar { 
       width: 42px; height: 42px; 
       border-radius: 50%; object-fit: cover; 
       border: 2px solid var(--gold);
     }
+
     .user-meta { display: flex; flex-direction: column; }
     .username { font-weight: 600; font-size: 15px; color: #fff; }
     .post-date { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
     /* NUOVO CSS PER I LINK PRODOTTI */
-    .post-img-container { position: relative; width: 100%; border-radius: 12px; overflow: visible; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+    .post-img-container { 
+        position: relative; 
+        width: 100%; 
+        border-radius: 12px; 
+        overflow: visible; /* Importante per il dropdown */
+        border: 1px solid rgba(255,255,255,0.1); 
+        cursor: pointer; 
+        z-index: 5; /* FIX RICHIESTO */
+    }
     .post-img { width: 100%; display: block; border-radius: 12px; }
     
     .shopping-tag-indicator {
@@ -153,7 +165,7 @@
       border-radius: 16px; padding: 5px; 
       width: 260px; max-width: 90%;
       box-shadow: 0 0 50px rgba(0,0,0,0.9); 
-      z-index: 100;
+      z-index: 9999; /* FIX RICHIESTO */
       opacity: 0; pointer-events: none;
       transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -242,7 +254,16 @@
     }
 
     /* --- CHAT & NOTIFICATIONS CSS --- */
-    .gold-dot { width: 10px; height: 10px; background: var(--gold); border-radius: 50%; position: absolute; top: 10px; right: 10px; box-shadow: 0 0 8px var(--gold); display: none; z-index: 60; }
+    .gold-dot {
+      width: 10px; height: 10px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: absolute;
+      top: 10px; right: 10px;
+      box-shadow: 0 0 8px var(--gold);
+      display: none; /* Nascosto di default */
+      z-index: 60;
+    }
     .msg-bubble { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; margin-bottom: 8px; position: relative; }
     .msg-mine { background: var(--gold); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
     .msg-theirs { background: rgba(255,255,255,0.1); color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
@@ -444,6 +465,7 @@
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
@@ -583,14 +605,20 @@
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
     // --- LOGICA HTML SHOPPING ---
+    let products = post.products;
+
+    if (typeof products === "string") {
+      try { products = JSON.parse(products); } catch (e) { products = []; }
+    }
+
     let shoppingHtml = '';
     let clickAttr = `onclick="openPostDetail('${post.id}')"`; // Default: apre dettaglio
 
-    if (post.products && Array.isArray(post.products) && post.products.length > 0) {
+    if (Array.isArray(products) && products.length > 0) {
       // Se ci sono prodotti, attiviamo il menu
       clickAttr = `onclick="toggleProductMenu(event, this)"`;
       
-      const itemsHtml = post.products.map(p => 
+      const itemsHtml = products.map(p => 
         `<a href="${p.link}" target="_blank" class="product-link-item">
            <span>${escapeHtml(p.name)}</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
          </a>`
@@ -598,7 +626,7 @@
       
       shoppingHtml = `
         <div class="shopping-tag-indicator"><i class="fa-solid fa-bag-shopping"></i> Acquista</div>
-        <div class="products-dropdown">${itemsHtml}</div>
+        <div class="products-dropdown" onclick="event.stopPropagation()">${itemsHtml}</div>
       `;
     }
 
@@ -796,7 +824,7 @@
         user_id: currentUser.id, 
         image_url: url, 
         caption: c,
-        products: tempProducts // Salva il JSON
+        products: (tempProducts && tempProducts.length ? tempProducts : []) // Salva il JSON
     }]); 
     
     if(insErr) alert("Errore salvataggio post: " + insErr.message);
