@@ -718,9 +718,14 @@
       const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
       url = data.publicUrl; 
     } 
-    const { error: insErr } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: c }]); 
+    // MODIFICA QUI: Aggiungiamo .select().single() per ottenere l'ID del nuovo post
+    const { data: newPost, error: insErr } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: c }]).select().single(); 
     if(insErr) alert("Errore salvataggio post: " + insErr.message);
-    else { closeModal('upload-modal'); renderFeedView(); }
+    else { 
+      if(newPost) myPostIds.add(newPost.id); // AGGIUNGE IL POST ALLA LISTA NOTIFICHE
+      closeModal('upload-modal'); 
+      renderFeedView(); 
+    }
   }
 
   function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
@@ -947,54 +952,40 @@
       checkNotifications(); 
       checkAppNotifications(); 
 
-      // SOTTOSCRIZIONE REALTIME MIGLIORATA
+      // SOTTOSCRIZIONE REALTIME
       sb.channel('global-updates')
         // MESSAGGI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           if(payload.new.receiver_id === currentUser.id) checkNotifications();
         })
-        // LIKE: AGGIUNTO SUPPORTO COMPLETO REAL-TIME + NOTIFICHE
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, async payload => {
-          
-          // EVENTO NUOVO LIKE (INSERT)
-          if (payload.eventType === 'INSERT') {
-            const pid = payload.new.post_id;
-            
-            // 1. NOTIFICHE: Se il post è mio e non sono io -> Notifica Toast e Pallino
-            if(myPostIds.has(pid) && payload.new.user_id !== currentUser.id) {
-              showToast("Nuovo Mi Piace ricevuto!");
-              document.getElementById('notif-gold-dot').style.display = 'block';
-            }
-
-            // 2. COUNTER FEED: Aggiorna il numero visuale nel DOM se visibile
-            const feedCount = document.getElementById(`feed-likes-count-${pid}`);
-            if(feedCount) {
-              const current = parseInt(feedCount.innerText) || 0;
-              feedCount.innerText = current + 1;
-              // Piccolo effetto visivo
-              feedCount.style.color = '#d4af37'; 
-              setTimeout(()=>feedCount.style.color = '#fff', 500);
-            }
-
-            // 3. COUNTER MODALE: Se aperto
-            if(currentPostId === pid) refreshDetailCounts(pid);
+        
+        // --- ASCOLTATORE DEDICATO AI LIKE (AGGIUNTO/CORRETTO) ---
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
+          // 1. Notifica e Pallino Rosso se è un mio post
+          if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
+            showToast("Qualcuno ha messo Mi Piace!");
+            document.getElementById('notif-gold-dot').style.display = 'block';
           }
-
-          // EVENTO RIMOZIONE LIKE (DELETE)
-          if (payload.eventType === 'DELETE') {
-             const pid = payload.old.post_id; // Supabase deve inviare l'intero vecchio record o almeno ID
-             // Nota: Se DELETE restituisce solo ID della riga 'likes', pid sarà undefined senza REPLICA IDENTITY FULL.
-             // Ma proviamo a gestire l'aggiornamento DOM se possibile.
-             if(pid) {
-                const feedCount = document.getElementById(`feed-likes-count-${pid}`);
-                if(feedCount) {
-                  const current = parseInt(feedCount.innerText) || 0;
-                  feedCount.innerText = Math.max(0, current - 1);
-                }
-                if(currentPostId === pid) refreshDetailCounts(pid);
-             }
-          }
+          // 2. Aggiornamento Contatore Realtime (Feed)
+          const el = document.getElementById(`feed-likes-count-${payload.new.post_id}`);
+          if(el) { el.innerText = parseInt(el.innerText) + 1; el.style.color='#d4af37'; setTimeout(()=>el.style.color='#fff',500); }
+          // 3. Aggiornamento Contatore Realtime (Dettaglio)
+          if(currentPostId === payload.new.post_id) refreshDetailCounts(currentPostId);
         })
+        
+        // --- ASCOLTATORE PER RIMOZIONE LIKE (AGGIUNTO) ---
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, payload => {
+           // Aggiornamento Contatore Realtime quando qualcuno toglie il like
+           const oldId = payload.old.post_id; 
+           // Nota: Supabase potrebbe non inviare old.post_id se Replica Identity non è FULL. 
+           // Ma se invia, aggiorniamo l'UI.
+           if(oldId) {
+             const el = document.getElementById(`feed-likes-count-${oldId}`);
+             if(el) el.innerText = Math.max(0, parseInt(el.innerText) - 1);
+             if(currentPostId === oldId) refreshDetailCounts(currentPostId);
+           }
+        })
+
         // COMMENTI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
           if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
