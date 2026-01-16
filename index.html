@@ -118,8 +118,6 @@
       border: 1px solid var(--gold);
       box-shadow: 0 0 20px var(--gold-glow);
       transition: transform 0.3s ease;
-      position: relative;
-      overflow: visible; /* FIX RICHIESTO */
     }
     
     .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
@@ -135,54 +133,12 @@
     .username { font-weight: 600; font-size: 15px; color: #fff; }
     .post-date { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    /* NUOVO CSS PER I LINK PRODOTTI */
-    .post-img-container { 
-        position: relative; 
-        width: 100%; 
-        border-radius: 12px; 
-        overflow: visible; /* Importante per il dropdown */
-        border: 1px solid rgba(255,255,255,0.1); 
-        cursor: pointer; 
-        z-index: 5; /* FIX RICHIESTO */
+    .post-img { 
+      width: 100%; 
+      border-radius: 12px;
+      cursor: pointer; 
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    .post-img { width: 100%; display: block; border-radius: 12px; }
-    
-    .shopping-tag-indicator {
-      position: absolute; bottom: 10px; right: 10px; 
-      background: rgba(0, 0, 0, 0.85); color: var(--gold); 
-      padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; letter-spacing: 1px;
-      border: 1px solid var(--gold); pointer-events: none;
-      box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); z-index: 10;
-      display: flex; align-items: center; gap: 6px; text-transform: uppercase;
-    }
-
-    .products-dropdown {
-      position: absolute; 
-      top: 50%; left: 50%; 
-      transform: translate(-50%, -50%) scale(0.9);
-      background: rgba(15, 23, 42, 0.98); 
-      border: 1px solid var(--gold);
-      border-radius: 16px; padding: 5px; 
-      width: 260px; max-width: 90%;
-      box-shadow: 0 0 50px rgba(0,0,0,0.9); 
-      z-index: 9999; /* FIX RICHIESTO */
-      opacity: 0; pointer-events: none;
-      transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    .products-dropdown.active { 
-      opacity: 1; pointer-events: auto; 
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .product-link-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 15px; color: #fff; text-decoration: none; 
-      border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; 
-      transition: 0.2s; border-radius: 8px;
-    }
-    .product-link-item:hover { background: rgba(212, 175, 55, 0.15); color: var(--gold); }
-    .product-link-item:last-child { border-bottom: none; }
 
     .action-bar { display: flex; gap: 24px; margin-top: 20px; padding: 0 5px; }
     .icon-btn { 
@@ -270,6 +226,19 @@
     .inbox-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s; }
     .inbox-item:hover { background: rgba(255,255,255,0.05); }
     .unread-indicator { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; margin-left: auto; }
+
+    /* TOAST NOTIFICATION STYLE */
+    .toast-box {
+      position: fixed; top: 20px; right: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--gold);
+      padding: 15px; border-radius: 12px;
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; z-index: 2000;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+      transform: translateX(200%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .toast-active { transform: translateX(0); }
   </style>
 </head>
 <body>
@@ -317,6 +286,10 @@
       <div class="nav-item" onclick="openUploadModal()" title="Nuovo Post">
         <i class="fa-solid fa-plus"></i>
       </div>
+      <div class="nav-item relative" onclick="openNotificationsModal()" title="Notifiche">
+        <div id="notif-gold-dot" class="gold-dot"></div>
+        <i class="fa-regular fa-bell"></i>
+      </div>
       <div class="nav-item relative" onclick="openInboxModal()" title="Messaggi">
         <div id="global-gold-dot" class="gold-dot"></div>
         <i class="fa-regular fa-envelope"></i>
@@ -333,6 +306,14 @@
   </div>
 </div>
 
+<div id="toast-notif" class="toast-box">
+  <div class="text-[#d4af37] text-xl"><i class="fa-solid fa-bolt"></i></div>
+  <div>
+    <h4 class="text-sm font-bold text-[#d4af37]">Nuova Attività</h4>
+    <p class="text-xs text-gray-300" id="toast-msg">Qualcuno ha interagito con te.</p>
+  </div>
+</div>
+
 <div id="upload-modal" class="modal-overlay hidden">
   <div class="glass-modal p-6 w-[400px]">
     <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-700">
@@ -340,23 +321,12 @@
       <i class="fa-solid fa-xmark cursor-pointer hover:text-white text-gray-400" onclick="closeModal('upload-modal')"></i>
     </div>
     <div class="flex flex-col gap-4">
-      <label class="h-32 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition">
+      <label class="h-48 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition">
         <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-[#d4af37]"></i>
         <span class="text-sm text-gray-400">Clicca per caricare foto</span>
         <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
       </label>
-      <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg">
-      
-      <div class="border-t border-gray-700 pt-3">
-        <label class="text-xs text-[#d4af37] uppercase font-bold mb-2 block">Link Prodotti (Opzionale)</label>
-        <div id="product-list-container" class="space-y-2 mb-2 max-h-[100px] overflow-y-auto"></div>
-        <div class="flex gap-2">
-          <input type="text" id="prod-name" placeholder="Es: Jeans" class="flex-1 bg-slate-800 rounded p-2 text-xs text-white outline-none">
-          <input type="text" id="prod-link" placeholder="https://..." class="flex-1 bg-slate-800 rounded p-2 text-xs text-white outline-none">
-          <button onclick="addProductLink()" class="bg-[#d4af37] text-black px-3 rounded text-xs font-bold">+</button>
-        </div>
-      </div>
-
+      <img id="upload-preview" class="hidden w-full h-48 object-cover rounded-xl shadow-lg">
       <textarea id="post-caption" rows="2" placeholder="Scrivi un pensiero..." class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-1 focus:ring-[#d4af37] outline-none"></textarea>
       <button onclick="submitPost()" class="btn-gold w-full">Pubblica</button>
     </div>
@@ -444,6 +414,16 @@
   </div>
 </div>
 
+<div id="notifications-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] h-[550px] flex flex-col">
+    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+      <h3 class="font-bold text-lg text-white">Notifiche</h3>
+      <i class="fa-solid fa-xmark cursor-pointer text-white" onclick="closeModal('notifications-modal')"></i>
+    </div>
+    <div id="notifications-list" class="flex-1 overflow-y-auto"></div>
+  </div>
+</div>
+
 <div id="chat-modal" class="modal-overlay hidden">
   <div class="glass-modal w-[400px] h-[550px] flex flex-col">
     <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-slate-900/50">
@@ -465,11 +445,10 @@
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
-  
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
-  let tempProducts = []; // Array per i prodotti
+  let myPostIds = new Set(); // Per tracciare le notifiche sui miei post
 
   window.addEventListener('load', async () => {
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
@@ -478,54 +457,6 @@
     if (session && !error) enterApp(session.user);
     else document.getElementById('auth-container').style.display = 'flex';
   });
-
-  // --- FUNZIONI PRODOTTI (NUOVE) ---
-  function addProductLink() {
-    const name = document.getElementById('prod-name').value.trim();
-    const link = document.getElementById('prod-link').value.trim();
-    if (!name || !link) return alert("Inserisci nome e link!");
-    
-    tempProducts.push({ name, link });
-    renderTempProducts();
-    document.getElementById('prod-name').value = '';
-    document.getElementById('prod-link').value = '';
-  }
-
-  function renderTempProducts() {
-    const c = document.getElementById('product-list-container');
-    c.innerHTML = tempProducts.map((p, i) => 
-      `<div class="flex justify-between items-center bg-white/5 p-1 rounded text-xs text-white">
-         <span>${escapeHtml(p.name)}</span>
-         <i class="fa-solid fa-trash cursor-pointer text-red-400 hover:text-red-500" onclick="removeTempProduct(${i})"></i>
-       </div>`
-    ).join('');
-  }
-
-  function removeTempProduct(index) {
-    tempProducts.splice(index, 1);
-    renderTempProducts();
-  }
-
-  function toggleProductMenu(event, container) {
-    event.stopPropagation(); // BLOCCA LA CHIUSURA IMMEDIATA
-    
-    // Chiudi tutti gli altri
-    document.querySelectorAll('.products-dropdown').forEach(el => {
-      if (el !== container.querySelector('.products-dropdown')) el.classList.remove('active');
-    });
-
-    const menu = container.querySelector('.products-dropdown');
-    if(menu) menu.classList.toggle('active');
-  }
-
-  // Listener globale per chiudere cliccando fuori
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.post-img-container')) {
-      document.querySelectorAll('.products-dropdown').forEach(el => el.classList.remove('active'));
-    }
-  });
-
-  // --- FINE FUNZIONI PRODOTTI ---
 
   async function recuperoPassword() {
     const email = document.getElementById('l-email').value;
@@ -604,32 +535,6 @@
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
-    // --- LOGICA HTML SHOPPING ---
-    let products = post.products;
-
-    if (typeof products === "string") {
-      try { products = JSON.parse(products); } catch (e) { products = []; }
-    }
-
-    let shoppingHtml = '';
-    let clickAttr = `onclick="openPostDetail('${post.id}')"`; // Default: apre dettaglio
-
-    if (Array.isArray(products) && products.length > 0) {
-      // Se ci sono prodotti, attiviamo il menu
-      clickAttr = `onclick="toggleProductMenu(event, this)"`;
-      
-      const itemsHtml = products.map(p => 
-        `<a href="${p.link}" target="_blank" class="product-link-item">
-           <span>${escapeHtml(p.name)}</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-         </a>`
-      ).join('');
-      
-      shoppingHtml = `
-        <div class="shopping-tag-indicator"><i class="fa-solid fa-bag-shopping"></i> Acquista</div>
-        <div class="products-dropdown" onclick="event.stopPropagation()">${itemsHtml}</div>
-      `;
-    }
-
     return `
       <div class="post-card">
         <div class="post-header">
@@ -639,11 +544,7 @@
           </div>
           ${deleteIcon}
         </div>
-        ${post.image_url ? 
-          `<div class="post-img-container" ${clickAttr}>
-             <img src="${post.image_url}" class="post-img">
-             ${shoppingHtml}
-           </div>` : ''}
+        ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="action-bar">
           <div class="icon-btn" onclick="toggleLike('${post.id}', this)">
             <i class="${heartIcon}"></i>
@@ -671,6 +572,7 @@
       icon.className = 'fa-solid fa-heart text-red-500';
       countSpan.innerText = currentCount + 1;
       await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+      // Nota: Non inviamo notifiche a noi stessi, è gestito dal backend/listener
     }
   }
 
@@ -787,7 +689,7 @@
   async function refreshDetailCounts(pid) { const c = await getPostCounts(pid); document.getElementById('detail-likes-count').innerText = c.likes; }
   async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
   function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
-  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); document.getElementById('upload-preview').classList.add('hidden'); document.getElementById('post-file').value = ""; tempProducts=[]; renderTempProducts(); }
+  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); document.getElementById('upload-preview').classList.add('hidden'); document.getElementById('post-file').value = ""; }
   function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
   
   async function showUserList(type, uid) { 
@@ -804,12 +706,10 @@
   async function performSearch() { const q = document.getElementById('search-query').value.trim(); const c = document.getElementById('search-results'); if(q.length<2) return c.innerHTML=''; const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); c.innerHTML = ''; data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); }
   function previewUpload(input) { if(input.files && input.files[0]) { const r = new FileReader(); r.onload = (e) => { const i = document.getElementById('upload-preview'); i.src = e.target.result; i.classList.remove('hidden'); }; r.readAsDataURL(input.files[0]); } }
   
-  // FIX: SALVATAGGIO POST CON PRODOTTI
   async function submitPost() { 
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
     if(!f && !c) return alert("Metti foto o testo."); 
-    
     let url = null; 
     if(f) { 
       const n = `${currentUser.id}/${Date.now()}`; 
@@ -818,22 +718,9 @@
       const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
       url = data.publicUrl; 
     } 
-    
-    // Inseriamo l'array tempProducts nella colonna products
-    const { error: insErr } = await sb.from('posts').insert([{ 
-        user_id: currentUser.id, 
-        image_url: url, 
-        caption: c,
-        products: (tempProducts && tempProducts.length ? tempProducts : []) // Salva il JSON
-    }]); 
-    
+    const { error: insErr } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: c }]); 
     if(insErr) alert("Errore salvataggio post: " + insErr.message);
-    else { 
-        tempProducts = []; // Resetta prodotti
-        renderTempProducts(); // Pulisci UI
-        closeModal('upload-modal'); 
-        renderFeedView(); 
-    }
+    else { closeModal('upload-modal'); renderFeedView(); }
   }
 
   function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
@@ -850,24 +737,112 @@
   }
 
   /* --- FUNZIONI CHAT & INBOX --- */
-
-  // Controllo notifiche in realtime
   async function checkNotifications() {
+    // Messaggi
     const { count } = await sb.from('messages').select('*', { count: 'exact', head: true })
       .eq('receiver_id', currentUser.id)
       .eq('is_read', false);
-    
-    const dot = document.getElementById('global-gold-dot');
-    if (count && count > 0) dot.style.display = 'block';
-    else dot.style.display = 'none';
+    document.getElementById('global-gold-dot').style.display = (count > 0) ? 'block' : 'none';
   }
+
+  // --- FUNZIONI NOTIFICHE LIKE/COMMENTI ---
+  // Logica: Fetchiamo i like/commenti sui MIEI post.
+  // Usiamo localStorage per simulare "is_read" senza toccare il DB.
+  
+  async function fetchMyPostIds() {
+    const { data } = await sb.from('posts').select('id').eq('user_id', currentUser.id);
+    if(data) data.forEach(p => myPostIds.add(p.id));
+  }
+
+  async function checkAppNotifications() {
+    if(!myPostIds.size) return;
+    const lastCheck = localStorage.getItem('last_notif_check') || '2000-01-01T00:00:00';
+    // Cerchiamo commenti o like recenti (semplificato)
+    // Nota: Supabase query complessa, facciamo un controllo semplice sugli ultimi eventi
+    // In produzione si userebbe una tabella 'notifications'. Qui improvvisiamo con i dati che abbiamo.
+    // Controllo solo se c'è attività recente (ultime 10 interazioni) che è più nuova del lastCheck
+    
+    const ids = Array.from(myPostIds);
+    // Controllo Like
+    const { data: likes } = await sb.from('likes').select('created_at').in('post_id', ids).gt('created_at', lastCheck).neq('user_id', currentUser.id).limit(1);
+    // Controllo Commenti
+    const { data: coms } = await sb.from('comments').select('created_at').in('post_id', ids).gt('created_at', lastCheck).neq('user_id', currentUser.id).limit(1);
+
+    const hasNew = (likes && likes.length > 0) || (coms && coms.length > 0);
+    document.getElementById('notif-gold-dot').style.display = hasNew ? 'block' : 'none';
+  }
+
+  async function openNotificationsModal() {
+    document.getElementById('notifications-modal').classList.remove('hidden');
+    document.getElementById('notif-gold-dot').style.display = 'none';
+    localStorage.setItem('last_notif_check', new Date().toISOString());
+
+    const c = document.getElementById('notifications-list');
+    c.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+    // Recupero ultimi 20 eventi (Like e Commenti)
+    // Nota: Eseguo 2 query separate e unisco i risultati
+    const ids = Array.from(myPostIds);
+    if(ids.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Non hai ancora pubblicato post.</p>';
+
+    const { data: lData } = await sb.from('likes')
+      .select('created_at, user_id, post_id, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)')
+      .in('post_id', ids)
+      .neq('user_id', currentUser.id)
+      .order('created_at', { ascending: false }).limit(20);
+
+    const { data: cData } = await sb.from('comments')
+      .select('created_at, user_id, post_id, content, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)')
+      .in('post_id', ids)
+      .neq('user_id', currentUser.id)
+      .order('created_at', { ascending: false }).limit(20);
+
+    // Unisco e ordino
+    let all = [];
+    if(lData) lData.forEach(x => all.push({ type:'like', ...x }));
+    if(cData) cData.forEach(x => all.push({ type:'comment', ...x }));
+    all.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+    c.innerHTML = '';
+    if(all.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica recente.</p>';
+
+    all.forEach(n => {
+      const u = n.profiles;
+      const p = n.posts;
+      const icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
+      const txt = n.type === 'like' ? 'ha messo mi piace al tuo post' : `ha commentato: "${escapeHtml(n.content.substring(0,20))}..."`;
+      const imgPost = p.image_url ? `<img src="${p.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">` : `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">TESTO</div>`;
+      
+      const html = `
+        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="closeModal('notifications-modal'); openPostDetail('${n.post_id}')">
+          <img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]">
+          <div class="flex-1">
+            <div class="text-sm text-white"><span class="font-bold">${u.username}</span> <span class="text-xs text-gray-400">${new Date(n.created_at).toLocaleDateString()}</span></div>
+            <div class="text-xs text-gray-300 flex items-center gap-2">${icon} ${txt}</div>
+          </div>
+          ${imgPost}
+        </div>
+      `;
+      c.insertAdjacentHTML('beforeend', html);
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast-notif');
+    document.getElementById('toast-msg').innerText = msg;
+    t.classList.add('toast-active');
+    setTimeout(() => t.classList.remove('toast-active'), 4000);
+    // Accendi pallino
+    document.getElementById('notif-gold-dot').style.display = 'block';
+  }
+
+  /* --- FINE SEZIONE NOTIFICHE --- */
 
   async function openInboxModal() {
     document.getElementById('inbox-modal').classList.remove('hidden');
     const container = document.getElementById('inbox-list');
     container.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
-    // Recupero tutti i messaggi dove sono coinvolto
     const { data: msgs } = await sb.from('messages').select('*')
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
       .order('created_at', { ascending: false });
@@ -877,7 +852,6 @@
       return;
     }
 
-    // Trovo utenti unici
     const uniqueUsers = new Set();
     const previews = [];
 
@@ -920,7 +894,6 @@
     await loadMessages();
     await markAsRead(userId);
 
-    // Iscrizione Realtime
     if (chatSub) chatSub.unsubscribe();
     chatSub = sb.channel('chat-room')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
@@ -959,7 +932,7 @@
     await sb.from('messages').update({ is_read: true })
       .eq('sender_id', senderId)
       .eq('receiver_id', currentUser.id);
-    checkNotifications(); // Aggiorna pallino globale
+    checkNotifications(); 
   }
 
   function closeChat() {
@@ -969,20 +942,37 @@
     checkNotifications();
   }
 
-  // --- STARTUP MODIFICATO ---
   function enterApp(u) { 
     currentUser=u; 
     document.getElementById('auth-container').style.transform = "translateY(-100vh)"; 
-    setTimeout(()=>{ 
+    setTimeout(async ()=>{ 
       document.getElementById('auth-container').classList.add('hidden'); 
       document.getElementById('app-interface').classList.remove('hidden'); 
-      renderFeedView(); 
-      checkNotifications(); // Controllo notifiche all'avvio
       
-      // Ascolto globale per notifiche
-      sb.channel('global-notif').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-        if(payload.new.receiver_id === currentUser.id) checkNotifications();
-      }).subscribe();
+      await fetchMyPostIds(); // Carico ID dei miei post per monitorare
+      renderFeedView(); 
+      checkNotifications(); // Messaggi
+      checkAppNotifications(); // Like/Commenti
+
+      // SOTTOSCRIZIONE REALTIME GLOBALE
+      sb.channel('global-updates')
+        // Messaggi
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          if(payload.new.receiver_id === currentUser.id) checkNotifications();
+        })
+        // Like
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
+          if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
+            showToast("Qualcuno ha messo Mi Piace!");
+          }
+        })
+        // Commenti
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
+          if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
+            showToast("Nuovo commento sul tuo post!");
+          }
+        })
+        .subscribe();
 
     },600); 
   }
