@@ -746,8 +746,6 @@
   }
 
   // --- FUNZIONI NOTIFICHE LIKE/COMMENTI ---
-  // Logica: Fetchiamo i like/commenti sui MIEI post.
-  // Usiamo localStorage per simulare "is_read" senza toccare il DB.
   
   async function fetchMyPostIds() {
     const { data } = await sb.from('posts').select('id').eq('user_id', currentUser.id);
@@ -757,10 +755,6 @@
   async function checkAppNotifications() {
     if(!myPostIds.size) return;
     const lastCheck = localStorage.getItem('last_notif_check') || '2000-01-01T00:00:00';
-    // Cerchiamo commenti o like recenti (semplificato)
-    // Nota: Supabase query complessa, facciamo un controllo semplice sugli ultimi eventi
-    // In produzione si userebbe una tabella 'notifications'. Qui improvvisiamo con i dati che abbiamo.
-    // Controllo solo se c'è attività recente (ultime 10 interazioni) che è più nuova del lastCheck
     
     const ids = Array.from(myPostIds);
     // Controllo Like
@@ -781,7 +775,6 @@
     c.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
     // Recupero ultimi 20 eventi (Like e Commenti)
-    // Nota: Eseguo 2 query separate e unisco i risultati
     const ids = Array.from(myPostIds);
     if(ids.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Non hai ancora pubblicato post.</p>';
 
@@ -949,27 +942,64 @@
       document.getElementById('auth-container').classList.add('hidden'); 
       document.getElementById('app-interface').classList.remove('hidden'); 
       
-      await fetchMyPostIds(); // Carico ID dei miei post per monitorare
+      await fetchMyPostIds(); 
       renderFeedView(); 
-      checkNotifications(); // Messaggi
-      checkAppNotifications(); // Like/Commenti
+      checkNotifications(); 
+      checkAppNotifications(); 
 
-      // SOTTOSCRIZIONE REALTIME GLOBALE
+      // SOTTOSCRIZIONE REALTIME MIGLIORATA
       sb.channel('global-updates')
-        // Messaggi
+        // MESSAGGI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           if(payload.new.receiver_id === currentUser.id) checkNotifications();
         })
-        // Like
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
-          if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
-            showToast("Qualcuno ha messo Mi Piace!");
+        // LIKE: AGGIUNTO SUPPORTO COMPLETO REAL-TIME + NOTIFICHE
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, async payload => {
+          
+          // EVENTO NUOVO LIKE (INSERT)
+          if (payload.eventType === 'INSERT') {
+            const pid = payload.new.post_id;
+            
+            // 1. NOTIFICHE: Se il post è mio e non sono io -> Notifica Toast e Pallino
+            if(myPostIds.has(pid) && payload.new.user_id !== currentUser.id) {
+              showToast("Nuovo Mi Piace ricevuto!");
+              document.getElementById('notif-gold-dot').style.display = 'block';
+            }
+
+            // 2. COUNTER FEED: Aggiorna il numero visuale nel DOM se visibile
+            const feedCount = document.getElementById(`feed-likes-count-${pid}`);
+            if(feedCount) {
+              const current = parseInt(feedCount.innerText) || 0;
+              feedCount.innerText = current + 1;
+              // Piccolo effetto visivo
+              feedCount.style.color = '#d4af37'; 
+              setTimeout(()=>feedCount.style.color = '#fff', 500);
+            }
+
+            // 3. COUNTER MODALE: Se aperto
+            if(currentPostId === pid) refreshDetailCounts(pid);
+          }
+
+          // EVENTO RIMOZIONE LIKE (DELETE)
+          if (payload.eventType === 'DELETE') {
+             const pid = payload.old.post_id; // Supabase deve inviare l'intero vecchio record o almeno ID
+             // Nota: Se DELETE restituisce solo ID della riga 'likes', pid sarà undefined senza REPLICA IDENTITY FULL.
+             // Ma proviamo a gestire l'aggiornamento DOM se possibile.
+             if(pid) {
+                const feedCount = document.getElementById(`feed-likes-count-${pid}`);
+                if(feedCount) {
+                  const current = parseInt(feedCount.innerText) || 0;
+                  feedCount.innerText = Math.max(0, current - 1);
+                }
+                if(currentPostId === pid) refreshDetailCounts(pid);
+             }
           }
         })
-        // Commenti
+        // COMMENTI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
           if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
             showToast("Nuovo commento sul tuo post!");
+            document.getElementById('notif-gold-dot').style.display = 'block';
           }
         })
         .subscribe();
