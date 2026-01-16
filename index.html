@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -687,7 +686,7 @@
     document.getElementById('global-gold-dot').style.display = (count > 0) ? 'block' : 'none';
   }
 
-  /* --- GESTIONE NOTIFICHE --- */
+  /* --- GESTIONE NOTIFICHE ROBUSTA (Corretta) --- */
   async function fetchMyPostIds() {
     const { data } = await sb.from('posts').select('id').eq('user_id', currentUser.id);
     if(data) data.forEach(p => myPostIds.add(p.id));
@@ -697,117 +696,64 @@
     if(!myPostIds.size) return;
     const lastCheck = localStorage.getItem('last_notif_check') || '2000-01-01T00:00:00';
     const ids = Array.from(myPostIds);
+    // Controllo solo se ci sono nuovi like o commenti
     const { data: likes } = await sb.from('likes').select('created_at').in('post_id', ids).gt('created_at', lastCheck).neq('user_id', currentUser.id).limit(1);
     const { data: coms } = await sb.from('comments').select('created_at').in('post_id', ids).gt('created_at', lastCheck).neq('user_id', currentUser.id).limit(1);
     const hasNew = (likes && likes.length > 0) || (coms && coms.length > 0);
     document.getElementById('notif-gold-dot').style.display = hasNew ? 'block' : 'none';
   }
 
-  // ✅ ✅ ✅ FIX: openNotificationsModal con join esplicite FK (LIKE)
+  // --- FUNZIONE LISTA NOTIFICHE MIGLIORATA (Per far uscire la scritta) ---
   async function openNotificationsModal() {
     document.getElementById('notifications-modal').classList.remove('hidden');
     document.getElementById('notif-gold-dot').style.display = 'none';
-
-    // salvo alla fine (così non perdi eventi appena arrivati)
-    const nowIso = new Date().toISOString();
+    localStorage.setItem('last_notif_check', new Date().toISOString());
 
     const c = document.getElementById('notifications-list');
     c.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
+    // Ricarico gli ID per sicurezza
     await fetchMyPostIds();
     const ids = Array.from(myPostIds);
+    if(ids.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Non hai ancora pubblicato post.</p>';
 
-    if(ids.length === 0) {
-      localStorage.setItem('last_notif_check', nowIso);
-      return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Non hai ancora pubblicato post.</p>';
-    }
-
-    // LIKE: join robusta con FK esplicite (usa i nomi: likes_user_id_fkey / likes_post_id_fkey)
-    const { data: lData, error: lErr } = await sb
-      .from('likes')
-      .select(`
-        created_at, user_id, post_id,
-        liker:profiles!likes_user_id_fkey(username, avatar_url),
-        post:posts!likes_post_id_fkey(image_url, caption)
-      `)
+    // Query separate per evitare conflitti e JOIN più sicure
+    const { data: lData } = await sb.from('likes')
+      .select(`created_at, user_id, post_id, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)`)
       .in('post_id', ids)
       .neq('user_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .order('created_at', { ascending: false }).limit(20);
 
-    if (lErr) console.error("LIKES JOIN ERROR:", lErr);
-
-    // COMMENTI: come prima
-    const { data: cData, error: cErr } = await sb.from('comments')
+    const { data: cData } = await sb.from('comments')
       .select(`created_at, user_id, post_id, content, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)`)
       .in('post_id', ids)
       .neq('user_id', currentUser.id)
       .order('created_at', { ascending: false }).limit(20);
 
-    if (cErr) console.error("COMMENTS ERROR:", cErr);
-
     let all = [];
-
-    // Normalizzo likes
-    if(lData && lData.length) {
-      lData.forEach(x => {
-        all.push({
-          type: 'like',
-          created_at: x.created_at,
-          user_id: x.user_id,
-          post_id: x.post_id,
-          profiles: x.liker,
-          posts: x.post
-        });
-      });
-    }
-
-    // Normalizzo commenti
-    if(cData && cData.length) {
-      cData.forEach(x => {
-        all.push({
-          type: 'comment',
-          created_at: x.created_at,
-          user_id: x.user_id,
-          post_id: x.post_id,
-          content: x.content,
-          profiles: Array.isArray(x.profiles) ? x.profiles[0] : x.profiles,
-          posts: Array.isArray(x.posts) ? x.posts[0] : x.posts
-        });
-      });
-    }
-
+    if(lData) lData.forEach(x => all.push({ type:'like', ...x }));
+    if(cData) cData.forEach(x => all.push({ type:'comment', ...x }));
     all.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
     c.innerHTML = '';
-    if(all.length === 0) {
-      localStorage.setItem('last_notif_check', nowIso);
-      return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica recente.</p>';
-    }
+    if(all.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica recente.</p>';
 
     all.forEach(n => {
+      // FIX CRITICO: A volte Supabase ritorna un array per le foreign key, a volte un oggetto. Gestiamo entrambi.
       const u = Array.isArray(n.profiles) ? n.profiles[0] : n.profiles;
       const p = Array.isArray(n.posts) ? n.posts[0] : n.posts;
-      if(!u) return;
 
-      const icon = n.type === 'like'
-        ? '<i class="fa-solid fa-heart text-red-500"></i>'
-        : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
+      if(!u) return; // Se utente cancellato, salta
 
-      const txt = n.type === 'like'
-        ? 'ha messo mi piace al tuo post'
-        : `ha commentato: "${escapeHtml((n.content || '').substring(0,20))}..."`;
-
-      const imgPost = (p && p.image_url)
-        ? `<img src="${p.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">`
-        : `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">POST</div>`;
-
+      const icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
+      const txt = n.type === 'like' ? 'ha messo mi piace al tuo post' : `ha commentato: "${escapeHtml(n.content.substring(0,20))}..."`;
+      const imgPost = (p && p.image_url) ? `<img src="${p.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">` : `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">POST</div>`;
+      
       const html = `
-        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition"
-             onclick="closeModal('notifications-modal'); openPostDetail('${n.post_id}')">
+        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="closeModal('notifications-modal'); openPostDetail('${n.post_id}')">
           <img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]">
           <div class="flex-1">
-            <div class="text-sm text-white"><span class="font-bold">${u.username}</span> <span class="text-xs text-gray-400">${new Date(n.created_at).toLocaleDateString('it-IT')}</span></div>
+            <div class="text-sm text-white"><span class="font-bold">${u.username}</span> <span class="text-xs text-gray-400">${new Date(n.created_at).toLocaleDateString()}</span></div>
             <div class="text-xs text-gray-300 flex items-center gap-2">${icon} ${txt}</div>
           </div>
           ${imgPost}
@@ -815,9 +761,6 @@
       `;
       c.insertAdjacentHTML('beforeend', html);
     });
-
-    // segno "letto" solo alla fine
-    localStorage.setItem('last_notif_check', nowIso);
   }
 
   function showToast(msg) {
@@ -889,15 +832,20 @@
       checkNotifications(); 
       checkAppNotifications(); 
 
+      // --- CONFIGURAZIONE REALTIME ---
       sb.channel('global-updates')
+        // LIKE
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
           if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
-            showToast("Qualcuno ha messo Mi Piace!");
+            showToast("Qualcuno ha messo Mi Piace!"); // Notifica
+            // Aggiorno contatore feed se visibile
             const el = document.getElementById(`feed-likes-count-${payload.new.post_id}`);
             if(el) { el.innerText = parseInt(el.innerText) + 1; el.style.color='#d4af37'; setTimeout(()=>el.style.color='#fff',500); }
+            // Aggiorno dettaglio se aperto
             if(currentPostId === payload.new.post_id) refreshDetailCounts(currentPostId);
           }
         })
+        // LIKE REMOVED
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, payload => {
            if(payload.old && payload.old.post_id) {
              const el = document.getElementById(`feed-likes-count-${payload.old.post_id}`);
@@ -905,11 +853,13 @@
              if(currentPostId === payload.old.post_id) refreshDetailCounts(currentPostId);
            }
         })
+        // COMMENTI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
           if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
             showToast("Nuovo commento sul tuo post!");
           }
         })
+        // MESSAGGI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
           if(payload.new.receiver_id === currentUser.id) checkNotifications();
         })
