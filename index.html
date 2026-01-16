@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -448,7 +449,7 @@
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
-  let myPostIds = new Set(); // Per tracciare le notifiche sui miei post
+  let myPostIds = new Set(); 
 
   window.addEventListener('load', async () => {
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
@@ -487,37 +488,19 @@
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
     if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
-
     main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
-
+    
     const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
     const followingIds = follows ? follows.map(f => f.followed_id) : [];
 
     if (followingIds.length === 0) {
-      return main.innerHTML = `
-        <div class="empty-feed-box">
-          <i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i>
-          <h2 class="text-xl font-bold mb-2">Home Vuota</h2>
-          <p class="text-gray-400 mb-6">Non segui ancora nessuno. Inizia a seguire qualcuno per arricchire il tuo feed!</p>
-          <button onclick="openSearchModal()" class="btn-gold">Cerca Persone</button>
-        </div>
-      `;
+      return main.innerHTML = `<div class="empty-feed-box"><i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i><h2 class="text-xl font-bold mb-2">Home Vuota</h2><p class="text-gray-400 mb-6">Non segui ancora nessuno.</p><button onclick="openSearchModal()" class="btn-gold">Cerca Persone</button></div>`;
     }
 
-    const { data: posts, error } = await sb.from('posts')
-      .select(`*, profiles:user_id (username, avatar_url)`)
-      .in('user_id', followingIds)
-      .order('created_at', { ascending: false });
+    const { data: posts, error } = await sb.from('posts').select(`*, profiles:user_id (username, avatar_url)`).in('user_id', followingIds).order('created_at', { ascending: false });
 
     if (error || !posts || posts.length === 0) {
-      return main.innerHTML = `
-        <div class="empty-feed-box">
-          <i class="fa-solid fa-ghost text-4xl mb-4 text-[#d4af37]"></i>
-          <h2 class="text-xl font-bold mb-2">Tutto tace...</h2>
-          <p class="text-gray-400 mb-6">Le persone che segui non hanno ancora pubblicato nulla.</p>
-          <button onclick="openSearchModal()" class="btn-gold">Cerca altri utenti</button>
-        </div>
-      `;
+      return main.innerHTML = `<div class="empty-feed-box"><i class="fa-solid fa-ghost text-4xl mb-4 text-[#d4af37]"></i><h2 class="text-xl font-bold mb-2">Tutto tace...</h2><p class="text-gray-400 mb-6">Nessun post da mostrare.</p><button onclick="openSearchModal()" class="btn-gold">Cerca altri utenti</button></div>`;
     }
 
     main.innerHTML = '';
@@ -532,30 +515,9 @@
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
     const heartIcon = liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
-    const deleteIcon = (post.user_id === currentUser.id) 
-      ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
+    const deleteIcon = (post.user_id === currentUser.id) ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')"></i>` : '';
 
-    return `
-      <div class="post-card">
-        <div class="post-header">
-          <div class="user-badge" onclick="openUserProfile('${post.user_id}')">
-            <img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar">
-            <div class="user-meta"><span class="username">${user.username}</span><span class="post-date">${dateStr}</span></div>
-          </div>
-          ${deleteIcon}
-        </div>
-        ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
-        <div class="action-bar">
-          <div class="icon-btn" onclick="toggleLike('${post.id}', this)">
-            <i class="${heartIcon}"></i>
-            <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
-          </div>
-          <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
-          <div class="icon-btn ml-auto" onclick="sharePost('${post.id}', \`${escapeHtml(post.caption)}\`)"><i class="fa-regular fa-paper-plane"></i></div>
-        </div>
-        <div class="caption-box"><span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>${escapeHtml(post.caption)}</div>
-      </div>
-    `;
+    return `<div class="post-card"><div class="post-header"><div class="user-badge" onclick="openUserProfile('${post.user_id}')"><img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar"><div class="user-meta"><span class="username">${user.username}</span><span class="post-date">${dateStr}</span></div></div>${deleteIcon}</div>${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}<div class="action-bar"><div class="icon-btn" onclick="toggleLike('${post.id}', this)"><i class="${heartIcon}"></i><span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span></div><div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div><div class="icon-btn ml-auto" onclick="sharePost('${post.id}', \`${escapeHtml(post.caption)}\`)"><i class="fa-regular fa-paper-plane"></i></div></div><div class="caption-box"><span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>${escapeHtml(post.caption)}</div></div>`;
   }
 
   async function toggleLike(postId, btnContainer) {
@@ -572,7 +534,6 @@
       icon.className = 'fa-solid fa-heart text-red-500';
       countSpan.innerText = currentCount + 1;
       await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-      // Nota: Non inviamo notifiche a noi stessi, è gestito dal backend/listener
     }
   }
 
@@ -606,29 +567,9 @@
 
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const isMe = userId === currentUser.id;
-    const btn = isMe ? 
-      `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : 
-      `<div class="flex gap-2">
-         <button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>
-         <button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button>
-       </div>`;
+    const btn = isMe ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : `<div class="flex gap-2"><button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button><button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button></div>`;
 
-    main.innerHTML = `
-      <div id="view-profile-active" class="hidden"></div>
-      <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl">
-        <img src="${profile.avatar_url || 'https://via.placeholder.com/150'}" class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition" onclick="${isMe?'openEditProfile()':''}">
-        <div class="flex-1">
-          <div class="flex items-center gap-4 mb-4"><h2 class="text-3xl font-light text-white">${profile.username}</h2>${btn}</div>
-          <div class="flex gap-8 text-gray-300 mb-4">
-            <div class="text-center"><span class="block font-bold text-white text-lg">${postsCount||0}</span><span class="text-xs uppercase">Post</span></div>
-            <div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('followers','${userId}')"><span class="block font-bold text-white text-lg" id="p-followers">${followersCount||0}</span><span class="text-xs uppercase">Follower</span></div>
-            <div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('following','${userId}')"><span class="block font-bold text-white text-lg">${followingCount||0}</span><span class="text-xs uppercase">Seguiti</span></div>
-          </div>
-          <div class="text-gray-400 font-medium">${profile.full_name || ''}</div>
-        </div>
-      </div>
-      <div class="grid grid-cols-3 gap-1">${posts ? posts.map(p => `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(p.caption).substring(0,40)}...</div>`}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`).join('') : ''}</div>
-    `;
+    main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl"><img src="${profile.avatar_url || 'https://via.placeholder.com/150'}" class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition" onclick="${isMe?'openEditProfile()':''}"><div class="flex-1"><div class="flex items-center gap-4 mb-4"><h2 class="text-3xl font-light text-white">${profile.username}</h2>${btn}</div><div class="flex gap-8 text-gray-300 mb-4"><div class="text-center"><span class="block font-bold text-white text-lg">${postsCount||0}</span><span class="text-xs uppercase">Post</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('followers','${userId}')"><span class="block font-bold text-white text-lg" id="p-followers">${followersCount||0}</span><span class="text-xs uppercase">Follower</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('following','${userId}')"><span class="block font-bold text-white text-lg">${followingCount||0}</span><span class="text-xs uppercase">Seguiti</span></div></div><div class="text-gray-400 font-medium">${profile.full_name || ''}</div></div></div><div class="grid grid-cols-3 gap-1">${posts ? posts.map(p => `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(p.caption).substring(0,40)}...</div>`}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`).join('') : ''}</div>`;
   }
 
   async function toggleFollow(targetId) {
@@ -718,11 +659,10 @@
       const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
       url = data.publicUrl; 
     } 
-    // MODIFICA QUI: Aggiungiamo .select().single() per ottenere l'ID del nuovo post
     const { data: newPost, error: insErr } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: url, caption: c }]).select().single(); 
     if(insErr) alert("Errore salvataggio post: " + insErr.message);
     else { 
-      if(newPost) myPostIds.add(newPost.id); // AGGIUNGE IL POST ALLA LISTA NOTIFICHE
+      if(newPost) myPostIds.add(newPost.id);
       closeModal('upload-modal'); 
       renderFeedView(); 
     }
@@ -743,15 +683,11 @@
 
   /* --- FUNZIONI CHAT & INBOX --- */
   async function checkNotifications() {
-    // Messaggi
-    const { count } = await sb.from('messages').select('*', { count: 'exact', head: true })
-      .eq('receiver_id', currentUser.id)
-      .eq('is_read', false);
+    const { count } = await sb.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', currentUser.id).eq('is_read', false);
     document.getElementById('global-gold-dot').style.display = (count > 0) ? 'block' : 'none';
   }
 
-  // --- FUNZIONI NOTIFICHE LIKE/COMMENTI ---
-  
+  /* --- GESTIONE NOTIFICHE --- */
   async function fetchMyPostIds() {
     const { data } = await sb.from('posts').select('id').eq('user_id', currentUser.id);
     if(data) data.forEach(p => myPostIds.add(p.id));
@@ -760,62 +696,118 @@
   async function checkAppNotifications() {
     if(!myPostIds.size) return;
     const lastCheck = localStorage.getItem('last_notif_check') || '2000-01-01T00:00:00';
-    
     const ids = Array.from(myPostIds);
-    // Controllo Like
     const { data: likes } = await sb.from('likes').select('created_at').in('post_id', ids).gt('created_at', lastCheck).neq('user_id', currentUser.id).limit(1);
-    // Controllo Commenti
     const { data: coms } = await sb.from('comments').select('created_at').in('post_id', ids).gt('created_at', lastCheck).neq('user_id', currentUser.id).limit(1);
-
     const hasNew = (likes && likes.length > 0) || (coms && coms.length > 0);
     document.getElementById('notif-gold-dot').style.display = hasNew ? 'block' : 'none';
   }
 
+  // ✅ ✅ ✅ FIX: openNotificationsModal con join esplicite FK (LIKE)
   async function openNotificationsModal() {
     document.getElementById('notifications-modal').classList.remove('hidden');
     document.getElementById('notif-gold-dot').style.display = 'none';
-    localStorage.setItem('last_notif_check', new Date().toISOString());
+
+    // salvo alla fine (così non perdi eventi appena arrivati)
+    const nowIso = new Date().toISOString();
 
     const c = document.getElementById('notifications-list');
     c.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
 
-    // Recupero ultimi 20 eventi (Like e Commenti)
+    await fetchMyPostIds();
     const ids = Array.from(myPostIds);
-    if(ids.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Non hai ancora pubblicato post.</p>';
 
-    const { data: lData } = await sb.from('likes')
-      .select('created_at, user_id, post_id, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)')
+    if(ids.length === 0) {
+      localStorage.setItem('last_notif_check', nowIso);
+      return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Non hai ancora pubblicato post.</p>';
+    }
+
+    // LIKE: join robusta con FK esplicite (usa i nomi: likes_user_id_fkey / likes_post_id_fkey)
+    const { data: lData, error: lErr } = await sb
+      .from('likes')
+      .select(`
+        created_at, user_id, post_id,
+        liker:profiles!likes_user_id_fkey(username, avatar_url),
+        post:posts!likes_post_id_fkey(image_url, caption)
+      `)
+      .in('post_id', ids)
+      .neq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (lErr) console.error("LIKES JOIN ERROR:", lErr);
+
+    // COMMENTI: come prima
+    const { data: cData, error: cErr } = await sb.from('comments')
+      .select(`created_at, user_id, post_id, content, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)`)
       .in('post_id', ids)
       .neq('user_id', currentUser.id)
       .order('created_at', { ascending: false }).limit(20);
 
-    const { data: cData } = await sb.from('comments')
-      .select('created_at, user_id, post_id, content, profiles:user_id(username, avatar_url), posts:post_id(image_url, caption)')
-      .in('post_id', ids)
-      .neq('user_id', currentUser.id)
-      .order('created_at', { ascending: false }).limit(20);
+    if (cErr) console.error("COMMENTS ERROR:", cErr);
 
-    // Unisco e ordino
     let all = [];
-    if(lData) lData.forEach(x => all.push({ type:'like', ...x }));
-    if(cData) cData.forEach(x => all.push({ type:'comment', ...x }));
+
+    // Normalizzo likes
+    if(lData && lData.length) {
+      lData.forEach(x => {
+        all.push({
+          type: 'like',
+          created_at: x.created_at,
+          user_id: x.user_id,
+          post_id: x.post_id,
+          profiles: x.liker,
+          posts: x.post
+        });
+      });
+    }
+
+    // Normalizzo commenti
+    if(cData && cData.length) {
+      cData.forEach(x => {
+        all.push({
+          type: 'comment',
+          created_at: x.created_at,
+          user_id: x.user_id,
+          post_id: x.post_id,
+          content: x.content,
+          profiles: Array.isArray(x.profiles) ? x.profiles[0] : x.profiles,
+          posts: Array.isArray(x.posts) ? x.posts[0] : x.posts
+        });
+      });
+    }
+
     all.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
     c.innerHTML = '';
-    if(all.length === 0) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica recente.</p>';
+    if(all.length === 0) {
+      localStorage.setItem('last_notif_check', nowIso);
+      return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica recente.</p>';
+    }
 
     all.forEach(n => {
-      const u = n.profiles;
-      const p = n.posts;
-      const icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
-      const txt = n.type === 'like' ? 'ha messo mi piace al tuo post' : `ha commentato: "${escapeHtml(n.content.substring(0,20))}..."`;
-      const imgPost = p.image_url ? `<img src="${p.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">` : `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">TESTO</div>`;
-      
+      const u = Array.isArray(n.profiles) ? n.profiles[0] : n.profiles;
+      const p = Array.isArray(n.posts) ? n.posts[0] : n.posts;
+      if(!u) return;
+
+      const icon = n.type === 'like'
+        ? '<i class="fa-solid fa-heart text-red-500"></i>'
+        : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
+
+      const txt = n.type === 'like'
+        ? 'ha messo mi piace al tuo post'
+        : `ha commentato: "${escapeHtml((n.content || '').substring(0,20))}..."`;
+
+      const imgPost = (p && p.image_url)
+        ? `<img src="${p.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">`
+        : `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">POST</div>`;
+
       const html = `
-        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="closeModal('notifications-modal'); openPostDetail('${n.post_id}')">
+        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition"
+             onclick="closeModal('notifications-modal'); openPostDetail('${n.post_id}')">
           <img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]">
           <div class="flex-1">
-            <div class="text-sm text-white"><span class="font-bold">${u.username}</span> <span class="text-xs text-gray-400">${new Date(n.created_at).toLocaleDateString()}</span></div>
+            <div class="text-sm text-white"><span class="font-bold">${u.username}</span> <span class="text-xs text-gray-400">${new Date(n.created_at).toLocaleDateString('it-IT')}</span></div>
             <div class="text-xs text-gray-300 flex items-center gap-2">${icon} ${txt}</div>
           </div>
           ${imgPost}
@@ -823,6 +815,9 @@
       `;
       c.insertAdjacentHTML('beforeend', html);
     });
+
+    // segno "letto" solo alla fine
+    localStorage.setItem('last_notif_check', nowIso);
   }
 
   function showToast(msg) {
@@ -830,53 +825,23 @@
     document.getElementById('toast-msg').innerText = msg;
     t.classList.add('toast-active');
     setTimeout(() => t.classList.remove('toast-active'), 4000);
-    // Accendi pallino
     document.getElementById('notif-gold-dot').style.display = 'block';
   }
-
-  /* --- FINE SEZIONE NOTIFICHE --- */
 
   async function openInboxModal() {
     document.getElementById('inbox-modal').classList.remove('hidden');
     const container = document.getElementById('inbox-list');
     container.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
-
-    const { data: msgs } = await sb.from('messages').select('*')
-      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order('created_at', { ascending: false });
-
-    if (!msgs || msgs.length === 0) {
-      container.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessun messaggio.</p>';
-      return;
-    }
-
-    const uniqueUsers = new Set();
-    const previews = [];
-
-    for (const m of msgs) {
-      const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-      if (!uniqueUsers.has(otherId)) {
-        uniqueUsers.add(otherId);
-        previews.push({ msg: m, otherId });
-      }
-    }
-
+    const { data: msgs } = await sb.from('messages').select('*').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`).order('created_at', { ascending: false });
+    if (!msgs || msgs.length === 0) { container.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessun messaggio.</p>'; return; }
+    const uniqueUsers = new Set(); const previews = [];
+    for (const m of msgs) { const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id; if (!uniqueUsers.has(otherId)) { uniqueUsers.add(otherId); previews.push({ msg: m, otherId }); } }
     container.innerHTML = '';
-    
     for (const item of previews) {
       const { data: u } = await sb.from('profiles').select('*').eq('id', item.otherId).single();
       const isUnread = (item.msg.receiver_id === currentUser.id && !item.msg.is_read);
       const dotHtml = isUnread ? `<div class="unread-indicator"></div>` : '';
-
-      const html = `
-        <div class="inbox-item" onclick="closeModal('inbox-modal'); openChat('${u.id}', '${u.username}', '${u.avatar_url}')">
-          <img src="${u.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]">
-          <div class="flex-1 overflow-hidden">
-            <div class="font-bold text-white text-sm">${u.username}</div>
-            <div class="text-gray-400 text-xs truncate">${item.msg.sender_id === currentUser.id ? 'Tu: ' : ''}${escapeHtml(item.msg.content)}</div>
-          </div>
-          ${dotHtml}
-        </div>`;
+      const html = `<div class="inbox-item" onclick="closeModal('inbox-modal'); openChat('${u.id}', '${u.username}', '${u.avatar_url}')"><img src="${u.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]"><div class="flex-1 overflow-hidden"><div class="font-bold text-white text-sm">${u.username}</div><div class="text-gray-400 text-xs truncate">${item.msg.sender_id === currentUser.id ? 'Tu: ' : ''}${escapeHtml(item.msg.content)}</div></div>${dotHtml}</div>`;
       container.insertAdjacentHTML('beforeend', html);
     }
   }
@@ -884,61 +849,33 @@
   async function openChat(userId, username, avatar) {
     if (userId === currentUser.id) return;
     activeChatId = userId;
-    
     document.getElementById('chat-modal').classList.remove('hidden');
     document.getElementById('chat-header-name').innerText = username;
     document.getElementById('chat-header-avatar').src = avatar || 'https://via.placeholder.com/40';
-    
-    await loadMessages();
-    await markAsRead(userId);
-
+    await loadMessages(); await markAsRead(userId);
     if (chatSub) chatSub.unsubscribe();
-    chatSub = sb.channel('chat-room')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-        if ((payload.new.sender_id === activeChatId && payload.new.receiver_id === currentUser.id) ||
-            (payload.new.sender_id === currentUser.id && payload.new.receiver_id === activeChatId)) {
-          loadMessages();
-          if (payload.new.receiver_id === currentUser.id) markAsRead(activeChatId);
-        }
-      }).subscribe();
+    chatSub = sb.channel('chat-room').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => { if ((payload.new.sender_id === activeChatId && payload.new.receiver_id === currentUser.id) || (payload.new.sender_id === currentUser.id && payload.new.receiver_id === activeChatId)) { loadMessages(); if (payload.new.receiver_id === currentUser.id) markAsRead(activeChatId); } }).subscribe();
   }
 
   async function loadMessages() {
-    const { data: msgs } = await sb.from('messages').select('*')
-      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`)
-      .order('created_at', { ascending: true });
-
-    const box = document.getElementById('chat-messages');
-    box.innerHTML = '';
-    msgs?.forEach(m => {
-      const isMine = m.sender_id === currentUser.id;
-      box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">${escapeHtml(m.content)}</div>`);
-    });
+    const { data: msgs } = await sb.from('messages').select('*').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`).order('created_at', { ascending: true });
+    const box = document.getElementById('chat-messages'); box.innerHTML = '';
+    msgs?.forEach(m => { const isMine = m.sender_id === currentUser.id; box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">${escapeHtml(m.content)}</div>`); });
     box.scrollTop = box.scrollHeight;
   }
 
   async function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if (!text || !activeChatId) return;
-    input.value = '';
+    const input = document.getElementById('chat-input'); const text = input.value.trim(); if (!text || !activeChatId) return; input.value = '';
     const { error } = await sb.from('messages').insert([{ sender_id: currentUser.id, receiver_id: activeChatId, content: text }]);
     if (!error) loadMessages();
   }
 
   async function markAsRead(senderId) {
-    await sb.from('messages').update({ is_read: true })
-      .eq('sender_id', senderId)
-      .eq('receiver_id', currentUser.id);
+    await sb.from('messages').update({ is_read: true }).eq('sender_id', senderId).eq('receiver_id', currentUser.id);
     checkNotifications(); 
   }
 
-  function closeChat() {
-    document.getElementById('chat-modal').classList.add('hidden');
-    activeChatId = null;
-    if (chatSub) chatSub.unsubscribe();
-    checkNotifications();
-  }
+  function closeChat() { document.getElementById('chat-modal').classList.add('hidden'); activeChatId = null; if (chatSub) chatSub.unsubscribe(); checkNotifications(); }
 
   function enterApp(u) { 
     currentUser=u; 
@@ -952,46 +889,29 @@
       checkNotifications(); 
       checkAppNotifications(); 
 
-      // SOTTOSCRIZIONE REALTIME
       sb.channel('global-updates')
-        // MESSAGGI
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-          if(payload.new.receiver_id === currentUser.id) checkNotifications();
-        })
-        
-        // --- ASCOLTATORE DEDICATO AI LIKE (AGGIUNTO/CORRETTO) ---
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, payload => {
-          // 1. Notifica e Pallino Rosso se è un mio post
           if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
             showToast("Qualcuno ha messo Mi Piace!");
-            document.getElementById('notif-gold-dot').style.display = 'block';
+            const el = document.getElementById(`feed-likes-count-${payload.new.post_id}`);
+            if(el) { el.innerText = parseInt(el.innerText) + 1; el.style.color='#d4af37'; setTimeout(()=>el.style.color='#fff',500); }
+            if(currentPostId === payload.new.post_id) refreshDetailCounts(currentPostId);
           }
-          // 2. Aggiornamento Contatore Realtime (Feed)
-          const el = document.getElementById(`feed-likes-count-${payload.new.post_id}`);
-          if(el) { el.innerText = parseInt(el.innerText) + 1; el.style.color='#d4af37'; setTimeout(()=>el.style.color='#fff',500); }
-          // 3. Aggiornamento Contatore Realtime (Dettaglio)
-          if(currentPostId === payload.new.post_id) refreshDetailCounts(currentPostId);
         })
-        
-        // --- ASCOLTATORE PER RIMOZIONE LIKE (AGGIUNTO) ---
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, payload => {
-           // Aggiornamento Contatore Realtime quando qualcuno toglie il like
-           const oldId = payload.old.post_id; 
-           // Nota: Supabase potrebbe non inviare old.post_id se Replica Identity non è FULL. 
-           // Ma se invia, aggiorniamo l'UI.
-           if(oldId) {
-             const el = document.getElementById(`feed-likes-count-${oldId}`);
+           if(payload.old && payload.old.post_id) {
+             const el = document.getElementById(`feed-likes-count-${payload.old.post_id}`);
              if(el) el.innerText = Math.max(0, parseInt(el.innerText) - 1);
-             if(currentPostId === oldId) refreshDetailCounts(currentPostId);
+             if(currentPostId === payload.old.post_id) refreshDetailCounts(currentPostId);
            }
         })
-
-        // COMMENTI
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, payload => {
           if(myPostIds.has(payload.new.post_id) && payload.new.user_id !== currentUser.id) {
             showToast("Nuovo commento sul tuo post!");
-            document.getElementById('notif-gold-dot').style.display = 'block';
           }
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          if(payload.new.receiver_id === currentUser.id) checkNotifications();
         })
         .subscribe();
 
