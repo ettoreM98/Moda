@@ -846,14 +846,63 @@
     `;
   }
 
-  async function toggleFollow(targetId) {
-    const btn = document.getElementById('follow-btn');
-    const isFollowing = btn.innerText === 'Seguito';
-    if(isFollowing) { await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId); btn.innerText = 'Segui'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition bg-[#d4af37] text-black shadow-lg hover:scale-105"; } 
-    else { await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]); btn.innerText = 'Seguito'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition border border-gray-500 text-gray-300"; }
-    openUserProfile(targetId);
-  }
+ async function toggleFollow(targetId) {
+    console.log("--- DEBUG FOLLOW ---");
+    console.log("Chi sono io (Follower):", currentUser ? currentUser.id : "NULLO/ERRORE");
+    console.log("Chi voglio seguire (Target):", targetId);
 
+    if (!currentUser) {
+        alert("Errore: Sembra che tu non sia loggato correttamente. Ricarica la pagina.");
+        return;
+    }
+
+    if (currentUser.id === targetId) {
+        alert("Non puoi seguire te stesso!");
+        return;
+    }
+
+    const btn = document.getElementById('follow-btn');
+    if (!btn) return;
+
+    const isFollowing = btn.innerText === 'Seguito';
+    const originalText = btn.innerText;
+    
+    btn.innerText = "...";
+    btn.disabled = true;
+
+    let error = null;
+
+    try {
+        if (isFollowing) {
+            // SMETTI DI SEGUIRE
+            console.log("Azione: DELETE");
+            const res = await sb.from('follows')
+                .delete()
+                .eq('follower_id', currentUser.id)
+                .eq('followed_id', targetId);
+            error = res.error;
+        } else {
+            // INIZIA A SEGUIRE
+            console.log("Azione: INSERT");
+            const res = await sb.from('follows')
+                .insert([{ follower_id: currentUser.id, followed_id: targetId }]);
+            error = res.error;
+        }
+
+        if (error) {
+            console.error("ERRORE SUPABASE:", error);
+            throw error;
+        }
+
+        console.log("Successo!");
+        openUserProfile(targetId);
+
+    } catch (err) {
+        alert("Errore: " + (err.message || "Errore sconosciuto (controlla console)"));
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+  }
   async function openPostDetail(postId) {
     currentPostId = postId;
     document.getElementById('post-detail-modal').classList.remove('hidden');
