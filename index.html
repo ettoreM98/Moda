@@ -573,30 +573,44 @@
     `;
   }
 
-  // --- NUOVA FUNZIONE PER APRIRE LA LISTA DEI MI PIACE ---
+  // --- NUOVA FUNZIONE CORRETTA E PIÙ ROBUSTA PER APRIRE LA LISTA DEI MI PIACE ---
   async function openLikesModal(postId) {
     document.getElementById('likes-list-modal').classList.remove('hidden');
     const container = document.getElementById('likes-list-content');
     container.innerHTML = '<div class="text-center mt-4 text-[#d4af37]"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>';
     
-    // Query a Supabase per prendere i like di questo post e i profili associati
+    // Richiesta con sintassi più flessibile e log di errore
     const { data: likes, error } = await sb.from('likes')
-        .select('user_id, profiles:user_id (id, username, avatar_url)')
+        .select(`
+          user_id, 
+          profiles (id, username, avatar_url)
+        `)
         .eq('post_id', postId);
 
-    if (error || !likes || likes.length === 0) {
+    if (error) {
+        console.error("Errore Likes:", error); 
+        container.innerHTML = '<p class="text-center text-red-500 mt-4">Errore caricamento.</p>';
+        return;
+    }
+
+    if (!likes || likes.length === 0) {
         container.innerHTML = '<p class="text-center text-gray-500 mt-4">Ancora nessun mi piace.</p>';
         return;
     }
 
     container.innerHTML = '';
+    
     likes.forEach(item => {
-        const u = item.profiles;
-        if (!u) return;
+        // Gestiamo il caso in cui profiles sia un array o un oggetto
+        let u = item.profiles;
+        if (Array.isArray(u)) u = u[0]; 
+
+        if (!u) return; // Salta se per qualche motivo il profilo non c'è
+
         const html = `
             <div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('likes-list-modal'); openUserProfile('${u.id}')">
                 <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]">
-                <div class="font-bold text-white">${u.username}</div>
+                <div class="font-bold text-white">${escapeHtml(u.username)}</div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', html);
