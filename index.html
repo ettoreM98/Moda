@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — AI Fashion Edition</title>
+  <title>HAWENISHLAND — AI Fashion & Shopping</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
@@ -432,7 +432,7 @@
 
       <div id="upload-details-section" class="hidden">
           <div class="bg-slate-800/50 p-3 rounded-xl border border-dashed border-gray-600 mb-4">
-            <p class="text-[#d4af37] text-xs font-bold uppercase mb-2"><i class="fa-solid fa-tags mr-1"></i> Tagga Prodotti</p>
+            <p class="text-[#d4af37] text-xs font-bold uppercase mb-2"><i class="fa-solid fa-tags mr-1"></i> Tagga Prodotti (OBBLIGATORIO)</p>
             <div class="flex gap-2 mb-2">
                <input type="text" id="temp-prod-name" placeholder="Nome (es. Scarpe Nike)" class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
                <input type="url" id="temp-prod-link" placeholder="Link..." class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
@@ -1161,6 +1161,7 @@
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
     
+    // Check for pending input in text fields (user forgot to click add)
     const pendingName = document.getElementById('temp-prod-name').value.trim();
     const pendingLink = document.getElementById('temp-prod-link').value.trim();
     
@@ -1168,11 +1169,17 @@
         uploadProductsList.push({ name: pendingName, link: pendingLink });
     }
 
-    if(uploadProductsList.length === 0) return alert("Devi aggiungere almeno un prodotto all'outfit.");
-    if(!f) return alert("Devi caricare una foto dell'outfit.");
-
     const btn = document.getElementById('btn-publish');
     const originalText = btn.innerText;
+
+    // THE MANDATORY CHECK
+    if(uploadProductsList.length === 0) {
+        alert("Devi aggiungere almeno un prodotto all'outfit (Nome e Link).");
+        return; // Stop execution
+    }
+
+    if(!f) return alert("Devi caricare una foto dell'outfit.");
+
     btn.innerText = "Pubblicazione...";
     btn.disabled = true;
 
