@@ -110,6 +110,44 @@
     /* --- FEED & POSTS --- */
     .main-content { flex: 1; padding: 40px; max-width: 700px; margin: 0 auto; }
 
+    /* TIKTOK STYLE TABS */
+    .feed-tabs-container {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .feed-tab {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 5px 10px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .feed-tab.active {
+      color: #fff;
+      text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+    }
+
+    .feed-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 25px;
+      height: 3px;
+      background: var(--gold);
+      border-radius: 2px;
+      box-shadow: 0 0 10px var(--gold);
+    }
+
     .post-card { 
       background: rgba(30, 41, 59, 0.4);
       margin-bottom: 40px; 
@@ -534,6 +572,8 @@
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
   
+  // VARIABILE PER GESTIRE LA MODALITÀ FEED (Seguiti vs Per Te)
+  let currentFeedMode = 'following'; // 'following' oppure 'viral'
   let uploadProductsList = [];
 
   window.addEventListener('load', async () => {
@@ -639,43 +679,83 @@
     document.getElementById('shop-modal').classList.remove('hidden');
   }
 
+  /* --- LOGICA FEED AVANZATA (SEGUTI vs PER TE) --- */
+  
+  function switchFeedMode(mode) {
+    if (currentFeedMode === mode) return; 
+    currentFeedMode = mode;
+    renderFeedView();
+  }
+
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
+    
     if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
 
-    main.innerHTML = `<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
+    // TABS HTML
+    const tabsHtml = `
+      <div class="feed-tabs-container">
+        <div class="feed-tab ${currentFeedMode === 'following' ? 'active' : ''}" onclick="switchFeedMode('following')">Seguiti</div>
+        <div class="feed-tab ${currentFeedMode === 'viral' ? 'active' : ''}" onclick="switchFeedMode('viral')">Per Te</div>
+      </div>
+    `;
 
-    const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
-    const followingIds = follows ? follows.map(f => f.followed_id) : [];
+    main.innerHTML = `${tabsHtml}<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
 
-    if (followingIds.length === 0) {
-      return main.innerHTML = `
-        <div class="empty-feed-box">
-          <i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i>
-          <h2 class="text-xl font-bold mb-2">Benvenuto in Hawenishland</h2>
-          <p class="text-gray-400 mb-6">Segui i creatori di tendenza per vedere i loro outfit.</p>
-          <button onclick="openSearchModal()" class="btn-gold">Trova Ispirazione</button>
-        </div>
-      `;
+    let posts = [];
+    let error = null;
+
+    if (currentFeedMode === 'following') {
+        // --- MODALITÀ SEGUTI ---
+        const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
+        const followingIds = follows ? follows.map(f => f.followed_id) : [];
+
+        if (followingIds.length > 0) {
+            const res = await sb.from('posts')
+                .select(`*, profiles:user_id (username, avatar_url)`)
+                .in('user_id', followingIds)
+                .order('created_at', { ascending: false });
+            posts = res.data;
+            error = res.error;
+        } else {
+            posts = []; 
+        }
+
+    } else {
+        // --- MODALITÀ PER TE (VIRAL) ---
+        // Prende tutti i post, ordinati per data (in futuro per like)
+        const res = await sb.from('posts')
+            .select(`*, profiles:user_id (username, avatar_url)`)
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        posts = res.data;
+        error = res.error;
     }
 
-    const { data: posts, error } = await sb.from('posts')
-      .select(`*, profiles:user_id (username, avatar_url)`)
-      .in('user_id', followingIds)
-      .order('created_at', { ascending: false });
-
-    if (error || !posts || posts.length === 0) {
-      return main.innerHTML = `
-        <div class="empty-feed-box">
-          <i class="fa-solid fa-ghost text-4xl mb-4 text-[#d4af37]"></i>
-          <h2 class="text-xl font-bold mb-2">Feed Vuoto</h2>
-          <p class="text-gray-400 mb-6">Le persone che segui non hanno ancora postato nuovi look.</p>
-          <button onclick="openSearchModal()" class="btn-gold">Cerca altri utenti</button>
-        </div>
-      `;
+    // GESTIONE ERRORI O FEED VUOTO
+    if (error) {
+        return main.innerHTML = `${tabsHtml}<p class="text-center text-red-500 mt-10">Errore caricamento feed.</p>`;
     }
 
-    main.innerHTML = '';
+    if (!posts || posts.length === 0) {
+        if (currentFeedMode === 'following') {
+            return main.innerHTML = `
+                ${tabsHtml}
+                <div class="empty-feed-box">
+                  <i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i>
+                  <h2 class="text-xl font-bold mb-2">Feed Vuoto</h2>
+                  <p class="text-gray-400 mb-6">Non segui ancora nessuno.</p>
+                  <button onclick="switchFeedMode('viral')" class="btn-gold">Vai su "Per Te"</button>
+                </div>
+            `;
+        } else {
+            return main.innerHTML = `${tabsHtml}<div class="empty-feed-box"><p>Nessun post trovato su Hawenishland.</p></div>`;
+        }
+    }
+
+    // RENDERIZZA I POST
+    main.innerHTML = tabsHtml;
     for (const post of posts) {
       const counts = await getPostCounts(post.id);
       const likedByMe = await isLikedByMe(post.id);
@@ -847,20 +927,6 @@
   }
 
  async function toggleFollow(targetId) {
-    console.log("--- DEBUG FOLLOW ---");
-    console.log("Chi sono io (Follower):", currentUser ? currentUser.id : "NULLO/ERRORE");
-    console.log("Chi voglio seguire (Target):", targetId);
-
-    if (!currentUser) {
-        alert("Errore: Sembra che tu non sia loggato correttamente. Ricarica la pagina.");
-        return;
-    }
-
-    if (currentUser.id === targetId) {
-        alert("Non puoi seguire te stesso!");
-        return;
-    }
-
     const btn = document.getElementById('follow-btn');
     if (!btn) return;
 
@@ -875,34 +941,31 @@
     try {
         if (isFollowing) {
             // SMETTI DI SEGUIRE
-            console.log("Azione: DELETE");
-            const res = await sb.from('follows')
+            const { error: err } = await sb.from('follows')
                 .delete()
                 .eq('follower_id', currentUser.id)
                 .eq('followed_id', targetId);
-            error = res.error;
+            error = err;
         } else {
             // INIZIA A SEGUIRE
-            console.log("Azione: INSERT");
-            const res = await sb.from('follows')
+            const { error: err } = await sb.from('follows')
                 .insert([{ follower_id: currentUser.id, followed_id: targetId }]);
-            error = res.error;
+            error = err;
         }
 
-        if (error) {
-            console.error("ERRORE SUPABASE:", error);
-            throw error;
-        }
+        if (error) throw error;
 
-        console.log("Successo!");
+        // Ricarica profilo
         openUserProfile(targetId);
 
     } catch (err) {
-        alert("Errore: " + (err.message || "Errore sconosciuto (controlla console)"));
+        console.error("ERRORE FOLLOW:", err);
+        alert("Errore: " + (err.message || "Impossibile completare l'azione"));
         btn.innerText = originalText;
         btn.disabled = false;
     }
   }
+
   async function openPostDetail(postId) {
     currentPostId = postId;
     document.getElementById('post-detail-modal').classList.remove('hidden');
@@ -1098,14 +1161,12 @@
       
       let icon, txt, clickAction, rightSideContent;
       
-      // LOGICA DIVERSA IN BASE AL TIPO DI NOTIFICA
       if (n.type === 'follow') {
          icon = '<i class="fa-solid fa-user-plus text-blue-400"></i>';
          txt = 'ha iniziato a seguirti';
          clickAction = `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')`;
-         rightSideContent = ''; // Nessuna immagine post per i follow
+         rightSideContent = ''; 
       } else {
-         // Logica esistente per like e commenti
          const { data: post } = await sb.from('posts').select('image_url').eq('id', n.post_id).single();
          icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
          txt = n.type === 'like' ? 'ha messo like al tuo post' : 'ha commentato il tuo post';
