@@ -534,7 +534,6 @@
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
   
-  // Array per memorizzare i prodotti in fase di caricamento
   let uploadProductsList = [];
 
   window.addEventListener('load', async () => {
@@ -791,7 +790,6 @@
     return data && data.length > 0; 
   }
    
-  /* --- MODIFICATA: LOGICA MESSAGGI SOLO SE SEGUI --- */
   async function openUserProfile(userId) {
     const main = document.getElementById('main-content-area');
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
@@ -812,7 +810,6 @@
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const isMe = userId === currentUser.id;
     
-    // QUI LA LOGICA: Se non lo segui, non mostriamo il bottone chat.
     let chatButtonHtml = '';
     if (isFollowing) {
         chatButtonHtml = `<button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button>`;
@@ -854,7 +851,6 @@
     const isFollowing = btn.innerText === 'Seguito';
     if(isFollowing) { await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId); btn.innerText = 'Segui'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition bg-[#d4af37] text-black shadow-lg hover:scale-105"; } 
     else { await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]); btn.innerText = 'Seguito'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition border border-gray-500 text-gray-300"; }
-    // Ricarica il profilo per aggiornare lo stato del bottone Chat
     openUserProfile(targetId);
   }
 
@@ -1021,6 +1017,7 @@
     document.getElementById('notif-gold-dot').style.display = (count > 0) ? 'block' : 'none';
   }
 
+  /* --- UPDATED NOTIFICATION MODAL TO HANDLE FOLLOWS --- */
   async function openNotificationsModal() {
     document.getElementById('notifications-modal').classList.remove('hidden');
     document.getElementById('notif-gold-dot').style.display = 'none';
@@ -1049,19 +1046,31 @@
 
     for (const n of rows) {
       const { data: actor } = await sb.from('profiles').select('username, avatar_url').eq('id', n.actor_id).single();
-      const { data: post } = await sb.from('posts').select('image_url, caption').eq('id', n.post_id).single();
-
-      const icon = n.type === 'like'
-        ? '<i class="fa-solid fa-heart text-red-500"></i>'
-        : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
-
-      const txt = n.type === 'like' ? 'liked your post' : 'ha commentato il tuo post';
-      const imgPost = post?.image_url
-        ? `<img src="${post.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">`
-        : `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">TEXT</div>`;
+      
+      let icon, txt, clickAction, rightSideContent;
+      
+      // LOGICA DIVERSA IN BASE AL TIPO DI NOTIFICA
+      if (n.type === 'follow') {
+         icon = '<i class="fa-solid fa-user-plus text-blue-400"></i>';
+         txt = 'ha iniziato a seguirti';
+         clickAction = `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')`;
+         rightSideContent = ''; // Nessuna immagine post per i follow
+      } else {
+         // Logica esistente per like e commenti
+         const { data: post } = await sb.from('posts').select('image_url').eq('id', n.post_id).single();
+         icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
+         txt = n.type === 'like' ? 'ha messo like al tuo post' : 'ha commentato il tuo post';
+         clickAction = `closeModal('notifications-modal'); openPostDetail('${n.post_id}')`;
+         
+         if(post?.image_url) {
+             rightSideContent = `<img src="${post.image_url}" class="w-10 h-10 rounded object-cover ml-auto border border-gray-700">`;
+         } else {
+             rightSideContent = `<div class="w-10 h-10 bg-slate-800 flex items-center justify-center text-[8px] ml-auto border border-gray-700 rounded text-gray-500">TEXT</div>`;
+         }
+      }
 
       const html = `
-        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="closeModal('notifications-modal'); openPostDetail('${n.post_id}')">
+        <div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="${clickAction}">
           <img src="${actor?.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]">
           <div class="flex-1">
             <div class="text-sm text-white">
@@ -1070,7 +1079,7 @@
             </div>
             <div class="text-xs text-gray-300 flex items-center gap-2">${icon} ${txt}</div>
           </div>
-          ${imgPost}
+          ${rightSideContent}
         </div>
       `;
       c.insertAdjacentHTML('beforeend', html);
@@ -1086,7 +1095,6 @@
     document.getElementById('notif-gold-dot').style.display = 'block';
   }
 
-  /* --- MODIFICATA: AGGIUNTO TASTO DELETE --- */
   async function openInboxModal() {
     document.getElementById('inbox-modal').classList.remove('hidden');
     const container = document.getElementById('inbox-list');
@@ -1135,7 +1143,6 @@
     }
   }
 
-  /* --- NUOVA FUNZIONE: ELIMINA CHAT --- */
   async function deleteChat(targetId, event) {
       if(event) event.stopPropagation();
       if(!confirm("Sei sicuro di voler eliminare l'intera conversazione?")) return;
@@ -1144,7 +1151,7 @@
         .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${currentUser.id})`);
       
       if(error) alert("Errore cancellazione: " + error.message);
-      else openInboxModal(); // Ricarica la lista
+      else openInboxModal(); 
   }
 
   async function openChat(userId, username, avatar) {
@@ -1230,6 +1237,7 @@
           if (!payload?.new) return;
           if (payload.new.type === 'like') showToast("Someone liked your post!");
           if (payload.new.type === 'comment') showToast("New comment on your post!");
+          if (payload.new.type === 'follow') showToast("Nuovo follower!");
           checkAppNotifications();
         })
         .subscribe();
