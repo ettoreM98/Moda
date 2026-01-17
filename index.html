@@ -13,11 +13,11 @@
   <style>
     /* --- VARIABILI DESIGN --- */
     :root {
-      --bg-deep: #0f172a;       
+      --bg-deep: #0f172a;        
       --bg-panel: rgba(15, 23, 42, 0.95); 
-      --text-main: #f8fafc;     
+      --text-main: #f8fafc;      
       --text-muted: #94a3b8;    
-      --gold: #d4af37;          
+      --gold: #d4af37;           
       --gold-glow: rgba(212, 175, 55, 0.2);
       --red-like: #ef4444;
       --glass-border: 1px solid rgba(212, 175, 55, 0.3);
@@ -147,7 +147,10 @@
     }
     .icon-btn:hover { opacity: 1; transform: translateY(-2px); color: var(--gold); }
     
-    .likes-count { font-size: 14px; font-weight: 600; color: #fff; }
+    /* MODIFICA: Classe per rendere cliccabile il numero */
+    .likes-count-clickable { font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; }
+    .likes-count-clickable:hover { text-decoration: underline; color: var(--gold); }
+
     .caption-box { margin-top: 15px; padding: 0 5px; font-size: 15px; line-height: 1.6; color: #cbd5e1; }
     .caption-user { font-weight: 700; color: var(--gold); margin-right: 8px; cursor: pointer; }
 
@@ -353,6 +356,16 @@
   </div>
 </div>
 
+<div id="likes-list-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] max-h-[500px] flex flex-col">
+    <div class="p-4 border-b border-gray-700 flex justify-between font-bold text-white">
+      <span>Mi piace</span>
+      <i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('likes-list-modal')"></i>
+    </div>
+    <div id="likes-list-content" class="flex-1 overflow-y-auto p-2"></div>
+  </div>
+</div>
+
 <div id="post-detail-modal" class="modal-overlay hidden">
   <div class="glass-modal detail-layout">
     <div class="detail-img-side">
@@ -376,7 +389,9 @@
           <i id="detail-like-btn" class="fa-regular fa-heart cursor-pointer transition text-white"></i>
           <i class="fa-regular fa-comment text-white"></i>
         </div>
-        <div class="font-bold text-sm mb-3 text-white"><span id="detail-likes-count">0</span> Mi piace</div>
+        <div class="font-bold text-sm mb-3 text-white">
+            <span id="detail-likes-count" class="cursor-pointer hover:underline hover:text-[#d4af37]">0</span> Mi piace
+        </div>
         <div class="flex gap-2">
           <input type="text" id="new-comment" placeholder="Commenta..." class="flex-1 bg-transparent outline-none text-white text-sm">
           <button onclick="inviaCommento()" class="text-[#d4af37] font-bold text-sm">INVIA</button>
@@ -534,6 +549,7 @@
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
+    // MODIFICA QUI: Aggiunto onclick al numero dei mi piace
     return `
       <div class="post-card">
         <div class="post-header">
@@ -545,9 +561,9 @@
         </div>
         ${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}
         <div class="action-bar">
-          <div class="icon-btn" onclick="toggleLike('${post.id}', this)">
-            <i class="${heartIcon}"></i>
-            <span class="likes-count text-sm ml-2" id="feed-likes-count-${post.id}">${counts.likes}</span>
+          <div class="icon-btn">
+            <i class="${heartIcon}" onclick="toggleLike('${post.id}', this.parentNode)"></i>
+            <span class="likes-count-clickable ml-2" id="feed-likes-count-${post.id}" onclick="openLikesModal('${post.id}')">${counts.likes}</span>
           </div>
           <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
           <div class="icon-btn ml-auto" onclick="sharePost('${post.id}', \`${escapeHtml(post.caption)}\`)"><i class="fa-regular fa-paper-plane"></i></div>
@@ -557,8 +573,39 @@
     `;
   }
 
+  // --- NUOVA FUNZIONE PER APRIRE LA LISTA DEI MI PIACE ---
+  async function openLikesModal(postId) {
+    document.getElementById('likes-list-modal').classList.remove('hidden');
+    const container = document.getElementById('likes-list-content');
+    container.innerHTML = '<div class="text-center mt-4 text-[#d4af37]"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>';
+    
+    // Query a Supabase per prendere i like di questo post e i profili associati
+    const { data: likes, error } = await sb.from('likes')
+        .select('user_id, profiles:user_id (id, username, avatar_url)')
+        .eq('post_id', postId);
+
+    if (error || !likes || likes.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 mt-4">Ancora nessun mi piace.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    likes.forEach(item => {
+        const u = item.profiles;
+        if (!u) return;
+        const html = `
+            <div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('likes-list-modal'); openUserProfile('${u.id}')">
+                <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]">
+                <div class="font-bold text-white">${u.username}</div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    });
+  }
+
   // ====== LIKE LOGIC: UNTOUCHED (as requested) ======
   async function toggleLike(postId, btnContainer) {
+    // Cerchiamo l'icona dentro il container (perché ora il click è sull'icona, non su tutto il div)
     const icon = btnContainer.querySelector('i');
     const countSpan = document.getElementById(`feed-likes-count-${postId}`);
     let currentCount = parseInt(countSpan.innerText);
@@ -582,12 +629,12 @@
     const { count: c } = await sb.from('comments').select('*', { count: 'exact', head: true }).eq('post_id', postId);
     return { likes: l || 0, comments: c || 0 };
   }
-  
+   
   async function isLikedByMe(postId) { 
     const { data } = await sb.from('likes').select('id').eq('post_id', postId).eq('user_id', currentUser.id); 
     return data && data.length > 0; 
   }
-  
+   
   async function openUserProfile(userId) {
     const main = document.getElementById('main-content-area');
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
@@ -686,6 +733,10 @@
     if(coms) {
       coms.forEach(c => { const cu = c.profiles; list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-2"><img src="${cu.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 text-white cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${cu.username}</span><span class="text-gray-400">${escapeHtml(c.content)}</span></div></div>`); });
     }
+    
+    // Assegna la funzione per aprire la lista like anche nel dettaglio
+    const countSpan = document.getElementById('detail-likes-count');
+    countSpan.onclick = () => openLikesModal(postId);
     refreshDetailCounts(postId);
   }
 
