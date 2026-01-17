@@ -133,7 +133,6 @@
     .username { font-weight: 600; font-size: 15px; color: #fff; }
     .post-date { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Container immagine per ospitare il tag shopping */
     .post-img-container {
       position: relative;
       width: 100%;
@@ -183,7 +182,6 @@
       font-size: 14px;
     }
 
-
     .action-bar { display: flex; gap: 24px; margin-top: 20px; padding: 0 5px; }
     .icon-btn { 
       font-size: 24px; cursor: pointer; transition: 0.2s; color: var(--text-main); opacity: 0.7; 
@@ -199,7 +197,7 @@
 
     .heart-filled { color: var(--red-like) !important; opacity: 1 !important; }
 
-    /* --- BUTTONS & EMPTY STATE --- */
+    /* --- BUTTONS --- */
     .btn-gold {
       background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%);
       color: #000; padding: 12px 24px; border-radius: 12px;
@@ -209,13 +207,20 @@
     }
     .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(248, 181, 0, 0.6); }
 
+    .btn-gold-outline {
+      border: 1px solid var(--gold);
+      color: var(--gold); padding: 8px 16px; border-radius: 8px;
+      font-weight: 600; cursor: pointer; background: transparent; transition: 0.2s;
+    }
+    .btn-gold-outline:hover { background: rgba(212, 175, 55, 0.1); }
+
     .empty-feed-box {
       text-align: center; padding: 60px 20px;
       background: rgba(255,255,255,0.03); border: 1px dashed var(--gold);
       border-radius: 20px; color: #ccc;
     }
 
-    /* --- LOGIN (INTATTO) --- */
+    /* --- LOGIN --- */
     .split-layout { display:flex; height:100vh; width:100vw; position:fixed; top:0; left:0; z-index:200; background:#0a0a0a; transition:transform .8s ease-in-out; }
     .visual-side { flex:1; position:relative; overflow:hidden; display:none; background:#000 }
     @media (min-width:768px){ .visual-side{display:block} }
@@ -255,16 +260,7 @@
     }
 
     /* --- CHAT & NOTIFICATIONS CSS --- */
-    .gold-dot {
-      width: 10px; height: 10px;
-      background: var(--gold);
-      border-radius: 50%;
-      position: absolute;
-      top: 10px; right: 10px;
-      box-shadow: 0 0 8px var(--gold);
-      display: none;
-      z-index: 60;
-    }
+    .gold-dot { width: 10px; height: 10px; background: var(--gold); border-radius: 50%; position: absolute; top: 10px; right: 10px; box-shadow: 0 0 8px var(--gold); display: none; z-index: 60; }
     .msg-bubble { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; margin-bottom: 8px; position: relative; }
     .msg-mine { background: var(--gold); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
     .msg-theirs { background: rgba(255,255,255,0.1); color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
@@ -272,23 +268,19 @@
     .inbox-item:hover { background: rgba(255,255,255,0.05); }
     .unread-indicator { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; margin-left: auto; }
 
-    /* TOAST NOTIFICATION STYLE */
-    .toast-box {
-      position: fixed; top: 20px; right: 20px;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid var(--gold);
-      padding: 15px; border-radius: 12px;
-      display: flex; align-items: center; gap: 10px;
-      color: #fff; z-index: 2000;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-      transform: translateX(200%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
+    /* TOAST */
+    .toast-box { position: fixed; top: 20px; right: 20px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--gold); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 10px; color: #fff; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); transform: translateX(200%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .toast-active { transform: translateX(0); }
 
-    /* --- SHOP WINDOW CSS (NUOVO) --- */
-    .shop-product-img {
-      width: 100px; height: 100px; border-radius: 10px; border: 1px solid var(--gold); object-fit: cover;
-      box-shadow: 0 0 15px var(--gold-glow);
+    /* --- MULTI SHOP LIST STYLE --- */
+    .added-product-item {
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; margin-bottom: 5px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .added-product-item span { font-size: 12px; color: #ddd; }
+    .shop-list-container {
+        max-height: 300px; overflow-y: auto; padding-right: 5px;
     }
   </style>
 </head>
@@ -372,17 +364,23 @@
       <i class="fa-solid fa-xmark cursor-pointer hover:text-white text-gray-400" onclick="closeModal('upload-modal')"></i>
     </div>
     <div class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-1">
-      <label class="h-40 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition">
+      <label class="h-32 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition">
         <i class="fa-solid fa-camera text-2xl mb-2 text-[#d4af37]"></i>
         <span class="text-xs text-gray-400">Carica Foto Outfit</span>
         <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
       </label>
-      <img id="upload-preview" class="hidden w-full h-40 object-cover rounded-xl shadow-lg border border-gray-600">
+      <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg border border-gray-600">
       
       <div class="bg-slate-800/50 p-3 rounded-xl border border-dashed border-gray-600">
-        <p class="text-[#d4af37] text-xs font-bold uppercase mb-2"><i class="fa-solid fa-tag mr-1"></i> Tagga Prodotto (Obbligatorio)</p>
-        <input type="text" id="post-prod-name" placeholder="Es. Camicia Seta Zara" class="w-full bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-sm mb-2 focus:border-[#d4af37] outline-none">
-        <input type="url" id="post-prod-link" placeholder="https://www.zara.com/..." class="w-full bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-sm focus:border-[#d4af37] outline-none">
+        <p class="text-[#d4af37] text-xs font-bold uppercase mb-2"><i class="fa-solid fa-tags mr-1"></i> Tagga Prodotti</p>
+        
+        <div class="flex gap-2 mb-2">
+           <input type="text" id="temp-prod-name" placeholder="Nome (es. Scarpe Nike)" class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
+           <input type="url" id="temp-prod-link" placeholder="Link..." class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
+        </div>
+        <button onclick="addProdToUpload()" class="btn-gold-outline w-full text-xs py-2 mb-2">+ Aggiungi al Look</button>
+        
+        <div id="upload-products-list" class="space-y-1"></div>
       </div>
 
       <textarea id="post-caption" rows="2" placeholder="Descrivi il tuo stile..." class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-1 focus:ring-[#d4af37] outline-none"></textarea>
@@ -392,24 +390,19 @@
 </div>
 
 <div id="shop-modal" class="modal-overlay hidden">
-  <div class="glass-modal w-[350px] p-6 text-center relative">
+  <div class="glass-modal w-[380px] p-6 text-center relative">
     <i class="fa-solid fa-xmark absolute top-4 right-4 text-white cursor-pointer text-xl" onclick="closeModal('shop-modal')"></i>
     
-    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#d4af37]/20 mb-4 border border-[#d4af37]">
-      <i class="fa-solid fa-bag-shopping text-2xl text-[#d4af37]"></i>
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#d4af37]/20 mb-3 border border-[#d4af37]">
+      <i class="fa-solid fa-bag-shopping text-xl text-[#d4af37]"></i>
     </div>
     
     <h3 class="text-white font-serif text-2xl mb-1 italic" style="font-family: 'Playfair Display', serif;">Shop the Look</h3>
     <div class="w-10 h-0.5 bg-[#d4af37] mx-auto mb-6"></div>
 
-    <div class="bg-slate-800/50 p-4 rounded-xl border border-white/10 mb-6">
-      <h4 id="shop-prod-name" class="text-lg font-bold text-white mb-2">Nome Prodotto</h4>
-      <p class="text-xs text-gray-400 uppercase tracking-widest mb-4">Selezionato dall'utente</p>
-      <a id="shop-prod-link" href="#" target="_blank" class="btn-gold w-full block no-underline py-3 text-sm tracking-wide">
-        ACQUISTA ORA <i class="fa-solid fa-arrow-up-right-from-square ml-2"></i>
-      </a>
-    </div>
-    <p class="text-[10px] text-gray-500">Verrai reindirizzato al sito del venditore.</p>
+    <div id="shop-window-list" class="shop-list-container bg-slate-800/50 p-2 rounded-xl border border-white/10 mb-4 space-y-3">
+        </div>
+    <p class="text-[10px] text-gray-500">I link portano a siti esterni.</p>
   </div>
 </div>
 
@@ -540,6 +533,9 @@
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
+  
+  // Array per memorizzare i prodotti in fase di caricamento
+  let uploadProductsList = [];
 
   window.addEventListener('load', async () => {
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
@@ -575,16 +571,77 @@
     }
   }
 
-  /* --- NUOVA FUNZIONE: APRI SMART SHOP WINDOW --- */
-  function openShopWindow(name, link, event) {
-    // Impedisce che il click si propaghi all'immagine sotto (che aprirebbe il dettaglio post)
+  /* --- GESTIONE MULTI LINK SHOP --- */
+
+  // Aggiunge prodotto alla lista temporanea (UI Upload)
+  function addProdToUpload() {
+    const nameInput = document.getElementById('temp-prod-name');
+    const linkInput = document.getElementById('temp-prod-link');
+    const name = nameInput.value.trim();
+    const link = linkInput.value.trim();
+
+    if(!name || !link) return alert("Inserisci nome e link del prodotto.");
+    
+    uploadProductsList.push({ name, link });
+    
+    // Pulisci input
+    nameInput.value = '';
+    linkInput.value = '';
+    
+    renderUploadProductsList();
+  }
+
+  // Rimuove prodotto dalla lista temporanea
+  function removeProdFromUpload(index) {
+    uploadProductsList.splice(index, 1);
+    renderUploadProductsList();
+  }
+
+  // Renderizza la lista visuale nell'upload modal
+  function renderUploadProductsList() {
+    const container = document.getElementById('upload-products-list');
+    container.innerHTML = '';
+    uploadProductsList.forEach((prod, idx) => {
+        container.insertAdjacentHTML('beforeend', `
+            <div class="added-product-item">
+                <div class="truncate mr-2">
+                    <div class="text-[#d4af37] font-bold text-xs">${escapeHtml(prod.name)}</div>
+                    <div class="text-[10px] text-gray-500 truncate">${escapeHtml(prod.link)}</div>
+                </div>
+                <i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-xs" onclick="removeProdFromUpload(${idx})"></i>
+            </div>
+        `);
+    });
+  }
+
+  // Apre la finestra Shop con TUTTI i link
+  function openShopWindow(productsJson, event) {
     if(event) event.stopPropagation();
     
-    document.getElementById('shop-prod-name').innerText = name || "Prodotto";
-    const btn = document.getElementById('shop-prod-link');
-    btn.href = link;
+    const container = document.getElementById('shop-window-list');
+    container.innerHTML = '';
     
-    // Apri modale
+    let products = [];
+    try {
+        products = JSON.parse(decodeURIComponent(productsJson));
+    } catch(e) { console.error("Errore parsing prodotti", e); return; }
+
+    if(!products || products.length === 0) return;
+
+    products.forEach(p => {
+        container.insertAdjacentHTML('beforeend', `
+            <div class="bg-black/30 p-3 rounded-lg border border-white/5 flex items-center justify-between">
+                <div class="text-left">
+                    <div class="font-bold text-white text-sm">${escapeHtml(p.name)}</div>
+                    <div class="text-[10px] text-gray-400">Clicca per acquistare</div>
+                </div>
+                <a href="${p.link}" target="_blank" class="bg-[#d4af37] text-black px-3 py-1 rounded text-xs font-bold hover:scale-105 transition">
+                    GO <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        `);
+    });
+    
     document.getElementById('shop-modal').classList.remove('hidden');
   }
 
@@ -632,7 +689,6 @@
     }
   }
 
-  /* --- MODIFICATO PER INCLUDERE L'ICONA SHOPPING --- */
   function createPostHTML(post, counts, liked) {
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
@@ -640,15 +696,23 @@
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
-    // Gestione del Tag Prodotto
+    // Gestione Multi Prodotti (JSONB)
     let shopTag = '';
-    if (post.product_link) {
-      const pName = post.product_name ? post.product_name.replace(/'/g, "\\'") : 'Vedi Prodotto';
-      const pLink = post.product_link;
+    let products = [];
+    
+    // Supporto retrocompatibilità (se hai vecchi post con product_name singolo)
+    if(post.products) {
+        products = post.products; // è già un oggetto/array JSON grazie a supabase
+    } else if (post.product_link) {
+        products = [{ name: post.product_name || 'Prodotto', link: post.product_link }];
+    }
+
+    if (products.length > 0) {
+      const jsonStr = encodeURIComponent(JSON.stringify(products));
       shopTag = `
-        <div class="shop-tag-overlay" onclick="openShopWindow('${pName}', '${pLink}', event)">
+        <div class="shop-tag-overlay" onclick="openShopWindow('${jsonStr}', event)">
            <i class="fa-solid fa-bag-shopping"></i>
-           <span>SHOP</span>
+           <span>SHOP (${products.length})</span>
         </div>
       `;
     }
@@ -679,7 +743,6 @@
         <div class="caption-box">
             <span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>
             ${escapeHtml(post.caption)}
-            ${post.product_name ? `<br><span class="text-xs text-[#d4af37] font-bold mt-1 block"><i class="fa-solid fa-tag"></i> Wearing: ${escapeHtml(post.product_name)}</span>` : ''}
         </div>
       </div>
     `;
@@ -778,7 +841,7 @@
       <div class="grid grid-cols-3 gap-1">${posts ? posts.map(p => `
         <div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${p.id}')">
             ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(p.caption).substring(0,40)}...</div>`}
-            ${p.product_link ? '<div class="absolute top-2 right-2 bg-black/50 p-1 rounded-full border border-[#d4af37]"><i class="fa-solid fa-bag-shopping text-[#d4af37] text-xs"></i></div>' : ''}
+            ${(p.products && p.products.length>0) || p.product_link ? '<div class="absolute top-2 right-2 bg-black/50 p-1 rounded-full border border-[#d4af37]"><i class="fa-solid fa-bag-shopping text-[#d4af37] text-xs"></i></div>' : ''}
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div>
         </div>`).join('') : ''}
       </div>
@@ -832,12 +895,19 @@
 
     const list = document.getElementById('detail-comments'); list.innerHTML = '';
     
-    // Mostra caption e eventuale link prodotto nei commenti
     let captionHtml = '';
     if(post.caption) captionHtml += `<span class="text-gray-300">${escapeHtml(post.caption)}</span>`;
-    if(post.product_link) {
-        const pName = post.product_name || "Prodotto";
-        captionHtml += `<br><a href="${post.product_link}" target="_blank" class="text-[#d4af37] text-xs font-bold mt-1 inline-block hover:underline"><i class="fa-solid fa-bag-shopping"></i> Acquista: ${escapeHtml(pName)}</a>`;
+    
+    // Mostra lista prodotti nei commenti (opzionale, ma utile)
+    let products = post.products || [];
+    if(products.length === 0 && post.product_link) products = [{name: post.product_name, link: post.product_link}];
+
+    if(products.length > 0) {
+        captionHtml += '<div class="mt-2 flex flex-wrap gap-2">';
+        products.forEach(p => {
+            captionHtml += `<a href="${p.link}" target="_blank" class="bg-slate-800 border border-gray-600 px-2 py-1 rounded text-[10px] text-[#d4af37] hover:bg-slate-700">${escapeHtml(p.name)}</a>`;
+        });
+        captionHtml += '</div>';
     }
 
     if(captionHtml) {
@@ -858,14 +928,18 @@
   async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
   function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
   
-  // Reset campi upload
+  // RESET UPLOAD
   function openUploadModal() { 
       document.getElementById('upload-modal').classList.remove('hidden'); 
       document.getElementById('upload-preview').classList.add('hidden'); 
       document.getElementById('post-file').value = ""; 
-      document.getElementById('post-prod-name').value = "";
-      document.getElementById('post-prod-link').value = "";
       document.getElementById('post-caption').value = "";
+      
+      // Reset Multi List
+      uploadProductsList = [];
+      document.getElementById('temp-prod-name').value = '';
+      document.getElementById('temp-prod-link').value = '';
+      renderUploadProductsList();
   }
   
   function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -884,16 +958,15 @@
   async function performSearch() { const q = document.getElementById('search-query').value.trim(); const c = document.getElementById('search-results'); if(q.length<2) return c.innerHTML=''; const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); c.innerHTML = ''; data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); }
   function previewUpload(input) { if(input.files && input.files[0]) { const r = new FileReader(); r.onload = (e) => { const i = document.getElementById('upload-preview'); i.src = e.target.result; i.classList.remove('hidden'); }; r.readAsDataURL(input.files[0]); } }
    
+  // SUBMIT POST CON ARRAY DI PRODOTTI
   async function submitPost() { 
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
     
-    // NUOVI CAMPI PRODOTTO
-    const prodName = document.getElementById('post-prod-name').value.trim();
-    const prodLink = document.getElementById('post-prod-link').value.trim();
+    // Controllo prodotti (Obbligatorio almeno uno)
+    if(uploadProductsList.length === 0) return alert("Devi aggiungere almeno un prodotto all'outfit.");
 
     if(!f) return alert("Devi caricare una foto dell'outfit.");
-    if(!prodLink) return alert("È obbligatorio inserire il link al prodotto per aiutare gli altri utenti!");
 
     let url = null; 
     if(f) { 
@@ -908,8 +981,8 @@
         user_id: currentUser.id, 
         image_url: url, 
         caption: c,
-        product_name: prodName,
-        product_link: prodLink
+        // Salviamo l'array come JSON
+        products: uploadProductsList 
     }]); 
 
     if(insErr) alert("Errore salvataggio post: " + insErr.message);
