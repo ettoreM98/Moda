@@ -573,40 +573,44 @@
     `;
   }
 
-  // --- NUOVA FUNZIONE CORRETTA E PIÙ ROBUSTA PER APRIRE LA LISTA DEI MI PIACE ---
+  // --- FUNZIONE LIKE AGGIORNATA (Metodo a 2 passaggi infallibile) ---
   async function openLikesModal(postId) {
     document.getElementById('likes-list-modal').classList.remove('hidden');
     const container = document.getElementById('likes-list-content');
     container.innerHTML = '<div class="text-center mt-4 text-[#d4af37]"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></div>';
     
-    // Richiesta con sintassi più flessibile e log di errore
-    const { data: likes, error } = await sb.from('likes')
-        .select(`
-          user_id, 
-          profiles (id, username, avatar_url)
-        `)
+    // PASSO 1: Prendiamo SOLO gli ID degli utenti che hanno messo like a questo post
+    const { data: rawLikes, error: err1 } = await sb.from('likes')
+        .select('user_id')
         .eq('post_id', postId);
 
-    if (error) {
-        console.error("Errore Likes:", error); 
-        container.innerHTML = '<p class="text-center text-red-500 mt-4">Errore caricamento.</p>';
+    if (err1) {
+        console.error("Errore nel prendere i like:", err1);
+        container.innerHTML = '<p class="text-center text-red-500 mt-4">Errore caricamento lista.</p>';
         return;
     }
 
-    if (!likes || likes.length === 0) {
+    if (!rawLikes || rawLikes.length === 0) {
         container.innerHTML = '<p class="text-center text-gray-500 mt-4">Ancora nessun mi piace.</p>';
         return;
     }
 
+    // Creiamo una lista pulita di ID
+    const userIds = rawLikes.map(item => item.user_id);
+
+    // PASSO 2: Scarichiamo i profili di QUESTI utenti specifici
+    const { data: profiles, error: err2 } = await sb.from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+    if (err2) {
+        console.error("Errore nel prendere i profili:", err2);
+        container.innerHTML = '<p class="text-center text-red-500 mt-4">Errore caricamento profili.</p>';
+        return;
+    }
+
     container.innerHTML = '';
-    
-    likes.forEach(item => {
-        // Gestiamo il caso in cui profiles sia un array o un oggetto
-        let u = item.profiles;
-        if (Array.isArray(u)) u = u[0]; 
-
-        if (!u) return; // Salta se per qualche motivo il profilo non c'è
-
+    profiles.forEach(u => {
         const html = `
             <div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('likes-list-modal'); openUserProfile('${u.id}')">
                 <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]">
