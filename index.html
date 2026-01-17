@@ -573,7 +573,6 @@
 
   /* --- GESTIONE MULTI LINK SHOP --- */
 
-  // Aggiunge prodotto alla lista temporanea (UI Upload)
   function addProdToUpload() {
     const nameInput = document.getElementById('temp-prod-name');
     const linkInput = document.getElementById('temp-prod-link');
@@ -584,20 +583,17 @@
     
     uploadProductsList.push({ name, link });
     
-    // Pulisci input
     nameInput.value = '';
     linkInput.value = '';
     
     renderUploadProductsList();
   }
 
-  // Rimuove prodotto dalla lista temporanea
   function removeProdFromUpload(index) {
     uploadProductsList.splice(index, 1);
     renderUploadProductsList();
   }
 
-  // Renderizza la lista visuale nell'upload modal
   function renderUploadProductsList() {
     const container = document.getElementById('upload-products-list');
     container.innerHTML = '';
@@ -614,7 +610,6 @@
     });
   }
 
-  // Apre la finestra Shop con TUTTI i link
   function openShopWindow(productsJson, event) {
     if(event) event.stopPropagation();
     
@@ -696,13 +691,11 @@
     const deleteIcon = (post.user_id === currentUser.id) 
       ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
-    // Gestione Multi Prodotti (JSONB)
     let shopTag = '';
     let products = [];
     
-    // Supporto retrocompatibilità (se hai vecchi post con product_name singolo)
-    if(post.products) {
-        products = post.products; // è già un oggetto/array JSON grazie a supabase
+    if(post.products && post.products.length > 0) {
+        products = post.products; 
     } else if (post.product_link) {
         products = [{ name: post.product_name || 'Prodotto', link: post.product_link }];
     }
@@ -798,6 +791,7 @@
     return data && data.length > 0; 
   }
    
+  /* --- MODIFICATA: LOGICA MESSAGGI SOLO SE SEGUI --- */
   async function openUserProfile(userId) {
     const main = document.getElementById('main-content-area');
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
@@ -817,11 +811,18 @@
 
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const isMe = userId === currentUser.id;
+    
+    // QUI LA LOGICA: Se non lo segui, non mostriamo il bottone chat.
+    let chatButtonHtml = '';
+    if (isFollowing) {
+        chatButtonHtml = `<button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button>`;
+    }
+
     const btn = isMe ? 
       `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : 
       `<div class="flex gap-2">
          <button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button>
-         <button onclick="openChat('${userId}', '${profile.username}', '${profile.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button>
+         ${chatButtonHtml}
        </div>`;
 
     main.innerHTML = `
@@ -853,7 +854,8 @@
     const isFollowing = btn.innerText === 'Seguito';
     if(isFollowing) { await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId); btn.innerText = 'Segui'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition bg-[#d4af37] text-black shadow-lg hover:scale-105"; } 
     else { await sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]); btn.innerText = 'Seguito'; btn.className = "px-6 py-2 rounded-lg text-sm font-bold transition border border-gray-500 text-gray-300"; }
-    const c = document.getElementById('p-followers'); if(c) c.innerText = isFollowing ? parseInt(c.innerText)-1 : parseInt(c.innerText)+1;
+    // Ricarica il profilo per aggiornare lo stato del bottone Chat
+    openUserProfile(targetId);
   }
 
   async function openPostDetail(postId) {
@@ -898,7 +900,6 @@
     let captionHtml = '';
     if(post.caption) captionHtml += `<span class="text-gray-300">${escapeHtml(post.caption)}</span>`;
     
-    // Mostra lista prodotti nei commenti (opzionale, ma utile)
     let products = post.products || [];
     if(products.length === 0 && post.product_link) products = [{name: post.product_name, link: post.product_link}];
 
@@ -928,14 +929,12 @@
   async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
   function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
   
-  // RESET UPLOAD
   function openUploadModal() { 
       document.getElementById('upload-modal').classList.remove('hidden'); 
       document.getElementById('upload-preview').classList.add('hidden'); 
       document.getElementById('post-file').value = ""; 
       document.getElementById('post-caption').value = "";
       
-      // Reset Multi List
       uploadProductsList = [];
       document.getElementById('temp-prod-name').value = '';
       document.getElementById('temp-prod-link').value = '';
@@ -958,14 +957,18 @@
   async function performSearch() { const q = document.getElementById('search-query').value.trim(); const c = document.getElementById('search-results'); if(q.length<2) return c.innerHTML=''; const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); c.innerHTML = ''; data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); }
   function previewUpload(input) { if(input.files && input.files[0]) { const r = new FileReader(); r.onload = (e) => { const i = document.getElementById('upload-preview'); i.src = e.target.result; i.classList.remove('hidden'); }; r.readAsDataURL(input.files[0]); } }
    
-  // SUBMIT POST CON ARRAY DI PRODOTTI
   async function submitPost() { 
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
     
-    // Controllo prodotti (Obbligatorio almeno uno)
-    if(uploadProductsList.length === 0) return alert("Devi aggiungere almeno un prodotto all'outfit.");
+    const pendingName = document.getElementById('temp-prod-name').value.trim();
+    const pendingLink = document.getElementById('temp-prod-link').value.trim();
+    
+    if(pendingName && pendingLink) {
+        uploadProductsList.push({ name: pendingName, link: pendingLink });
+    }
 
+    if(uploadProductsList.length === 0) return alert("Devi aggiungere almeno un prodotto all'outfit.");
     if(!f) return alert("Devi caricare una foto dell'outfit.");
 
     let url = null; 
@@ -981,7 +984,6 @@
         user_id: currentUser.id, 
         image_url: url, 
         caption: c,
-        // Salviamo l'array come JSON
         products: uploadProductsList 
     }]); 
 
@@ -1010,7 +1012,6 @@
     document.getElementById('global-gold-dot').style.display = (count > 0) ? 'block' : 'none';
   }
 
-  /* --- APP NOTIFICATIONS --- */
   async function checkAppNotifications() {
     const { count } = await sb.from('notifications')
       .select('*', { count: 'exact', head: true })
@@ -1085,6 +1086,7 @@
     document.getElementById('notif-gold-dot').style.display = 'block';
   }
 
+  /* --- MODIFICATA: AGGIUNTO TASTO DELETE --- */
   async function openInboxModal() {
     document.getElementById('inbox-modal').classList.remove('hidden');
     const container = document.getElementById('inbox-list');
@@ -1121,13 +1123,28 @@
         <div class="inbox-item" onclick="closeModal('inbox-modal'); openChat('${u.id}', '${u.username}', '${u.avatar_url}')">
           <img src="${u.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]">
           <div class="flex-1 overflow-hidden">
-            <div class="font-bold text-white text-sm">${u.username}</div>
+            <div class="font-bold text-white text-sm flex justify-between">
+                ${u.username}
+                <i class="fa-solid fa-trash text-gray-500 hover:text-red-500 transition text-xs p-1" onclick="deleteChat('${u.id}', event)" title="Elimina chat"></i>
+            </div>
             <div class="text-gray-400 text-xs truncate">${item.msg.sender_id === currentUser.id ? 'Tu: ' : ''}${escapeHtml(item.msg.content)}</div>
           </div>
           ${dotHtml}
         </div>`;
       container.insertAdjacentHTML('beforeend', html);
     }
+  }
+
+  /* --- NUOVA FUNZIONE: ELIMINA CHAT --- */
+  async function deleteChat(targetId, event) {
+      if(event) event.stopPropagation();
+      if(!confirm("Sei sicuro di voler eliminare l'intera conversazione?")) return;
+      
+      const { error } = await sb.from('messages').delete()
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${currentUser.id})`);
+      
+      if(error) alert("Errore cancellazione: " + error.message);
+      else openInboxModal(); // Ricarica la lista
   }
 
   async function openChat(userId, username, avatar) {
