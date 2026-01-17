@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAWENISHLAND — Gold Edition</title>
+  <title>HAWENISHLAND — AI Fashion Edition</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
 
@@ -320,6 +324,13 @@
     .shop-list-container {
         max-height: 300px; overflow-y: auto; padding-right: 5px;
     }
+    
+    /* ANALISI AI LOADING */
+    .analyzing-box {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        border-radius: 12px; z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -401,28 +412,38 @@
       <h3 class="font-bold text-lg text-white">Crea Outfit</h3>
       <i class="fa-solid fa-xmark cursor-pointer hover:text-white text-gray-400" onclick="closeModal('upload-modal')"></i>
     </div>
-    <div class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-1">
-      <label class="h-32 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition">
+    <div class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-1 relative">
+      
+      <label class="h-32 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition relative overflow-hidden">
         <i class="fa-solid fa-camera text-2xl mb-2 text-[#d4af37]"></i>
         <span class="text-xs text-gray-400">Carica Foto Outfit</span>
         <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
-      </label>
-      <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg border border-gray-600">
-      
-      <div class="bg-slate-800/50 p-3 rounded-xl border border-dashed border-gray-600">
-        <p class="text-[#d4af37] text-xs font-bold uppercase mb-2"><i class="fa-solid fa-tags mr-1"></i> Tagga Prodotti</p>
-        
-        <div class="flex gap-2 mb-2">
-           <input type="text" id="temp-prod-name" placeholder="Nome (es. Scarpe Nike)" class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
-           <input type="url" id="temp-prod-link" placeholder="Link..." class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
+        <div id="ai-loading" class="hidden analyzing-box">
+            <i class="fa-solid fa-brain fa-spin text-3xl text-[#d4af37] mb-2"></i>
+            <span class="text-xs text-white font-bold">L'AI sta giudicando...</span>
         </div>
-        <button onclick="addProdToUpload()" class="btn-gold-outline w-full text-xs py-2 mb-2">+ Aggiungi al Look</button>
-        
-        <div id="upload-products-list" class="space-y-1"></div>
+      </label>
+      
+      <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg border border-gray-600" crossorigin="anonymous">
+      
+      <div id="ai-error-msg" class="hidden p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-200 text-xs text-center">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Ops! Questa foto non sembra riguardare la moda.
       </div>
 
-      <textarea id="post-caption" rows="2" placeholder="Descrivi il tuo stile..." class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-1 focus:ring-[#d4af37] outline-none"></textarea>
-      <button onclick="submitPost()" class="btn-gold w-full">PUBBLICA LOOK</button>
+      <div id="upload-details-section" class="hidden">
+          <div class="bg-slate-800/50 p-3 rounded-xl border border-dashed border-gray-600 mb-4">
+            <p class="text-[#d4af37] text-xs font-bold uppercase mb-2"><i class="fa-solid fa-tags mr-1"></i> Tagga Prodotti</p>
+            <div class="flex gap-2 mb-2">
+               <input type="text" id="temp-prod-name" placeholder="Nome (es. Scarpe Nike)" class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
+               <input type="url" id="temp-prod-link" placeholder="Link..." class="flex-1 bg-slate-900 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-[#d4af37] outline-none">
+            </div>
+            <button onclick="addProdToUpload()" class="btn-gold-outline w-full text-xs py-2 mb-2">+ Aggiungi al Look</button>
+            <div id="upload-products-list" class="space-y-1"></div>
+          </div>
+
+          <textarea id="post-caption" rows="2" placeholder="Descrivi il tuo stile..." class="w-full bg-slate-800 border-none rounded-xl p-3 text-white focus:ring-1 focus:ring-[#d4af37] outline-none mb-4"></textarea>
+          <button id="btn-publish" onclick="submitPost()" class="btn-gold w-full">PUBBLICA LOOK</button>
+      </div>
     </div>
   </div>
 </div>
@@ -571,18 +592,95 @@
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
-  
-  // VARIABILE PER GESTIRE LA MODALITÀ FEED (Seguiti vs Per Te)
-  let currentFeedMode = 'following'; // 'following' oppure 'viral'
+  let currentFeedMode = 'following'; 
   let uploadProductsList = [];
+  
+  // AI VARIABLES
+  let classifierModel = null;
+  const FASHION_KEYWORDS = [
+    'shirt', 'pants', 'jean', 'dress', 'suit', 'shoe', 'boot', 'sandal', 'hat', 
+    'sunglasses', 'jacket', 'coat', 'sweater', 'jersey', 'cardigan', 'skirt', 
+    'tie', 't-shirt', 'blouse', 'trousers', 'shorts', 'footwear', 'outerwear',
+    'miniskirt', 'maillot', 'tank suit', 'bikini', 'kimono', 'abaya', 'gown',
+    'cloak', 'lab coat', 'pajama', 'velvet', 'wool', 'tie', 'bow tie', 'apron',
+    'stole', 'necklace', 'wardrobe', 'closet', 'fashion', 'person', 'groom', 'bride'
+  ];
 
   window.addEventListener('load', async () => {
+    // Load AI Model in background
+    try {
+        console.log("Caricamento AI...");
+        classifierModel = await mobilenet.load();
+        console.log("AI Fashion Ready!");
+    } catch(e) { console.error("Errore caricamento AI", e); }
+
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
     if (imgs.length) { setInterval(() => { imgs[i].classList.remove('active'); i = (i + 1) % imgs.length; imgs[i].classList.add('active'); }, 5000); }
     const { data: { session }, error } = await sb.auth.getSession();
     if (session && !error) enterApp(session.user);
     else document.getElementById('auth-container').style.display = 'flex';
   });
+
+  /* --- FASHION CHECK FUNCTION --- */
+  async function checkImageContent(imgElement) {
+    if (!classifierModel) return true; // Se l'AI non carica, lascia passare (fallback)
+    
+    try {
+        const predictions = await classifierModel.classify(imgElement);
+        console.log("AI vede:", predictions);
+        
+        // Controlla se una delle predizioni è nella lista moda
+        const isFashion = predictions.some(p => {
+            const terms = p.className.toLowerCase().split(',');
+            return terms.some(term => 
+                FASHION_KEYWORDS.some(k => term.includes(k))
+            );
+        });
+        
+        return isFashion;
+    } catch (e) {
+        console.error("Errore classificazione:", e);
+        return true; // Lascia passare in caso di errore tecnico
+    }
+  }
+
+  // Anteprima con AI Check
+  function previewUpload(input) { 
+    if(input.files && input.files[0]) { 
+        const loadingBox = document.getElementById('ai-loading');
+        const previewImg = document.getElementById('upload-preview');
+        const detailsSection = document.getElementById('upload-details-section');
+        const errorMsg = document.getElementById('ai-error-msg');
+        
+        // Reset UI
+        previewImg.classList.add('hidden');
+        detailsSection.classList.add('hidden');
+        errorMsg.classList.add('hidden');
+        loadingBox.classList.remove('hidden');
+
+        const r = new FileReader(); 
+        r.onload = async (e) => { 
+            previewImg.src = e.target.result; 
+            
+            // Aspetta che l'immagine sia caricata nel DOM
+            previewImg.onload = async () => {
+                loadingBox.classList.add('hidden');
+                previewImg.classList.remove('hidden');
+                
+                // AI CHECK
+                const isApproved = await checkImageContent(previewImg);
+                
+                if (isApproved) {
+                    detailsSection.classList.remove('hidden');
+                } else {
+                    errorMsg.classList.remove('hidden');
+                    input.value = ""; // Resetta input
+                }
+            };
+        }; 
+        r.readAsDataURL(input.files[0]); 
+    } 
+  }
 
   async function recuperoPassword() {
     const email = document.getElementById('l-email').value;
@@ -706,7 +804,6 @@
     let error = null;
 
     if (currentFeedMode === 'following') {
-        // --- MODALITÀ SEGUTI ---
         const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
         const followingIds = follows ? follows.map(f => f.followed_id) : [];
 
@@ -722,8 +819,6 @@
         }
 
     } else {
-        // --- MODALITÀ PER TE (VIRAL) ---
-        // Prende tutti i post, ordinati per data (in futuro per like)
         const res = await sb.from('posts')
             .select(`*, profiles:user_id (username, avatar_url)`)
             .order('created_at', { ascending: false })
@@ -733,7 +828,6 @@
         error = res.error;
     }
 
-    // GESTIONE ERRORI O FEED VUOTO
     if (error) {
         return main.innerHTML = `${tabsHtml}<p class="text-center text-red-500 mt-10">Errore caricamento feed.</p>`;
     }
@@ -754,7 +848,6 @@
         }
     }
 
-    // RENDERIZZA I POST
     main.innerHTML = tabsHtml;
     for (const post of posts) {
       const counts = await getPostCounts(post.id);
@@ -940,22 +1033,18 @@
 
     try {
         if (isFollowing) {
-            // SMETTI DI SEGUIRE
             const { error: err } = await sb.from('follows')
                 .delete()
                 .eq('follower_id', currentUser.id)
                 .eq('followed_id', targetId);
             error = err;
         } else {
-            // INIZIA A SEGUIRE
             const { error: err } = await sb.from('follows')
                 .insert([{ follower_id: currentUser.id, followed_id: targetId }]);
             error = err;
         }
 
         if (error) throw error;
-
-        // Ricarica profilo
         openUserProfile(targetId);
 
     } catch (err) {
@@ -1037,11 +1126,14 @@
   async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
   function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
   
+  // RESET UPLOAD
   function openUploadModal() { 
       document.getElementById('upload-modal').classList.remove('hidden'); 
       document.getElementById('upload-preview').classList.add('hidden'); 
       document.getElementById('post-file').value = ""; 
       document.getElementById('post-caption').value = "";
+      document.getElementById('ai-error-msg').classList.add('hidden');
+      document.getElementById('upload-details-section').classList.add('hidden');
       
       uploadProductsList = [];
       document.getElementById('temp-prod-name').value = '';
@@ -1063,8 +1155,8 @@
   }
 
   async function performSearch() { const q = document.getElementById('search-query').value.trim(); const c = document.getElementById('search-results'); if(q.length<2) return c.innerHTML=''; const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); c.innerHTML = ''; data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); }
-  function previewUpload(input) { if(input.files && input.files[0]) { const r = new FileReader(); r.onload = (e) => { const i = document.getElementById('upload-preview'); i.src = e.target.result; i.classList.remove('hidden'); }; r.readAsDataURL(input.files[0]); } }
-   
+  
+  // SUBMIT POST CON ARRAY DI PRODOTTI
   async function submitPost() { 
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
@@ -1079,24 +1171,38 @@
     if(uploadProductsList.length === 0) return alert("Devi aggiungere almeno un prodotto all'outfit.");
     if(!f) return alert("Devi caricare una foto dell'outfit.");
 
-    let url = null; 
-    if(f) { 
-      const n = `${currentUser.id}/${Date.now()}`; 
-      const { error: upErr } = await sb.storage.from(BUCKET_POSTS).upload(n, f); 
-      if(upErr) return alert("Errore upload immagine: " + upErr.message);
-      const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
-      url = data.publicUrl; 
-    } 
+    const btn = document.getElementById('btn-publish');
+    const originalText = btn.innerText;
+    btn.innerText = "Pubblicazione...";
+    btn.disabled = true;
 
-    const { error: insErr } = await sb.from('posts').insert([{ 
-        user_id: currentUser.id, 
-        image_url: url, 
-        caption: c,
-        products: uploadProductsList 
-    }]); 
+    try {
+        let url = null; 
+        if(f) { 
+          const n = `${currentUser.id}/${Date.now()}`; 
+          const { error: upErr } = await sb.storage.from(BUCKET_POSTS).upload(n, f); 
+          if(upErr) throw upErr;
+          const { data } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n); 
+          url = data.publicUrl; 
+        } 
 
-    if(insErr) alert("Errore salvataggio post: " + insErr.message);
-    else { closeModal('upload-modal'); renderFeedView(); }
+        const { error: insErr } = await sb.from('posts').insert([{ 
+            user_id: currentUser.id, 
+            image_url: url, 
+            caption: c,
+            products: uploadProductsList 
+        }]); 
+
+        if(insErr) throw insErr;
+        
+        closeModal('upload-modal'); 
+        renderFeedView();
+    } catch(err) {
+        alert("Errore salvataggio: " + err.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
   }
 
   function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
@@ -1161,12 +1267,14 @@
       
       let icon, txt, clickAction, rightSideContent;
       
+      // LOGICA DIVERSA IN BASE AL TIPO DI NOTIFICA
       if (n.type === 'follow') {
          icon = '<i class="fa-solid fa-user-plus text-blue-400"></i>';
          txt = 'ha iniziato a seguirti';
          clickAction = `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')`;
-         rightSideContent = ''; 
+         rightSideContent = ''; // Nessuna immagine post per i follow
       } else {
+         // Logica esistente per like e commenti
          const { data: post } = await sb.from('posts').select('image_url').eq('id', n.post_id).single();
          icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
          txt = n.type === 'like' ? 'ha messo like al tuo post' : 'ha commentato il tuo post';
