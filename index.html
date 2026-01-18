@@ -424,7 +424,7 @@
         </div>
       </label>
       
-      <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg border border-gray-600" crossorigin="anonymous">
+      <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg border border-gray-600">
       
       <div id="ai-error-msg" class="hidden p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-200 text-xs text-center">
         <i class="fa-solid fa-triangle-exclamation mr-1"></i> Ops! Questa foto non sembra riguardare la moda.
@@ -597,21 +597,27 @@
   
   // AI VARIABLES
   let classifierModel = null;
+  // Lista estesa di parole chiave moda
   const FASHION_KEYWORDS = [
     'shirt', 'pants', 'jean', 'dress', 'suit', 'shoe', 'boot', 'sandal', 'hat', 
     'sunglasses', 'jacket', 'coat', 'sweater', 'jersey', 'cardigan', 'skirt', 
     'tie', 't-shirt', 'blouse', 'trousers', 'shorts', 'footwear', 'outerwear',
     'miniskirt', 'maillot', 'tank suit', 'bikini', 'kimono', 'abaya', 'gown',
     'cloak', 'lab coat', 'pajama', 'velvet', 'wool', 'tie', 'bow tie', 'apron',
-    'stole', 'necklace', 'wardrobe', 'closet', 'fashion', 'person', 'groom', 'bride'
+    'stole', 'necklace', 'wardrobe', 'closet', 'fashion', 'person', 'groom', 'bride',
+    'uniform', 'vestment', 'trench coat', 'sweatshirt', 'Loafer', 'clog'
   ];
 
   window.addEventListener('load', async () => {
-    // Load AI Model in background
+    // Caricamento AI in background
     try {
-        console.log("Caricamento AI...");
-        classifierModel = await mobilenet.load();
-        console.log("AI Fashion Ready!");
+        console.log("Sto caricando il cervello AI...");
+        if (typeof mobilenet !== 'undefined') {
+            classifierModel = await mobilenet.load();
+            console.log("AI Fashion Caricata con successo!");
+        } else {
+            console.warn("Libreria MobileNet non trovata. Il controllo AI sarà disabilitato.");
+        }
     } catch(e) { console.error("Errore caricamento AI", e); }
 
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
@@ -621,26 +627,31 @@
     else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  /* --- FASHION CHECK FUNCTION --- */
+  /* --- FASHION CHECK FUNCTION (ROBUSTA) --- */
   async function checkImageContent(imgElement) {
-    if (!classifierModel) return true; // Se l'AI non carica, lascia passare (fallback)
+    // Se il modello non è caricato (o la libreria manca), lasciamo passare tutto per non bloccare l'utente
+    if (!classifierModel) {
+        console.log("Modello AI non pronto, bypass controllo.");
+        return true; 
+    }
     
     try {
         const predictions = await classifierModel.classify(imgElement);
-        console.log("AI vede:", predictions);
+        console.log("L'AI vede:", predictions);
         
-        // Controlla se una delle predizioni è nella lista moda
+        // Controlla se una delle 3 previsioni principali è nella lista moda
         const isFashion = predictions.some(p => {
-            const terms = p.className.toLowerCase().split(',');
-            return terms.some(term => 
-                FASHION_KEYWORDS.some(k => term.includes(k))
-            );
+            const terms = p.className.toLowerCase().split(','); // es: "jersey, t-shirt" -> ["jersey", " t-shirt"]
+            return terms.some(term => {
+                const cleanTerm = term.trim();
+                return FASHION_KEYWORDS.some(k => cleanTerm.includes(k) || k.includes(cleanTerm));
+            });
         });
         
         return isFashion;
     } catch (e) {
-        console.error("Errore classificazione:", e);
-        return true; // Lascia passare in caso di errore tecnico
+        console.error("Errore durante la classificazione:", e);
+        return true; // In caso di errore tecnico, lasciamo passare
     }
   }
 
@@ -654,7 +665,7 @@
         
         // Reset UI
         previewImg.classList.add('hidden');
-        detailsSection.classList.add('hidden');
+        detailsSection.classList.add('hidden'); // Nascondiamo i dettagli all'inizio
         errorMsg.classList.add('hidden');
         loadingBox.classList.remove('hidden');
 
@@ -662,19 +673,27 @@
         r.onload = async (e) => { 
             previewImg.src = e.target.result; 
             
-            // Aspetta che l'immagine sia caricata nel DOM
+            // Aspetta che l'immagine sia renderizzata nel browser
             previewImg.onload = async () => {
-                loadingBox.classList.add('hidden');
-                previewImg.classList.remove('hidden');
-                
-                // AI CHECK
-                const isApproved = await checkImageContent(previewImg);
-                
-                if (isApproved) {
+                try {
+                    // AI CHECK
+                    const isApproved = await checkImageContent(previewImg);
+                    
+                    loadingBox.classList.add('hidden');
+                    previewImg.classList.remove('hidden');
+
+                    if (isApproved) {
+                        detailsSection.classList.remove('hidden'); // MOSTRA I CAMPI!
+                    } else {
+                        errorMsg.classList.remove('hidden');
+                        input.value = ""; // Resetta input file per forzare nuovo caricamento
+                    }
+                } catch (err) {
+                    console.error("Errore fatale preview:", err);
+                    // Fallback di emergenza: mostra tutto se crasha
+                    loadingBox.classList.add('hidden');
+                    previewImg.classList.remove('hidden');
                     detailsSection.classList.remove('hidden');
-                } else {
-                    errorMsg.classList.remove('hidden');
-                    input.value = ""; // Resetta input
                 }
             };
         }; 
