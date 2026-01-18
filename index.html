@@ -310,6 +310,21 @@
     .inbox-item:hover { background: rgba(255,255,255,0.05); }
     .unread-indicator { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; margin-left: auto; }
 
+    /* SHARED POST IN CHAT CSS */
+    .shared-post-bubble {
+        background: #000 !important;
+        border: 1px solid var(--gold);
+        border-radius: 12px !important;
+        padding: 0 !important;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s;
+        width: 200px;
+    }
+    .shared-post-bubble:hover { transform: scale(1.02); }
+    .shared-post-img { width: 100%; height: 150px; object-fit: cover; }
+    .shared-post-info { padding: 8px; text-align: center; font-size: 10px; color: #ccc; background: rgba(255,255,255,0.1); }
+
     /* TOAST */
     .toast-box { position: fixed; top: 20px; right: 20px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--gold); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 10px; color: #fff; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); transform: translateX(200%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .toast-active { transform: translateX(0); }
@@ -448,19 +463,25 @@
   </div>
 </div>
 
+<div id="share-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[350px] max-h-[500px] flex flex-col">
+    <div class="p-4 border-b border-gray-700 flex justify-between font-bold text-white">
+      <span>Invia a...</span>
+      <i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('share-modal')"></i>
+    </div>
+    <div id="share-list-content" class="flex-1 overflow-y-auto p-2"></div>
+  </div>
+</div>
+
 <div id="shop-modal" class="modal-overlay hidden">
   <div class="glass-modal w-[380px] p-6 text-center relative">
     <i class="fa-solid fa-xmark absolute top-4 right-4 text-white cursor-pointer text-xl" onclick="closeModal('shop-modal')"></i>
-    
     <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#d4af37]/20 mb-3 border border-[#d4af37]">
       <i class="fa-solid fa-bag-shopping text-xl text-[#d4af37]"></i>
     </div>
-    
     <h3 class="text-white font-serif text-2xl mb-1 italic" style="font-family: 'Playfair Display', serif;">Shop the Look</h3>
     <div class="w-10 h-0.5 bg-[#d4af37] mx-auto mb-6"></div>
-
-    <div id="shop-window-list" class="shop-list-container bg-slate-800/50 p-2 rounded-xl border border-white/10 mb-4 space-y-3">
-        </div>
+    <div id="shop-window-list" class="shop-list-container bg-slate-800/50 p-2 rounded-xl border border-white/10 mb-4 space-y-3"></div>
     <p class="text-[10px] text-gray-500">I link portano a siti esterni.</p>
   </div>
 </div>
@@ -594,10 +615,10 @@
   let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
   let currentFeedMode = 'following'; 
   let uploadProductsList = [];
+  let sharePostId = null; // ID post da condividere
   
   // AI VARIABLES
   let classifierModel = null;
-  // Lista estesa di parole chiave moda
   const FASHION_KEYWORDS = [
     'shirt', 'pants', 'jean', 'dress', 'suit', 'shoe', 'boot', 'sandal', 'hat', 
     'sunglasses', 'jacket', 'coat', 'sweater', 'jersey', 'cardigan', 'skirt', 
@@ -609,7 +630,6 @@
   ];
 
   window.addEventListener('load', async () => {
-    // Caricamento AI in background
     try {
         console.log("Sto caricando il cervello AI...");
         if (typeof mobilenet !== 'undefined') {
@@ -627,9 +647,7 @@
     else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  /* --- FASHION CHECK FUNCTION (ROBUSTA) --- */
   async function checkImageContent(imgElement) {
-    // Se il modello non è caricato (o la libreria manca), lasciamo passare tutto per non bloccare l'utente
     if (!classifierModel) {
         console.log("Modello AI non pronto, bypass controllo.");
         return true; 
@@ -638,24 +656,20 @@
     try {
         const predictions = await classifierModel.classify(imgElement);
         console.log("L'AI vede:", predictions);
-        
-        // Controlla se una delle 3 previsioni principali è nella lista moda
         const isFashion = predictions.some(p => {
-            const terms = p.className.toLowerCase().split(','); // es: "jersey, t-shirt" -> ["jersey", " t-shirt"]
+            const terms = p.className.toLowerCase().split(','); 
             return terms.some(term => {
                 const cleanTerm = term.trim();
                 return FASHION_KEYWORDS.some(k => cleanTerm.includes(k) || k.includes(cleanTerm));
             });
         });
-        
         return isFashion;
     } catch (e) {
         console.error("Errore durante la classificazione:", e);
-        return true; // In caso di errore tecnico, lasciamo passare
+        return true; 
     }
   }
 
-  // Anteprima con AI Check
   function previewUpload(input) { 
     if(input.files && input.files[0]) { 
         const loadingBox = document.getElementById('ai-loading');
@@ -663,34 +677,28 @@
         const detailsSection = document.getElementById('upload-details-section');
         const errorMsg = document.getElementById('ai-error-msg');
         
-        // Reset UI
         previewImg.classList.add('hidden');
-        detailsSection.classList.add('hidden'); // Nascondiamo i dettagli all'inizio
+        detailsSection.classList.add('hidden'); 
         errorMsg.classList.add('hidden');
         loadingBox.classList.remove('hidden');
 
         const r = new FileReader(); 
         r.onload = async (e) => { 
             previewImg.src = e.target.result; 
-            
-            // Aspetta che l'immagine sia renderizzata nel browser
             previewImg.onload = async () => {
                 try {
-                    // AI CHECK
                     const isApproved = await checkImageContent(previewImg);
-                    
                     loadingBox.classList.add('hidden');
                     previewImg.classList.remove('hidden');
 
                     if (isApproved) {
-                        detailsSection.classList.remove('hidden'); // MOSTRA I CAMPI!
+                        detailsSection.classList.remove('hidden');
                     } else {
                         errorMsg.classList.remove('hidden');
-                        input.value = ""; // Resetta input file per forzare nuovo caricamento
+                        input.value = ""; 
                     }
                 } catch (err) {
                     console.error("Errore fatale preview:", err);
-                    // Fallback di emergenza: mostra tutto se crasha
                     loadingBox.classList.add('hidden');
                     previewImg.classList.remove('hidden');
                     detailsSection.classList.remove('hidden');
@@ -701,19 +709,68 @@
     } 
   }
 
+  /* --- NUOVA FUNZIONE CONDIVISIONE --- */
+  function openShareModal(postId) {
+      sharePostId = postId;
+      document.getElementById('share-modal').classList.remove('hidden');
+      const container = document.getElementById('share-list-content');
+      container.innerHTML = '<div class="text-center mt-4"><i class="fa-solid fa-spinner fa-spin text-[#d4af37]"></i></div>';
+      
+      sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`)
+        .eq('follower_id', currentUser.id)
+        .then(({ data }) => {
+            container.innerHTML = '';
+            if(!data || data.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">Non segui nessuno a cui inviare.</p>';
+                return;
+            }
+            data.forEach(x => {
+                const u = x.profiles;
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="flex items-center justify-between p-3 hover:bg-white/5 rounded-lg cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]">
+                            <span class="text-white font-bold">${u.username}</span>
+                        </div>
+                        <button onclick="sendPostToChat('${u.id}', this)" class="bg-[#d4af37] text-black px-4 py-1 rounded-full text-xs font-bold hover:scale-105 transition">Invia</button>
+                    </div>
+                `);
+            });
+        });
+  }
+
+  async function sendPostToChat(receiverId, btn) {
+      if(!sharePostId) return;
+      btn.innerText = "Inviato";
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      // Fetch post info first to embed in message (smart trick)
+      const { data: post } = await sb.from('posts').select('image_url, caption').eq('id', sharePostId).single();
+      
+      // Costruiamo un messaggio JSON speciale
+      const messageContent = JSON.stringify({
+          type: 'share_post',
+          postId: sharePostId,
+          img: post.image_url,
+          caption: post.caption ? post.caption.substring(0, 30) + '...' : 'Post condiviso'
+      });
+
+      await sb.from('messages').insert([{ 
+          sender_id: currentUser.id, 
+          receiver_id: receiverId, 
+          content: messageContent 
+      }]);
+      
+      setTimeout(() => closeModal('share-modal'), 500);
+  }
+
   async function recuperoPassword() {
     const email = document.getElementById('l-email').value;
     if(!email) return alert("Inserisci l'email per il recupero");
     const { error } = await sb.auth.resetPasswordForEmail(email);
     if(error) alert(error.message);
     else alert("Email di recupero inviata!");
-  }
-
-  async function sharePost(postId, caption) {
-    const safeCaption = caption ? caption.replace(/'/g, "\\'") : '';
-    const text = `Guarda questo look su Hawenishland: ${safeCaption}`;
-    if (navigator.share) { try { await navigator.share({ title: 'Hawenishland', text: text, url: window.location.href }); } catch (err) {} } 
-    else { try { await navigator.clipboard.writeText(text); alert("Link copiato!"); } catch (err) { alert("Errore copia."); } }
   }
 
   async function deletePost(postId) {
@@ -727,8 +784,6 @@
     }
   }
 
-  /* --- GESTIONE MULTI LINK SHOP --- */
-
   function addProdToUpload() {
     const nameInput = document.getElementById('temp-prod-name');
     const linkInput = document.getElementById('temp-prod-link');
@@ -738,10 +793,8 @@
     if(!name || !link) return alert("Inserisci nome e link del prodotto.");
     
     uploadProductsList.push({ name, link });
-    
     nameInput.value = '';
     linkInput.value = '';
-    
     renderUploadProductsList();
   }
 
@@ -768,7 +821,6 @@
 
   function openShopWindow(productsJson, event) {
     if(event) event.stopPropagation();
-    
     const container = document.getElementById('shop-window-list');
     container.innerHTML = '';
     
@@ -792,11 +844,8 @@
             </div>
         `);
     });
-    
     document.getElementById('shop-modal').classList.remove('hidden');
   }
-
-  /* --- LOGICA FEED AVANZATA (SEGUTI vs PER TE) --- */
   
   function switchFeedMode(mode) {
     if (currentFeedMode === mode) return; 
@@ -806,10 +855,8 @@
 
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
-    
     if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
 
-    // TABS HTML
     const tabsHtml = `
       <div class="feed-tabs-container">
         <div class="feed-tab ${currentFeedMode === 'following' ? 'active' : ''}" onclick="switchFeedMode('following')">Seguiti</div>
@@ -836,13 +883,11 @@
         } else {
             posts = []; 
         }
-
     } else {
         const res = await sb.from('posts')
             .select(`*, profiles:user_id (username, avatar_url)`)
             .order('created_at', { ascending: false })
             .limit(50);
-        
         posts = res.data;
         error = res.error;
     }
@@ -922,7 +967,7 @@
             <span class="likes-count-clickable ml-2" id="feed-likes-count-${post.id}" onclick="openLikesModal('${post.id}')">${counts.likes}</span>
           </div>
           <div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div>
-          <div class="icon-btn ml-auto" onclick="sharePost('${post.id}', \`${escapeHtml(post.caption)}\`)"><i class="fa-regular fa-paper-plane"></i></div>
+          <div class="icon-btn ml-auto" onclick="openShareModal('${post.id}')"><i class="fa-regular fa-paper-plane"></i></div>
         </div>
         <div class="caption-box">
             <span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>
@@ -1074,116 +1119,13 @@
     }
   }
 
-  async function openPostDetail(postId) {
-    currentPostId = postId;
-    document.getElementById('post-detail-modal').classList.remove('hidden');
-    document.getElementById('detail-comments').innerHTML = '<p class="text-center text-gray-500 mt-4">Caricamento...</p>';
-    document.getElementById('detail-delete-btn-container').innerHTML = '';
-
-    const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
-    if(!post) return;
-
-    const imgEl = document.getElementById('detail-img'); const noImgEl = document.getElementById('detail-noimg');
-    if(post.image_url) { imgEl.src = post.image_url; imgEl.classList.remove('hidden'); noImgEl.classList.add('hidden'); } else { imgEl.classList.add('hidden'); noImgEl.classList.remove('hidden'); }
-
-    const u = post.profiles; 
-    document.getElementById('detail-avatar').src = u.avatar_url || 'https://via.placeholder.com/32'; 
-    document.getElementById('detail-username').innerText = u.username; 
-    document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
-
-    if (post.user_id === currentUser.id) {
-        document.getElementById('detail-delete-btn-container').innerHTML = `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer text-lg transition mr-4" onclick="deletePost('${post.id}')" title="Elimina Post"></i>`;
-    }
-
-    const liked = await isLikedByMe(postId);
-    const likeBtn = document.getElementById('detail-like-btn');
-    likeBtn.className = liked ? "fa-solid fa-heart cursor-pointer text-red-500" : "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white";
-    
-    likeBtn.onclick = async () => { 
-        const isLikedNow = likeBtn.classList.contains('fa-solid'); 
-        if(isLikedNow) { 
-            likeBtn.className = "fa-regular fa-heart cursor-pointer hover:text-red-500 text-white"; 
-            await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id); 
-        } else { 
-            likeBtn.className = "fa-solid fa-heart cursor-pointer text-red-500"; 
-            await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]); 
-        } 
-        refreshDetailCounts(postId); 
-    };
-
-    const list = document.getElementById('detail-comments'); list.innerHTML = '';
-    
-    let captionHtml = '';
-    if(post.caption) captionHtml += `<span class="text-gray-300">${escapeHtml(post.caption)}</span>`;
-    
-    let products = post.products || [];
-    if(products.length === 0 && post.product_link) products = [{name: post.product_name, link: post.product_link}];
-
-    if(products.length > 0) {
-        captionHtml += '<div class="mt-2 flex flex-wrap gap-2">';
-        products.forEach(p => {
-            captionHtml += `<a href="${p.link}" target="_blank" class="bg-slate-800 border border-gray-600 px-2 py-1 rounded text-[10px] text-[#d4af37] hover:bg-slate-700">${escapeHtml(p.name)}</a>`;
-        });
-        captionHtml += '</div>';
-    }
-
-    if(captionHtml) {
-        list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-4 p-2 bg-white/5 rounded-lg border border-white/5"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover"><div><span class="font-bold mr-2 text-[#d4af37]">${u.username}</span>${captionHtml}</div></div>`);
-    }
-    
-    const { data: coms } = await sb.from('comments').select(`*, profiles:user_id(username, avatar_url)`).eq('post_id', postId).order('created_at', { ascending: true });
-    if(coms) {
-      coms.forEach(c => { const cu = c.profiles; list.insertAdjacentHTML('beforeend', `<div class="flex gap-3 mb-2"><img src="${cu.avatar_url||'https://via.placeholder.com/30'}" class="w-8 h-8 rounded-full object-cover cursor-pointer" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')"><div><span class="font-bold mr-2 text-white cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${cu.username}</span><span class="text-gray-400">${escapeHtml(c.content)}</span></div></div>`); });
-    }
-    
-    const countSpan = document.getElementById('detail-likes-count');
-    countSpan.onclick = () => openLikesModal(postId);
-    refreshDetailCounts(postId);
-  }
-
-  async function refreshDetailCounts(pid) { const c = await getPostCounts(pid); document.getElementById('detail-likes-count').innerText = c.likes; }
-  async function inviaCommento() { const txt = document.getElementById('new-comment').value.trim(); if(!txt) return; await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]); document.getElementById('new-comment').value = ''; openPostDetail(currentPostId); }
-  function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
-  
-  // RESET UPLOAD
-  function openUploadModal() { 
-      document.getElementById('upload-modal').classList.remove('hidden'); 
-      document.getElementById('upload-preview').classList.add('hidden'); 
-      document.getElementById('post-file').value = ""; 
-      document.getElementById('post-caption').value = "";
-      document.getElementById('ai-error-msg').classList.add('hidden');
-      document.getElementById('upload-details-section').classList.add('hidden');
-      
-      uploadProductsList = [];
-      document.getElementById('temp-prod-name').value = '';
-      document.getElementById('temp-prod-link').value = '';
-      renderUploadProductsList();
-  }
-  
-  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-   
-  async function showUserList(type, uid) { 
-    const m = document.getElementById('user-list-modal'); m.classList.remove('hidden'); 
-    document.getElementById('ul-title').innerText = type==='followers'?'Follower':'Seguiti'; 
-    const c = document.getElementById('ul-content'); c.innerHTML='Caricamento...'; 
-    let q = (type==='followers') ? sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`).eq('followed_id', uid) : sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`).eq('follower_id', uid); 
-    const { data } = await q; 
-    c.innerHTML = ''; 
-    if(!data || !data.length) return c.innerHTML='<p class="text-center text-gray-500">Nessuno trovato.</p>'; 
-    data.forEach(x => { const u = x.profiles; c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div><div class="font-bold text-white">${u.username}</div></div></div>`); }); 
-  }
-
-  async function performSearch() { const q = document.getElementById('search-query').value.trim(); const c = document.getElementById('search-results'); if(q.length<2) return c.innerHTML=''; const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10); c.innerHTML = ''; data.forEach(u => c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-2 hover:bg-white/5 cursor-pointer rounded" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url||'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full object-cover"><div class="font-bold text-white">${u.username}</div></div>`)); }
-  
-  // SUBMIT POST CON ARRAY DI PRODOTTI
   async function submitPost() { 
     const f = document.getElementById('post-file').files[0]; 
     const c = document.getElementById('post-caption').value; 
     
-    // Check for pending input in text fields (user forgot to click add)
+    // Controlla testo pendente
     const pendingName = document.getElementById('temp-prod-name').value.trim();
     const pendingLink = document.getElementById('temp-prod-link').value.trim();
-    
     if(pendingName && pendingLink) {
         uploadProductsList.push({ name: pendingName, link: pendingLink });
     }
@@ -1191,10 +1133,10 @@
     const btn = document.getElementById('btn-publish');
     const originalText = btn.innerText;
 
-    // THE MANDATORY CHECK
+    // CONTROLLO OBBLIGATORIO PRODOTTI
     if(uploadProductsList.length === 0) {
         alert("Devi aggiungere almeno un prodotto all'outfit (Nome e Link).");
-        return; // Stop execution
+        return; 
     }
 
     if(!f) return alert("Devi caricare una foto dell'outfit.");
@@ -1231,6 +1173,39 @@
     }
   }
 
+  /* --- MESSAGGI AGGIORNATI CON SHARE PREVIEW --- */
+  async function loadMessages() {
+    const { data: msgs } = await sb.from('messages').select('*')
+      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`)
+      .order('created_at', { ascending: true });
+
+    const box = document.getElementById('chat-messages');
+    box.innerHTML = '';
+    msgs?.forEach(m => {
+      const isMine = m.sender_id === currentUser.id;
+      let contentHtml = escapeHtml(m.content);
+
+      // PARSING SPECIALE PER POST CONDIVISI (JSON)
+      try {
+          if (m.content.startsWith('{') && m.content.includes('share_post')) {
+              const data = JSON.parse(m.content);
+              contentHtml = `
+                <div class="shared-post-bubble" onclick="openPostDetail('${data.postId}')">
+                    <img src="${data.img}" class="shared-post-img">
+                    <div class="shared-post-info">
+                        <b>Post Condiviso</b><br>
+                        ${escapeHtml(data.caption)}
+                    </div>
+                </div>
+              `;
+          }
+      } catch(e) {}
+
+      box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">${contentHtml}</div>`);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
   function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
   async function saveProfile() { await sb.from('profiles').update({ username:document.getElementById('edit-username').value, full_name:document.getElementById('edit-fullname').value }).eq('id', currentUser.id); closeModal('edit-profile-modal'); openUserProfile(currentUser.id); }
    
@@ -1244,7 +1219,6 @@
     await sb.from('profiles').update({ avatar_url:data.publicUrl }).eq('id',currentUser.id); 
   }
 
-  /* --- CHAT & INBOX --- */
   async function checkNotifications() {
     const { count } = await sb.from('messages').select('*', { count: 'exact', head: true })
       .eq('receiver_id', currentUser.id)
@@ -1261,7 +1235,6 @@
     document.getElementById('notif-gold-dot').style.display = (count > 0) ? 'block' : 'none';
   }
 
-  /* --- UPDATED NOTIFICATION MODAL TO HANDLE FOLLOWS --- */
   async function openNotificationsModal() {
     document.getElementById('notifications-modal').classList.remove('hidden');
     document.getElementById('notif-gold-dot').style.display = 'none';
@@ -1293,14 +1266,12 @@
       
       let icon, txt, clickAction, rightSideContent;
       
-      // LOGICA DIVERSA IN BASE AL TIPO DI NOTIFICA
       if (n.type === 'follow') {
          icon = '<i class="fa-solid fa-user-plus text-blue-400"></i>';
          txt = 'ha iniziato a seguirti';
          clickAction = `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')`;
-         rightSideContent = ''; // Nessuna immagine post per i follow
+         rightSideContent = ''; 
       } else {
-         // Logica esistente per like e commenti
          const { data: post } = await sb.from('posts').select('image_url').eq('id', n.post_id).single();
          icon = n.type === 'like' ? '<i class="fa-solid fa-heart text-red-500"></i>' : '<i class="fa-regular fa-comment text-[#d4af37]"></i>';
          txt = n.type === 'like' ? 'ha messo like al tuo post' : 'ha commentato il tuo post';
@@ -1418,20 +1389,6 @@
           if (payload.new.receiver_id === currentUser.id) markAsRead(activeChatId);
         }
       }).subscribe();
-  }
-
-  async function loadMessages() {
-    const { data: msgs } = await sb.from('messages').select('*')
-      .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`)
-      .order('created_at', { ascending: true });
-
-    const box = document.getElementById('chat-messages');
-    box.innerHTML = '';
-    msgs?.forEach(m => {
-      const isMine = m.sender_id === currentUser.id;
-      box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-theirs'}">${escapeHtml(m.content)}</div>`);
-    });
-    box.scrollTop = box.scrollHeight;
   }
 
   async function sendMessage() {
