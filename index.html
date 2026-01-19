@@ -2,12 +2,9 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HAWENISHLAND — Fashion AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAWENISHLAND — AI Fashion</title>
 
-  <link rel="preconnect" href="https://cdn.tailwindcss.com">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   
@@ -15,440 +12,395 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400&display=swap" rel="stylesheet">
 
   <style>
-    /* --- DESIGN SYSTEM: LUXURY LIGHT --- */
+    /* --- DESIGN PULITO E VELOCE --- */
     :root {
-      --bg-body: #ffffff;
-      --bg-hover: #f9f9f9;
-      --text-main: #111111;
-      --text-muted: #737373;
-      --gold: #d4af37; /* Oro classico elegante */
-      --border-color: #e5e5e5;
-      --radius: 8px;
+      /* Palette più elegante e neutra */
+      --bg-deep: #0a0a0a;        
+      --bg-panel: #141414; 
+      --text-main: #ffffff;      
+      --text-muted: #a3a3a3;    
+      --gold: #d4af37;           
+      --gold-glow: rgba(212, 175, 55, 0.1);
+      --red-like: #ef4444;
+      --border-light: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body { 
-      background-color: var(--bg-body); 
+      background-color: var(--bg-deep); 
       color: var(--text-main); 
-      font-family: 'Manrope', sans-serif; 
+      font-family: 'Outfit', sans-serif; 
       margin: 0; 
       overflow-x: hidden; 
+      min-height: 100vh;
     }
 
-    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
     .hidden { display: none !important; }
-    .serif { font-family: 'Playfair Display', serif; }
 
     /* --- LAYOUT --- */
-    .app-layout { display: flex; max-width: 1100px; margin: 0 auto; min-height: 100vh; position: relative; }
+    .app-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; }
 
-    /* SIDEBAR (Minimal & Clean) */
+    /* SIDEBAR */
     .sidebar { 
-      width: 240px; 
-      height: 100vh; 
+      width: 80px; 
       position: sticky; 
       top: 0; 
-      border-right: 1px solid var(--border-color); 
-      padding: 40px 24px; 
+      height: 100vh;
       display: flex; 
       flex-direction: column; 
-      background: #fff;
-      z-index: 50;
+      align-items: center; 
+      background: var(--bg-panel);
+      border-right: var(--border-light);
+      padding: 30px 0;
+      z-index: 50; /* Z-INDEX BASSO per non coprire i modali */
     }
 
-    .brand-logo {
+    .brand-logo-icon {
       font-family: 'Playfair Display', serif;
-      font-size: 26px;
-      font-weight: 600;
-      margin-bottom: 50px;
-      letter-spacing: -0.5px;
+      font-weight: bold;
+      font-size: 24px;
+      color: var(--gold);
+      margin-bottom: 40px;
       cursor: pointer;
+      border: 1px solid var(--gold);
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
     }
 
     .nav-item { 
-      display: flex; align-items: center; gap: 16px;
-      padding: 14px 12px;
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 12px; 
       cursor: pointer; 
-      border-radius: var(--radius);
-      transition: background 0.2s;
-      margin-bottom: 4px;
-      font-size: 15px;
-      color: var(--text-main);
+      transition: all 0.2s ease; 
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      font-size: 20px;
     }
-    
-    .nav-item:hover { background-color: var(--bg-hover); }
-    .nav-item.active { font-weight: 700; background-color: #f4f4f4; }
-    .nav-item i { font-size: 22px; width: 24px; text-align: center; }
-
-    /* MOBILE NAVIGATION */
-    @media (max-width: 768px) {
-      .sidebar { 
-        width: 100%; height: 60px; 
-        position: fixed; bottom: 0; top: auto; left: 0; 
-        border-right: none; border-top: 1px solid var(--border-color);
-        flex-direction: row; justify-content: space-around; 
-        padding: 0; background: rgba(255,255,255,0.98); 
-        z-index: 900; /* Alto ma sotto i modali */
-      }
-      .brand-logo { display: none; }
-      .nav-text { display: none; }
-      .nav-item { margin: 0; padding: 0; justify-content: center; width: 100%; height: 100%; }
-      .nav-item:hover { background: transparent; }
-      .app-layout { padding-bottom: 70px; display: block; }
+     
+    .nav-item:hover, .nav-item.active { 
+      background: rgba(255, 255, 255, 0.05); 
+      color: var(--gold); 
     }
 
-    /* --- FEED & CONTENT --- */
+    /* FEED */
     .main-content { flex: 1; padding: 40px; max-width: 600px; margin: 0 auto; }
-    @media (max-width: 768px) { .main-content { padding: 10px 0; width: 100%; } }
 
-    /* TABS */
-    .feed-tabs { 
-      display: flex; justify-content: center; gap: 40px; margin-bottom: 30px; 
-      border-bottom: 1px solid var(--border-color); position: sticky; top: 0; 
-      background: rgba(255,255,255,0.95); z-index: 40; padding-top: 10px;
+    .feed-tabs-container {
+      display: flex; justify-content: center; gap: 30px; margin-bottom: 30px;
+      padding-bottom: 10px; border-bottom: var(--border-light);
     }
-    .feed-tab { 
-      padding-bottom: 10px; cursor: pointer; color: var(--text-muted); font-weight: 600; font-size: 14px; 
-      position: relative;
+
+    .feed-tab {
+      font-size: 16px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; padding: 5px 10px; transition: all 0.3s ease; position: relative;
     }
-    .feed-tab.active { color: #000; }
-    .feed-tab.active::after { 
-      content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: #000; 
+    .feed-tab.active { color: #fff; }
+    .feed-tab.active::after {
+      content: ''; position: absolute; bottom: -11px; left: 0; width: 100%;
+      height: 2px; background: var(--gold);
     }
 
     /* POST CARD */
     .post-card { 
-      margin-bottom: 40px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; 
+      background: #111; margin-bottom: 40px; padding: 0;
+      border-radius: 16px; border: var(--border-light);
+      overflow: hidden;
     }
-    .post-card:last-child { border: none; }
-
-    .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+     
+    .post-header { display: flex; align-items: center; justify-content: space-between; padding: 15px; }
     .user-badge { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #f0f0f0; }
-    .username { font-weight: 700; font-size: 14px; }
-    .post-date { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-light); }
+    .username { font-weight: 600; font-size: 14px; color: #fff; }
+    .post-date { font-size: 11px; color: var(--text-muted); }
 
-    .post-img-container { 
-      position: relative; width: 100%; overflow: hidden; border-radius: 4px; background: #f4f4f4;
-      border: 1px solid #f0f0f0; 
+    .post-img-container { position: relative; width: 100%; }
+    .post-img { width: 100%; display: block; cursor: pointer; }
+
+    .shop-tag-overlay {
+      position: absolute; bottom: 15px; left: 15px;
+      background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px);
+      padding: 6px 12px; border-radius: 30px;
+      display: flex; align-items: center; gap: 8px; border: 1px solid var(--gold);
+      cursor: pointer; z-index: 10;
     }
-    .post-img { width: 100%; display: block; object-fit: cover; min-height: 300px; cursor: pointer; }
+    .shop-tag-overlay span { font-size: 11px; font-weight: bold; color: white; }
+    .shop-tag-overlay i { color: var(--gold); font-size: 12px; }
 
-    /* SHOP TAG SULLA FOTO */
-    .shop-tag {
-      position: absolute; bottom: 12px; left: 12px;
-      background: rgba(255,255,255,0.9); padding: 6px 12px;
-      border-radius: 20px; font-size: 11px; font-weight: 700;
-      color: #000; cursor: pointer; z-index: 10;
-      display: flex; align-items: center; gap: 6px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s;
-    }
-    .shop-tag:hover { transform: scale(1.05); }
+    .action-bar { display: flex; gap: 20px; padding: 15px; }
+    .icon-btn { font-size: 22px; cursor: pointer; color: var(--text-main); transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+    .icon-btn:hover { color: var(--gold); transform: translateY(-2px); }
+    .likes-count-clickable { font-size: 14px; font-weight: 600; }
 
-    .action-bar { display: flex; gap: 18px; padding: 12px 4px; font-size: 24px; }
-    .icon-btn { cursor: pointer; color: #111; transition: transform 0.1s; display: flex; align-items: center; gap: 6px; }
-    .icon-btn:hover { color: var(--gold); }
-    .likes-count { font-size: 14px; font-weight: 700; margin-bottom: 6px; padding: 0 4px; cursor: pointer; }
-    
-    .caption-box { padding: 0 4px; font-size: 14px; line-height: 1.5; color: #333; }
-    .caption-user { font-weight: 700; margin-right: 6px; cursor: pointer; }
+    .caption-box { padding: 0 15px 20px 15px; font-size: 14px; line-height: 1.5; color: #ccc; }
+    .caption-user { font-weight: 700; color: #fff; margin-right: 8px; }
 
     /* BUTTONS */
     .btn-gold {
-      background: #000; color: #fff; padding: 12px; border-radius: 6px;
-      font-weight: 600; width: 100%; border: none; cursor: pointer;
-      text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px;
-      transition: 0.2s;
+      background: var(--gold); color: #000; padding: 12px; border-radius: 8px;
+      font-weight: 700; border: none; cursor: pointer; transition: 0.3s; width: 100%;
     }
-    .btn-gold:hover { background: var(--gold); }
-    .btn-outline { 
-      background: transparent; border: 1px solid #000; padding: 6px 16px; 
-      font-weight: 600; font-size: 12px; border-radius: 6px; cursor: pointer; 
+    .btn-gold:hover { opacity: 0.9; }
+    .btn-gold-outline {
+      border: 1px solid var(--gold); color: var(--gold); padding: 8px; 
+      border-radius: 6px; font-weight: 600; cursor: pointer; background: transparent;
     }
 
-    /* LOGIN PAGE */
-    .auth-overlay { 
-      position: fixed; inset: 0; background: #fff; z-index: 5000; 
-      display: flex; flex-direction: row; transition: transform 0.4s ease-in-out; 
-    }
-    .visual-side { flex: 1.2; position: relative; display: none; background: #f2f2f2; }
-    @media(min-width: 900px) { .visual-side { display: block; } }
-    .visual-side img { width: 100%; height: 100%; object-fit: cover; }
-    
-    .form-side { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px; align-items: center; }
-    .auth-container { width: 100%; max-width: 380px; text-align: center; }
-    .auth-input { 
-      width: 100%; padding: 14px; margin-bottom: 12px; 
-      background: #fafafa; border: 1px solid var(--border-color); 
-      border-radius: 6px; outline: none; font-size: 14px; 
-    }
-    .auth-input:focus { border-color: #000; background: #fff; }
-
-    /* MODALS - FIXED */
+    /* MODALS - FIXED Z-INDEX */
     .modal-overlay { 
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0, 0.7); z-index: 10000; /* Z-INDEX MASSIMO */
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0, 0.85); z-index: 9999; /* Z-INDEX ALTISSIMO PER STARE SOPRA TUTTO */
       display: flex; justify-content: center; align-items: center;
-      backdrop-filter: blur(2px); /* Blur leggero, non impatta performance */
     }
     .glass-modal { 
-      background: #fff; width: 100%; max-width: 450px; max-height: 90vh;
-      border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      background: #141414; border: 1px solid rgba(255,255,255,0.1); 
+      border-radius: 16px; overflow: hidden; position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
-    
-    /* DETAIL MODAL LAYOUT */
-    .detail-layout { width: 95vw; max-width: 1000px; height: 85vh; flex-direction: row; }
+
+    /* Upload Styling */
+    .upload-box {
+        border: 2px dashed #333; border-radius: 12px; padding: 40px; 
+        text-align: center; cursor: pointer; transition: 0.2s;
+    }
+    .upload-box:hover { border-color: var(--gold); background: rgba(255,255,255,0.02); }
+    .added-product-item {
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; margin-bottom: 5px;
+    }
+
+    /* Detail Modal */
+    .detail-layout { display: flex; width: 90vw; max-width: 1000px; height: 85vh; }
     .detail-img-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
-    .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #fff; min-width: 320px; }
+    .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #141414; min-width: 320px; }
+
+    /* Mobile */
     @media (max-width: 800px) {
-        .detail-layout { flex-direction: column; height: 100%; }
-        .detail-img-side { height: 40%; }
-        .detail-info-side { height: 60%; }
+      .sidebar { 
+        width: 100%; height: 60px; position: fixed; bottom: 0; top: auto; 
+        flex-direction: row; justify-content: space-around; padding: 0;
+        border-right: none; border-top: 1px solid #333; z-index: 50;
+      }
+      .brand-logo-icon, .nav-item::after { display: none; }
+      .nav-item { margin: 0; }
+      .app-layout { display: block; padding-bottom: 70px; }
+      .detail-layout { flex-direction: column; height: 100%; width: 100%; }
     }
 
-    /* UPLOAD STUFF */
-    .file-drop-area {
-        border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 12px;
-        cursor: pointer; transition: 0.2s; position: relative;
-    }
-    .file-drop-area:hover { border-color: var(--gold); background: #fffcf5; }
-    .added-prod { display: flex; justify-content: space-between; padding: 8px; background: #f9f9f9; border-radius: 4px; margin-bottom: 4px; font-size: 12px; border: 1px solid #eee; }
-
-    /* ANALYZING AI OVERLAY */
-    .ai-analyzing {
-        position: absolute; inset: 0; background: rgba(255,255,255,0.9);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 20;
-    }
-
-    /* UTILS */
-    .gold-dot { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; position: absolute; top: 10px; right: 10px; display: none; }
-    .msg-bubble { padding: 8px 14px; border-radius: 18px; max-width: 75%; font-size: 14px; margin-bottom: 6px; }
-    .msg-mine { background: #000; color: #fff; align-self: flex-end; }
-    .msg-theirs { background: #f0f0f0; align-self: flex-start; }
-    
-    .toast { position: fixed; top: 20px; right: 20px; background: #111; color: #fff; padding: 12px 20px; border-radius: 6px; z-index: 20000; opacity: 0; transition: 0.3s; transform: translateY(-20px); pointer-events: none; }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    /* Utils */
+    .gold-dot { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; position: absolute; top: 12px; right: 12px; display: none; }
+    .msg-bubble { padding: 10px 14px; border-radius: 12px; font-size: 14px; margin-bottom: 8px; max-width: 80%; }
+    .msg-mine { background: var(--gold); color: #000; align-self: flex-end; }
+    .msg-theirs { background: #333; color: #fff; align-self: flex-start; }
+    .toast-box { position: fixed; top: 20px; right: 20px; background: #222; border: 1px solid var(--gold); padding: 15px; border-radius: 8px; z-index: 10000; color: #fff; transform: translateX(150%); transition: transform 0.3s; }
+    .toast-active { transform: translateX(0); }
+    .analyzing-box { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
   </style>
 </head>
 <body>
 
-<div id="auth-container" class="auth-overlay">
-  <div class="visual-side">
-    <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200">
-  </div>
-  <div class="form-side">
-    <div class="auth-container">
-      <h1 class="serif" style="font-size: 40px; margin-bottom: 30px;">Hawenishland</h1>
-      <div id="msg-box" class="hidden p-3 mb-4 text-xs rounded bg-red-100 text-red-600"></div>
-      
-      <div id="login-form">
-        <input type="email" id="l-email" class="auth-input" placeholder="Email">
-        <input type="password" id="l-pass" class="auth-input" placeholder="Password">
-        <button onclick="faiLogin()" class="btn-gold">ACCEDI</button>
-        <p onclick="vaiA('signup')" class="text-xs mt-4 text-gray-500 cursor-pointer hover:text-black">Non hai un account? <b>Iscriviti</b></p>
-      </div>
+<div id="auth-container" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0a0a0a; z-index:2000; display:flex;">
+  <div style="flex:1.5; background:url('https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1200') center/cover; display:none;" class="md:block"></div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px; align-items:center;">
+    <h1 style="font-family:'Playfair Display'; font-size:40px; margin-bottom:40px;">Hawenishland</h1>
+    <div id="msg-box" class="hidden p-2 mb-4 text-xs border rounded text-red-400 border-red-400"></div>
+    
+    <div id="login-form" style="width:100%; max-width:350px;">
+      <input type="email" id="l-email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; background:#222; border:1px solid #333; color:#fff; border-radius:6px;">
+      <input type="password" id="l-pass" placeholder="Password" style="width:100%; padding:12px; margin-bottom:20px; background:#222; border:1px solid #333; color:#fff; border-radius:6px;">
+      <button onclick="faiLogin()" class="btn-gold">Entra</button>
+      <p onclick="vaiA('signup')" style="margin-top:20px; text-align:center; font-size:12px; cursor:pointer; color:#888;">Non hai un account? <b style="color:#fff;">Iscriviti</b></p>
+    </div>
 
-      <div id="signup-form" class="hidden">
-        <input type="text" id="r-username" class="auth-input" placeholder="Username">
-        <input type="text" id="r-nome" class="auth-input" placeholder="Nome">
-        <input type="text" id="r-cognome" class="auth-input" placeholder="Cognome">
-        <input type="date" id="r-nascita" class="auth-input">
-        <input type="email" id="r-email" class="auth-input" placeholder="Email">
-        <input type="password" id="r-pass" class="auth-input" placeholder="Password">
-        <button onclick="faiRegistrazione()" class="btn-gold">REGISTRATI</button>
-        <p onclick="vaiA('login')" class="text-xs mt-4 text-gray-500 cursor-pointer hover:text-black">Torna al login</p>
-      </div>
+    <div id="signup-form" class="hidden" style="width:100%; max-width:350px;">
+      <input type="text" id="r-username" placeholder="Username" style="width:100%; padding:12px; margin-bottom:10px; background:#222; border:1px solid #333; color:#fff; border-radius:6px;">
+      <input type="email" id="r-email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; background:#222; border:1px solid #333; color:#fff; border-radius:6px;">
+      <input type="password" id="r-pass" placeholder="Password" style="width:100%; padding:12px; margin-bottom:20px; background:#222; border:1px solid #333; color:#fff; border-radius:6px;">
+      <button onclick="faiRegistrazione()" class="btn-gold">Registrati</button>
+      <p onclick="vaiA('login')" style="margin-top:20px; text-align:center; font-size:12px; cursor:pointer; color:#888;">Torna al Login</p>
     </div>
   </div>
 </div>
 
 <div id="app-interface" class="hidden">
   <div class="app-layout">
-    
     <div class="sidebar">
-      <div class="brand-logo" onclick="renderFeedView()">Hawenishland</div>
-      
-      <div class="nav-item active" onclick="renderFeedView()">
-        <i class="fa-solid fa-house"></i> <span>Home</span>
-      </div>
-      <div class="nav-item" onclick="openSearchModal()">
-        <i class="fa-solid fa-magnifying-glass"></i> <span>Cerca</span>
-      </div>
-      <div class="nav-item" onclick="openUploadModal()">
-        <i class="fa-regular fa-square-plus"></i> <span>Crea</span>
-      </div>
+      <div class="brand-logo-icon" onclick="renderFeedView()">H</div>
+      <div class="nav-item active" onclick="renderFeedView()"><i class="fa-solid fa-house"></i></div>
+      <div class="nav-item" onclick="openSearchModal()"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="nav-item" onclick="openUploadModal()"><i class="fa-solid fa-plus"></i></div>
       <div class="nav-item relative" onclick="openNotificationsModal()">
-        <div id="notif-gold-dot" class="gold-dot"></div>
-        <i class="fa-regular fa-heart"></i> <span>Notifiche</span>
+        <div id="notif-gold-dot" class="gold-dot"></div><i class="fa-regular fa-bell"></i>
       </div>
       <div class="nav-item relative" onclick="openInboxModal()">
-        <div id="global-gold-dot" class="gold-dot"></div>
-        <i class="fa-regular fa-paper-plane"></i> <span>Messaggi</span>
+        <div id="global-gold-dot" class="gold-dot"></div><i class="fa-regular fa-envelope"></i>
       </div>
-      <div class="nav-item" onclick="openUserProfile(currentUser.id)">
-        <i class="fa-regular fa-user"></i> <span>Profilo</span>
-      </div>
-      <div style="margin-top: auto"></div>
-      <div class="nav-item text-red-400" onclick="logout()">
-        <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Esci</span>
-      </div>
+      <div class="nav-item" onclick="openUserProfile(currentUser.id)"><i class="fa-solid fa-user"></i></div>
+      <div style="margin-top:auto"></div>
+      <div class="nav-item text-red-500" onclick="logout()"><i class="fa-solid fa-power-off"></i></div>
     </div>
-
     <div class="main-content" id="main-content-area"></div>
   </div>
 </div>
 
-<div id="toast-notif" class="toast">Notifica</div>
+<div id="toast-notif" class="toast-box">
+  <div style="font-weight:bold; color:var(--gold);">Notifica</div>
+  <div id="toast-msg" style="font-size:12px; color:#ccc;">Messaggio</div>
+</div>
 
 <div id="upload-modal" class="modal-overlay hidden">
-  <div class="glass-modal">
-    <div class="flex justify-between items-center p-4 border-b">
-        <span class="font-bold">Nuovo Post</span>
-        <i class="fa-solid fa-xmark cursor-pointer text-xl" onclick="closeModal('upload-modal')"></i>
+  <div class="glass-modal p-6 w-[400px]">
+    <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+      <h3 class="font-bold text-lg text-white">Crea Outfit</h3>
+      <i class="fa-solid fa-xmark cursor-pointer text-gray-400 hover:text-white" onclick="closeModal('upload-modal')"></i>
     </div>
     
-    <div class="p-4 overflow-y-auto flex-1">
-      <label class="file-drop-area block mb-4">
-        <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 mb-2"></i>
-        <div class="text-xs text-gray-500 font-bold">CARICA FOTO</div>
+    <div class="flex flex-col gap-4 overflow-y-auto max-h-[80vh]">
+      <label class="upload-box relative overflow-hidden">
+        <i class="fa-solid fa-camera text-3xl mb-2 text-gray-500"></i>
+        <div class="text-xs text-gray-400">Carica Foto</div>
         <input type="file" id="post-file" accept="image/*" class="hidden" onchange="previewUpload(this)">
-        <div id="ai-loading" class="ai-analyzing hidden">
-            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-gold mb-2"></i>
-            <span class="text-xs font-bold">ANALISI MODA IN CORSO...</span>
+        <div id="ai-loading" class="hidden analyzing-box">
+            <i class="fa-solid fa-brain fa-spin text-3xl text-[#d4af37] mb-2"></i>
+            <span class="text-xs text-white font-bold">L'AI sta controllando...</span>
         </div>
       </label>
-
-      <img id="upload-preview" class="hidden w-full h-64 object-cover rounded mb-4">
       
-      <div id="ai-error" class="hidden p-2 bg-red-100 text-red-600 text-xs text-center rounded mb-3">
-        L'IA non ha rilevato abbigliamento in questa foto. Riprova.
+      <img id="upload-preview" class="hidden w-full h-40 object-cover rounded-lg border border-gray-700">
+      
+      <div id="ai-error-msg" class="hidden p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-xs text-center">
+        L'IA non rileva abbigliamento in questa foto.
       </div>
 
-      <div id="upload-details" class="hidden">
-        <textarea id="post-caption" rows="2" placeholder="Scrivi una didascalia..." class="w-full border p-2 rounded text-sm mb-4 outline-none"></textarea>
-        
-        <div class="bg-gray-50 p-3 rounded border mb-4">
-            <p class="text-[10px] font-bold uppercase mb-2">Tagga Prodotti (Necessario)</p>
+      <div id="upload-details-section" class="hidden">
+          <div class="bg-[#1a1a1a] p-3 rounded border border-gray-800 mb-4">
+            <p class="text-[#d4af37] text-xs font-bold mb-2">TAGGA PRODOTTI (Richiesto)</p>
             <div class="flex gap-2 mb-2">
-                <input type="text" id="p-name" placeholder="Nome (es. Borsa)" class="flex-1 border p-2 text-xs rounded">
-                <input type="url" id="p-link" placeholder="Link shop" class="flex-1 border p-2 text-xs rounded">
+               <input type="text" id="temp-prod-name" placeholder="Nome" class="flex-1 bg-black border border-gray-700 rounded p-2 text-xs text-white">
+               <input type="url" id="temp-prod-link" placeholder="Link" class="flex-1 bg-black border border-gray-700 rounded p-2 text-xs text-white">
             </div>
-            <button onclick="addProd()" class="w-full border bg-white p-1 text-xs rounded font-bold hover:bg-gray-100">+ AGGIUNGI</button>
-            <div id="prod-list" class="mt-2"></div>
-        </div>
+            <button onclick="addProdToUpload()" class="btn-gold-outline w-full text-xs">+ Aggiungi</button>
+            <div id="upload-products-list" class="mt-2 space-y-1"></div>
+          </div>
 
-        <button id="btn-pub" onclick="submitPost()" class="btn-gold">PUBBLICA</button>
+          <textarea id="post-caption" rows="2" placeholder="Scrivi didascalia..." class="w-full bg-[#1a1a1a] border border-gray-800 rounded p-3 text-white text-sm mb-4 outline-none"></textarea>
+          <button id="btn-publish" onclick="submitPost()" class="btn-gold">PUBBLICA</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="share-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[350px] h-[400px] flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between font-bold text-white">
+      <span>Invia a...</span>
+      <i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('share-modal')"></i>
+    </div>
+    <div id="share-list-content" class="flex-1 overflow-y-auto p-2"></div>
+  </div>
+</div>
+
+<div id="shop-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[350px] p-6 text-center relative">
+    <i class="fa-solid fa-xmark absolute top-4 right-4 text-white cursor-pointer" onclick="closeModal('shop-modal')"></i>
+    <h3 class="text-white font-serif text-2xl mb-4 italic">Shop</h3>
+    <div id="shop-window-list" class="flex-col gap-2 flex"></div>
   </div>
 </div>
 
 <div id="post-detail-modal" class="modal-overlay hidden">
   <div class="glass-modal detail-layout">
     <div class="detail-img-side">
-        <img id="detail-img" src="" class="max-w-full max-h-full object-contain">
+      <img id="detail-img" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
     </div>
     <div class="detail-info-side">
-        <div class="p-3 border-b flex justify-between items-center">
-            <div class="flex items-center gap-2 cursor-pointer" id="detail-user-head">
-                <img id="detail-avatar" class="w-8 h-8 rounded-full border">
-                <span id="detail-username" class="font-bold text-sm"></span>
-            </div>
-            <div class="flex gap-3">
-                <span id="detail-delete"></span>
-                <i class="fa-solid fa-xmark cursor-pointer text-lg" onclick="closeModal('post-detail-modal')"></i>
-            </div>
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+        <div class="flex items-center gap-3 cursor-pointer" id="detail-user-link">
+          <img id="detail-avatar" src="" class="w-8 h-8 rounded-full border border-gray-700">
+          <span id="detail-username" class="font-bold text-sm text-white"></span>
         </div>
-        <div id="detail-comments" class="flex-1 overflow-y-auto p-3 text-sm"></div>
-        <div class="p-3 border-t">
-            <div class="flex gap-3 text-xl mb-2">
-                <i id="detail-like-icon" class="fa-regular fa-heart cursor-pointer"></i>
-                <i class="fa-regular fa-comment"></i>
-            </div>
-            <div class="font-bold text-xs mb-2"><span id="detail-likes-n">0</span> Mi piace</div>
-            <div class="flex gap-2">
-                <input type="text" id="new-comment" placeholder="Aggiungi un commento..." class="flex-1 text-sm outline-none">
-                <button onclick="sendComment()" class="text-xs font-bold">PUBBLICA</button>
-            </div>
+        <div class="flex items-center gap-3">
+            <span id="detail-delete-btn"></span>
+            <i class="fa-solid fa-xmark cursor-pointer text-gray-400 hover:text-white" onclick="closeModal('post-detail-modal')"></i>
         </div>
+      </div>
+      <div id="detail-comments" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex gap-4 text-xl mb-2 text-white">
+          <i id="detail-like-btn" class="fa-regular fa-heart cursor-pointer"></i>
+          <i class="fa-regular fa-comment"></i>
+        </div>
+        <div class="font-bold text-sm mb-2 text-white"><span id="detail-likes-count">0</span> Mi piace</div>
+        <div class="flex gap-2">
+          <input type="text" id="new-comment" placeholder="Commenta..." class="flex-1 bg-transparent text-white text-sm outline-none">
+          <button onclick="inviaCommento()" class="text-[#d4af37] font-bold text-xs">PUBBLICA</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<div id="shop-modal" class="modal-overlay hidden">
-  <div class="glass-modal p-5" style="max-height: 400px;">
-    <div class="flex justify-between items-center mb-4">
-        <h3 class="serif text-xl italic">Shop The Look</h3>
-        <i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('shop-modal')"></i>
+<div id="search-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] h-[500px] flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between">
+        <input id="search-query" type="text" placeholder="Cerca..." class="bg-transparent text-white outline-none w-full" onkeyup="performSearch()">
+        <i class="fa-solid fa-xmark cursor-pointer text-white" onclick="closeModal('search-modal')"></i>
     </div>
-    <div id="shop-list" class="overflow-y-auto flex-1 space-y-2"></div>
+    <div id="search-results" class="p-2 overflow-y-auto"></div>
   </div>
 </div>
 
-<div id="share-modal" class="modal-overlay hidden">
-  <div class="glass-modal p-4 h-[400px]">
-    <div class="flex justify-between mb-2 font-bold"><span>Condividi</span><i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('share-modal')"></i></div>
-    <div id="share-list" class="overflow-y-auto h-full"></div>
-  </div>
-</div>
-
-<div id="list-modal" class="modal-overlay hidden">
-  <div class="glass-modal p-0 h-[400px]">
-    <div class="p-3 border-b flex justify-between font-bold">
-        <span id="list-title">Lista</span>
-        <i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('list-modal')"></i>
-    </div>
-    <div id="list-search-bar" class="hidden p-2 border-b">
-        <input type="text" id="search-q" class="w-full bg-gray-100 p-2 rounded text-sm outline-none" placeholder="Cerca..." onkeyup="doSearch()">
-    </div>
-    <div id="list-content" class="p-2 overflow-y-auto h-full"></div>
-  </div>
-</div>
-
-<div id="edit-modal" class="modal-overlay hidden">
-  <div class="glass-modal p-6 h-auto">
-    <h3 class="serif text-center text-xl mb-4">Modifica Profilo</h3>
-    <div class="text-center mb-4">
-        <img id="edit-img" class="w-20 h-20 rounded-full border mx-auto mb-2 object-cover">
-        <label class="text-xs font-bold text-blue-600 cursor-pointer">Cambia Foto<input type="file" class="hidden" onchange="upAvatar(this)"></label>
-    </div>
-    <input type="text" id="edit-u" class="w-full border p-2 rounded mb-2 text-sm" placeholder="Username">
-    <input type="text" id="edit-f" class="w-full border p-2 rounded mb-4 text-sm" placeholder="Nome Completo">
-    <button onclick="saveEdit()" class="btn-gold">SALVA</button>
+<div id="inbox-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] h-[600px] flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between font-bold text-white"><span>Messaggi</span><i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('inbox-modal')"></i></div>
+    <div id="inbox-list" class="flex-1 overflow-y-auto"></div>
   </div>
 </div>
 
 <div id="chat-modal" class="modal-overlay hidden">
-  <div class="glass-modal h-[500px]">
-    <div class="p-3 border-b flex justify-between bg-gray-50 items-center">
-        <span id="chat-nm" class="font-bold">Chat</span>
+  <div class="glass-modal w-[400px] h-[600px] flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between text-white items-center">
+        <div class="flex gap-2 items-center"><img id="chat-head-img" class="w-6 h-6 rounded-full"><span id="chat-head-name" class="font-bold">Chat</span></div>
         <i class="fa-solid fa-xmark cursor-pointer" onclick="closeChat()"></i>
     </div>
-    <div id="chat-box" class="flex-1 overflow-y-auto p-3 flex flex-col"></div>
-    <div class="p-3 border-t flex gap-2">
-        <input type="text" id="chat-in" class="flex-1 border rounded-full px-3 text-sm outline-none" placeholder="Scrivi..." onkeypress="if(event.key==='Enter') sendMsg()">
-        <button onclick="sendMsg()" class="text-xs font-bold">INVIA</button>
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col"></div>
+    <div class="p-3 border-t border-gray-800 flex gap-2">
+        <input id="chat-input" class="flex-1 bg-[#222] rounded-full px-3 text-white text-sm outline-none" placeholder="Scrivi..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()" class="text-[#d4af37] font-bold text-xs">INVIA</button>
     </div>
   </div>
 </div>
 
-<div id="notif-modal" class="modal-overlay hidden">
-  <div class="glass-modal h-[500px]">
-    <div class="p-3 border-b flex justify-between font-bold"><span>Notifiche</span><i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('notif-modal')"></i></div>
-    <div id="notif-list" class="flex-1 overflow-y-auto"></div>
+<div id="notifications-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[400px] h-[500px] flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between font-bold text-white"><span>Notifiche</span><i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('notifications-modal')"></i></div>
+    <div id="notifications-list" class="flex-1 overflow-y-auto"></div>
   </div>
 </div>
-<div id="inbox-modal" class="modal-overlay hidden">
-  <div class="glass-modal h-[500px]">
-    <div class="p-3 border-b flex justify-between font-bold"><span>Messaggi</span><i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('inbox-modal')"></i></div>
-    <div id="inbox-list" class="flex-1 overflow-y-auto"></div>
+
+<div id="list-modal" class="modal-overlay hidden">
+  <div class="glass-modal w-[350px] h-[400px] flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between font-bold text-white"><span id="list-title">Lista</span><i class="fa-solid fa-xmark cursor-pointer" onclick="closeModal('list-modal')"></i></div>
+    <div id="list-content" class="flex-1 overflow-y-auto"></div>
+  </div>
+</div>
+
+<div id="edit-profile-modal" class="modal-overlay hidden">
+  <div class="glass-modal p-6 w-[350px]">
+    <h3 class="text-white font-bold text-center mb-4">Modifica Profilo</h3>
+    <div class="text-center mb-4">
+        <img id="edit-avatar-preview" class="w-20 h-20 rounded-full border border-[#d4af37] mx-auto object-cover mb-2">
+        <label class="text-[#d4af37] text-xs font-bold cursor-pointer">Cambia Foto<input type="file" class="hidden" onchange="uploadAvatar(this)"></label>
+    </div>
+    <input type="text" id="edit-username" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white mb-2" placeholder="Username">
+    <input type="text" id="edit-fullname" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white mb-4" placeholder="Nome Completo">
+    <button onclick="saveProfile()" class="btn-gold">SALVA</button>
   </div>
 </div>
 
@@ -456,383 +408,453 @@
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
+  const BUCKET_POSTS = 'posts';
+  const BUCKET_AVATARS = 'avatars';
   
-  let currentUser=null, curPost=null, chatUser=null, chatSub=null;
-  let feedMode='following', products=[]; 
-  let sharePid=null, model=null;
-  const FASHION_KEYS = ['shirt','pant','dress','shoe','boot','hat','glass','jacket','coat','skirt','tie','trousers','short','wear','cloth','suit','bikini','kimono','gown','fashion','person','mens','womens'];
+  let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
+  let feedMode = 'following'; 
+  let uploadProductsList = [];
+  let sharePostId = null; 
+  let classifierModel = null;
+  
+  // AI KEYWORDS
+  const FASHION_KEYWORDS = ['shirt','pant','jean','dress','suit','shoe','boot','hat','glass','jacket','coat','skirt','tie','trousers','wear','cloth','bikini','kimono','gown','fashion','mens','womens'];
 
-  // INIT
-  window.addEventListener('load', async()=>{
-    try { model = await mobilenet.load(); console.log("AI Ready"); } catch(e){console.log("AI Error");}
-    const {data:{session}} = await sb.auth.getSession();
-    if(session) enter(session.user);
-    else document.getElementById('auth-container').classList.remove('hidden');
+  window.addEventListener('load', async () => {
+    try {
+        if (typeof mobilenet !== 'undefined') {
+            classifierModel = await mobilenet.load();
+            console.log("AI Ready");
+        }
+    } catch(e) { console.error("AI Error", e); }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) enterApp(session.user);
+    else document.getElementById('auth-container').style.display = 'flex';
   });
 
-  // UTILS
-  const el = (id) => document.getElementById(id);
-  const hide = (id) => el(id).classList.add('hidden');
-  const show = (id) => el(id).classList.remove('hidden');
-  const esc = (t) => t ? t.replace(/</g,"&lt;") : "";
-  const toast = (m) => { const t=el('toast-notif'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
-  function closeModal(id){ hide(id); }
+  // --- FUNZIONE CRITICA PER CHIUDERE I MODALI ---
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  
+  function showToast(msg) {
+      const t = document.getElementById('toast-notif');
+      document.getElementById('toast-msg').innerText = msg;
+      t.classList.add('toast-active');
+      setTimeout(()=>t.classList.remove('toast-active'), 3000);
+  }
+  function escapeHtml(t) { return t?t.replace(/&/g,"&amp;").replace(/</g,"&lt;"): ""; }
 
-  // --- AI & UPLOAD LOGIC ---
+  // --- AI & UPLOAD ---
   function openUploadModal() {
-      show('upload-modal');
-      el('post-file').value="";
-      hide('upload-preview'); hide('upload-details'); hide('ai-error'); hide('ai-loading');
-      products=[]; renderProds();
+      document.getElementById('upload-modal').classList.remove('hidden');
+      document.getElementById('post-file').value = "";
+      document.getElementById('upload-preview').classList.add('hidden');
+      document.getElementById('upload-details-section').classList.add('hidden');
+      document.getElementById('ai-error-msg').classList.add('hidden');
+      uploadProductsList = []; renderUploadProductsList();
   }
 
   function previewUpload(input) {
       if(input.files && input.files[0]) {
-          const img = el('upload-preview');
-          img.src = URL.createObjectURL(input.files[0]);
-          show('upload-preview');
-          show('ai-loading');
+          const img = document.getElementById('upload-preview');
+          const loading = document.getElementById('ai-loading');
           
-          // AI CHECK
+          img.src = URL.createObjectURL(input.files[0]);
+          img.classList.remove('hidden');
+          loading.classList.remove('hidden');
+          document.getElementById('upload-details-section').classList.add('hidden');
+          document.getElementById('ai-error-msg').classList.add('hidden');
+
           img.onload = async () => {
-              if(!model) { finishCheck(true); return; } // Fallback se AI fallisce caricamento
-              try {
-                  const preds = await model.classify(img);
-                  const isFashion = preds.some(p => FASHION_KEYS.some(k => p.className.toLowerCase().includes(k)));
-                  finishCheck(isFashion);
-              } catch(e) { finishCheck(true); }
+              let isFashion = true;
+              if(classifierModel) {
+                  try {
+                      const preds = await classifierModel.classify(img);
+                      isFashion = preds.some(p => FASHION_KEYWORDS.some(k => p.className.toLowerCase().includes(k)));
+                  } catch(e) { console.log("AI skip error"); }
+              }
+              loading.classList.add('hidden');
+              if(isFashion) document.getElementById('upload-details-section').classList.remove('hidden');
+              else document.getElementById('ai-error-msg').classList.remove('hidden');
           }
       }
   }
 
-  function finishCheck(ok) {
-      hide('ai-loading');
-      if(ok) show('upload-details');
-      else show('ai-error');
+  function addProdToUpload() {
+      const n = document.getElementById('temp-prod-name').value;
+      const l = document.getElementById('temp-prod-link').value;
+      if(n && l) {
+          uploadProductsList.push({name:n, link:l});
+          document.getElementById('temp-prod-name').value = "";
+          document.getElementById('temp-prod-link').value = "";
+          renderUploadProductsList();
+      }
   }
-
-  function addProd() {
-      const n = el('p-name').value; const l = el('p-link').value;
-      if(n && l) { products.push({name:n, link:l}); el('p-name').value=""; el('p-link').value=""; renderProds(); }
-  }
-  function renderProds() {
-      el('prod-list').innerHTML = products.map((p,i)=>`<div class="added-item"><span>${esc(p.name)}</span><i class="fa-solid fa-trash text-red-500 cursor-pointer" onclick="products.splice(${i},1);renderProds()"></i></div>`).join('');
+  function renderUploadProductsList() {
+      const c = document.getElementById('upload-products-list');
+      c.innerHTML = "";
+      uploadProductsList.forEach((p, i) => {
+          c.innerHTML += `<div class="added-product-item"><span class="text-white text-xs">${escapeHtml(p.name)}</span><i class="fa-solid fa-trash text-red-500 cursor-pointer text-xs" onclick="uploadProductsList.splice(${i},1);renderUploadProductsList()"></i></div>`;
+      });
   }
 
   async function submitPost() {
-      const f = el('post-file').files[0];
-      const c = el('post-caption').value;
-      if(!f) return alert("Foto mancante");
-      if(products.length===0) return alert("Tagga almeno un prodotto!");
+      const f = document.getElementById('post-file').files[0];
+      const c = document.getElementById('post-caption').value;
+      if(!f) return;
+      if(uploadProductsList.length === 0) return alert("Inserisci almeno un prodotto (Nome + Link).");
 
-      el('btn-pub').innerText="...";
+      const btn = document.getElementById('btn-publish');
+      btn.innerText = "...";
       try {
           const path = `${currentUser.id}/${Date.now()}`;
-          await sb.storage.from('posts').upload(path, f);
-          const {data:{publicUrl}} = sb.storage.from('posts').getPublicUrl(path);
-          await sb.from('posts').insert([{user_id:currentUser.id, image_url:publicUrl, caption:c, products:products}]);
-          closeModal('upload-modal'); renderFeed(); toast("Pubblicato!");
+          await sb.storage.from(BUCKET_POSTS).upload(path, f);
+          const { data: { publicUrl } } = sb.storage.from(BUCKET_POSTS).getPublicUrl(path);
+          await sb.from('posts').insert([{user_id:currentUser.id, image_url:publicUrl, caption:c, products:uploadProductsList}]);
+          closeModal('upload-modal');
+          renderFeedView();
+          showToast("Post pubblicato!");
       } catch(e) { alert(e.message); }
-      el('btn-pub').innerText="PUBBLICA";
+      btn.innerText = "PUBBLICA";
   }
 
   // --- FEED ---
-  async function renderFeed() {
-      el('main-content-area').innerHTML = `
-        <div class="tabs-wrapper">
-            <div class="tab-item ${feedMode==='following'?'active':''}" onclick="feedMode='following';renderFeed()">SEGUITI</div>
-            <div class="tab-item ${feedMode==='viral'?'active':''}" onclick="feedMode='viral';renderFeed()">ESPLORA</div>
+  async function renderFeedView() {
+      const main = document.getElementById('main-content-area');
+      main.innerHTML = `
+        <div class="feed-tabs-container">
+            <div class="feed-tab ${feedMode==='following'?'active':''}" onclick="feedMode='following';renderFeedView()">SEGUITI</div>
+            <div class="feed-tab ${feedMode==='viral'?'active':''}" onclick="feedMode='viral';renderFeedView()">ESPLORA</div>
         </div>
-        <div id="feed-list"></div>
+        <div id="feed-list" class="flex flex-col items-center"><i class="fa-solid fa-spinner fa-spin text-[#d4af37] text-2xl"></i></div>
       `;
       
-      let q = sb.from('posts').select('*, profiles:user_id(*)').order('created_at',{ascending:false});
-      if(feedMode==='following') {
-          const {data:f} = await sb.from('follows').select('followed_id').eq('follower_id',currentUser.id);
-          const ids = f.map(x=>x.followed_id);
-          if(ids.length>0) q=q.in('user_id',ids); else q=q.limit(0); 
-      } else q=q.limit(50);
+      let q = sb.from('posts').select('*, profiles:user_id(*)').order('created_at', {ascending:false});
+      if(feedMode === 'following') {
+          const {data:f} = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
+          const ids = f.map(x => x.followed_id);
+          if(ids.length > 0) q = q.in('user_id', ids);
+          else { document.getElementById('feed-list').innerHTML = "<div class='text-gray-500 mt-10'>Non segui nessuno.</div>"; return; }
+      } else q = q.limit(50);
 
-      const {data:posts} = await q;
-      const list = el('feed-list');
+      const { data: posts } = await q;
+      const list = document.getElementById('feed-list');
+      list.innerHTML = "";
       
-      if(!posts || posts.length===0) { list.innerHTML="<div class='text-center p-10 text-gray-400'>Nessun post qui.</div>"; return; }
+      if(!posts || posts.length === 0) { list.innerHTML = "<div class='text-gray-500 mt-10'>Nessun post.</div>"; return; }
 
       for(const p of posts) {
           const counts = await getCounts(p.id);
           const liked = await isLiked(p.id);
-          const shopJson = encodeURIComponent(JSON.stringify(p.products||[]));
+          const shopJson = encodeURIComponent(JSON.stringify(p.products || []));
           
           list.innerHTML += `
-            <div class="post-card">
+            <div class="post-card w-full">
                 <div class="post-header">
-                    <div class="user-info" onclick="openProfile('${p.user_id}')">
-                        <img src="${p.profiles.avatar_url||'https://via.placeholder.com/40'}" class="user-pic">
-                        <span class="user-name">${esc(p.profiles.username)}</span>
+                    <div class="user-badge" onclick="openUserProfile('${p.user_id}')">
+                        <img src="${p.profiles.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar">
+                        <span class="username">${escapeHtml(p.profiles.username)}</span>
                     </div>
                 </div>
-                <div class="post-image-wrap">
-                    <img src="${p.image_url}" class="post-img" onclick="openDetail('${p.id}')">
-                    ${(p.products&&p.products.length>0)?`<div class="shop-tag" onclick="openShop('${shopJson}')"><i class="fa-solid fa-bag-shopping"></i> SHOP</div>`:''}
+                <div class="post-img-container">
+                    <img src="${p.image_url}" class="post-img" onclick="openPostDetail('${p.id}')">
+                    ${(p.products && p.products.length>0) ? `<div class="shop-tag-overlay" onclick="openShopWindow('${shopJson}', event)"><i class="fa-solid fa-bag-shopping"></i><span>SHOP</span></div>` : ''}
                 </div>
-                <div class="action-row">
-                    <div class="icon-btn" onclick="toggleLike('${p.id}',this)"><i class="${liked?'fa-solid text-red-500':'fa-regular'} fa-heart"></i></div>
-                    <div class="icon-btn" onclick="openDetail('${p.id}')"><i class="fa-regular fa-comment"></i></div>
-                    <div class="icon-btn ml-auto" onclick="openShare('${p.id}')"><i class="fa-regular fa-paper-plane"></i></div>
+                <div class="action-bar">
+                    <div class="icon-btn" onclick="toggleLike('${p.id}', this)"><i class="${liked?'fa-solid text-[#ef4444]':'fa-regular'} fa-heart"></i></div>
+                    <div class="icon-btn" onclick="openPostDetail('${p.id}')"><i class="fa-regular fa-comment"></i></div>
+                    <div class="icon-btn ml-auto" onclick="openShareModal('${p.id}')"><i class="fa-regular fa-paper-plane"></i></div>
                 </div>
-                <div class="like-txt" onclick="openList('likes','${p.id}')">${counts.likes} Mi piace</div>
-                <div class="caption"><b onclick="openProfile('${p.user_id}')">${esc(p.profiles.username)}</b> ${esc(p.caption)}</div>
+                <div class="px-4 pb-2 font-bold text-sm text-white cursor-pointer" onclick="openList('likes','${p.id}')">${counts.likes} Mi piace</div>
+                <div class="caption-box">
+                    <span class="caption-user" onclick="openUserProfile('${p.user_id}')">${escapeHtml(p.profiles.username)}</span>
+                    ${escapeHtml(p.caption)}
+                </div>
             </div>
           `;
       }
   }
 
   // --- ACTIONS ---
-  async function isLiked(pid) { const{data}=await sb.from('likes').select('*').eq('post_id',pid).eq('user_id',currentUser.id); return data.length>0; }
-  async function getCounts(pid) { 
-      const{count:l}=await sb.from('likes').select('*',{count:'exact',head:true}).eq('post_id',pid); 
-      return {likes:l||0}; 
-  }
-  async function toggleLike(pid,btn) {
-      const i = btn.querySelector('i');
-      if(i.classList.contains('fa-solid')) {
-          i.className="fa-regular fa-heart";
+  async function isLiked(pid) { const {data}=await sb.from('likes').select('id').eq('post_id',pid).eq('user_id',currentUser.id); return data.length>0; }
+  async function getCounts(pid) { const {count:l}=await sb.from('likes').select('*',{count:'exact',head:true}).eq('post_id',pid); return {likes:l||0}; }
+  
+  async function toggleLike(pid, btn) {
+      const icon = btn.querySelector('i');
+      if(icon.classList.contains('fa-solid')) {
+          icon.className = "fa-regular fa-heart";
           await sb.from('likes').delete().eq('post_id',pid).eq('user_id',currentUser.id);
       } else {
-          i.className="fa-solid fa-heart text-red-500";
-          await sb.from('likes').insert([{post_id:pid,user_id:currentUser.id}]);
+          icon.className = "fa-solid fa-heart text-[#ef4444]";
+          await sb.from('likes').insert([{post_id:pid, user_id:currentUser.id}]);
       }
   }
 
   // --- DETAILS ---
-  async function openDetail(pid) {
-      curPost=pid;
-      show('post-detail-modal');
+  async function openPostDetail(pid) {
+      currentPostId = pid;
+      document.getElementById('post-detail-modal').classList.remove('hidden');
       const {data:p} = await sb.from('posts').select('*, profiles:user_id(*)').eq('id',pid).single();
-      el('detail-img').src=p.image_url;
-      el('detail-avatar').src=p.profiles.avatar_url;
-      el('detail-username').innerText=p.profiles.username;
       
-      el('detail-user-head').onclick=()=>openProfile(p.user_id);
+      document.getElementById('detail-img').src = p.image_url;
+      document.getElementById('detail-avatar').src = p.profiles.avatar_url || 'https://via.placeholder.com/40';
+      document.getElementById('detail-username').innerText = p.profiles.username;
+      document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(p.user_id); };
       
-      // Delete btn
-      el('detail-delete').innerHTML = (p.user_id===currentUser.id) ? `<i class="fa-solid fa-trash text-gray-400 hover:text-red-500 cursor-pointer" onclick="delPost('${pid}')"></i>` : '';
-
+      document.getElementById('detail-delete-btn').innerHTML = (p.user_id === currentUser.id) ? `<i class="fa-solid fa-trash text-gray-500 hover:text-red-500 cursor-pointer" onclick="deletePost('${p.id}')"></i>` : '';
+      
       loadComments(pid);
-      const c=await getCounts(pid); el('detail-likes-n').innerText=c.likes;
-      const l=await isLiked(pid);
-      el('detail-like-icon').className = l?"fa-solid fa-heart text-red-500 cursor-pointer":"fa-regular fa-heart cursor-pointer";
-      el('detail-like-icon').onclick=()=>toggleLike(pid,{querySelector:()=>el('detail-like-icon')});
+      const c = await getCounts(pid); document.getElementById('detail-likes-count').innerText = c.likes;
+      
+      const l = await isLiked(pid);
+      const btn = document.getElementById('detail-like-btn');
+      btn.className = l ? "fa-solid fa-heart text-[#ef4444] cursor-pointer" : "fa-regular fa-heart cursor-pointer text-white";
+      btn.onclick = () => toggleLike(pid, {querySelector:()=>btn});
   }
 
   async function loadComments(pid) {
-      const box=el('detail-comments'); box.innerHTML="...";
-      const {data} = await sb.from('comments').select('*, profiles:user_id(*)').eq('post_id',pid);
-      box.innerHTML=data.map(c=>`
-        <div class="mb-2">
-            <b class="cursor-pointer" onclick="openProfile('${c.user_id}')">${esc(c.profiles.username)}</b> 
-            <span>${esc(c.content)}</span>
-        </div>`).join('');
+      const box = document.getElementById('detail-comments');
+      box.innerHTML = '<div class="text-gray-500 text-center text-xs">Caricamento...</div>';
+      const {data} = await sb.from('comments').select('*, profiles:user_id(username)').eq('post_id',pid);
+      box.innerHTML = "";
+      data.forEach(c => {
+          box.innerHTML += `<div class="text-sm text-gray-300 mb-2"><span class="font-bold text-white mr-2">${escapeHtml(c.profiles.username)}</span>${escapeHtml(c.content)}</div>`;
+      });
   }
-  async function sendComment() {
-      const t=el('new-comment').value; 
-      if(t) { await sb.from('comments').insert([{post_id:curPost,user_id:currentUser.id,content:t}]); el('new-comment').value=""; loadComments(curPost); }
+  async function inviaCommento() {
+      const t = document.getElementById('new-comment').value;
+      if(t) { await sb.from('comments').insert([{post_id:currentPostId, user_id:currentUser.id, content:t}]); document.getElementById('new-comment').value=""; loadComments(currentPostId); }
   }
 
   // --- MODALS CONTENT ---
-  function openShop(j) {
-      show('shop-modal');
-      const p=JSON.parse(decodeURIComponent(j));
-      el('shop-list').innerHTML=p.map(x=>`<div class="flex justify-between items-center p-3 border rounded"><span class="font-bold">${esc(x.name)}</span><a href="${x.link}" target="_blank" class="text-xs bg-black text-white px-2 py-1 rounded">VAI</a></div>`).join('');
-  }
-  
-  function openShare(pid) {
-      sharePid=pid; show('share-modal');
-      // Lista amici (simulata/fetch)
-      sb.from('follows').select('profiles!follows_followed_id_fkey(*)').eq('follower_id',currentUser.id)
-      .then(({data})=>{
-          el('share-list').innerHTML=data.map(u=>`<div class="flex justify-between p-2 items-center"><span class="font-bold">${u.profiles.username}</span><button class="text-xs bg-black text-white px-2 py-1 rounded" onclick="doShare('${u.profiles.id}')">INVIA</button></div>`).join('');
+  function openShopWindow(json, e) {
+      if(e) e.stopPropagation();
+      document.getElementById('shop-modal').classList.remove('hidden');
+      const p = JSON.parse(decodeURIComponent(json));
+      const l = document.getElementById('shop-window-list');
+      l.innerHTML = "";
+      p.forEach(x => {
+          l.innerHTML += `<div class="bg-[#222] p-3 rounded flex justify-between items-center"><span class="text-white text-sm font-bold">${escapeHtml(x.name)}</span><a href="${x.link}" target="_blank" class="text-xs bg-[#d4af37] text-black px-2 py-1 rounded font-bold">VAI</a></div>`;
       });
   }
-  async function doShare(uid) {
-      const{data:p}=await sb.from('posts').select('image_url').eq('id',sharePid).single();
-      const msg=JSON.stringify({type:'post',pid:sharePid,img:p.image_url});
+
+  function openShareModal(pid) {
+      sharePostId = pid;
+      document.getElementById('share-modal').classList.remove('hidden');
+      const l = document.getElementById('share-list-content');
+      l.innerHTML = '<div class="text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+      
+      sb.from('follows').select('profiles!follows_followed_id_fkey(*)').eq('follower_id', currentUser.id)
+      .then(({data}) => {
+          l.innerHTML = "";
+          if(!data || data.length===0) l.innerHTML = "<p class='text-center text-gray-500 text-sm'>Non segui nessuno.</p>";
+          data.forEach(x => {
+              const u = x.profiles;
+              l.innerHTML += `<div class="flex justify-between items-center p-3 hover:bg-white/5 rounded cursor-pointer"><div class="flex items-center gap-2"><img src="${u.avatar_url}" class="w-8 h-8 rounded-full border border-[#d4af37]"><span class="text-white font-bold text-sm">${u.username}</span></div><button onclick="shareToChat('${u.id}')" class="text-xs bg-[#d4af37] text-black px-3 py-1 rounded font-bold">INVIA</button></div>`;
+          });
+      });
+  }
+  async function shareToChat(uid) {
+      const {data:p} = await sb.from('posts').select('image_url').eq('id',sharePostId).single();
+      const msg = JSON.stringify({type:'share_post', postId:sharePostId, img:p.image_url});
       await sb.from('messages').insert([{sender_id:currentUser.id, receiver_id:uid, content:msg}]);
-      closeModal('share-modal'); toast('Inviato!');
+      closeModal('share-modal'); showToast("Inviato!");
   }
 
-  async function openProfile(uid) {
-      closeModal('post-detail-modal'); closeModal('list-modal');
-      el('main-content-area').innerHTML = `<div class="text-center p-10">Caricamento...</div>`;
+  // --- PROFILE ---
+  async function openUserProfile(uid) {
+      closeModal('post-detail-modal'); closeModal('list-modal'); closeModal('search-modal'); closeModal('notifications-modal');
+      const main = document.getElementById('main-content-area');
+      main.innerHTML = '<div class="text-center mt-10"><i class="fa-solid fa-spinner fa-spin text-[#d4af37] text-2xl"></i></div>';
       
       const {data:u} = await sb.from('profiles').select('*').eq('id',uid).single();
       const {data:posts} = await sb.from('posts').select('*').eq('user_id',uid).order('created_at',{ascending:false});
       const {count:pc} = await sb.from('posts').select('*',{count:'exact'}).eq('user_id',uid);
-      
-      let btn="";
-      if(uid===currentUser.id) btn=`<button onclick="show('edit-modal')" class="btn-outline">Modifica</button>`;
-      else {
-          const {data} = await sb.from('follows').select('*').eq('follower_id',currentUser.id).eq('followed_id',uid);
-          const fol = data.length>0;
-          btn=`<button onclick="tFollow('${uid}')" class="${fol?'btn-outline':'btn-gold'}">${fol?'Seguito':'Segui'}</button>`;
-          btn+=`<button class="btn-outline ml-2" onclick="openChat('${uid}','${u.username}')">Msg</button>`;
+      const {count:fc} = await sb.from('follows').select('*',{count:'exact'}).eq('followed_id',uid);
+      const {count:fing} = await sb.from('follows').select('*',{count:'exact'}).eq('follower_id',uid);
+
+      let actionBtn = "";
+      if(uid === currentUser.id) {
+          actionBtn = `<button onclick="document.getElementById('edit-profile-modal').classList.remove('hidden')" class="border border-gray-600 text-white px-4 py-1 rounded text-sm hover:bg-white/10">Modifica</button>`;
+      } else {
+          const {data:isF} = await sb.from('follows').select('id').eq('follower_id',currentUser.id).eq('followed_id',uid);
+          const fol = isF.length > 0;
+          actionBtn = `<button onclick="toggleFollow('${uid}')" class="${fol?'border border-gray-600 text-white':'bg-[#d4af37] text-black'} px-4 py-1 rounded text-sm font-bold">${fol?'Seguito':'Segui'}</button>`;
+          actionBtn += `<button onclick="openChat('${uid}','${u.username}','${u.avatar_url}')" class="ml-2 border border-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-white/10">Msg</button>`;
       }
 
-      el('main-content-area').innerHTML = `
-        <div class="flex gap-6 p-4 border-b mb-4">
-            <img src="${u.avatar_url||''}" class="w-20 h-20 rounded-full border">
-            <div class="flex-1">
-                <div class="text-xl mb-2">${esc(u.username)}</div>
-                <div class="mb-3">${btn}</div>
-                <div class="flex gap-4 text-sm">
-                    <span><b>${pc}</b> post</span>
-                    <span class="cursor-pointer" onclick="openList('followers','${uid}')">Follower</span>
-                    <span class="cursor-pointer" onclick="openList('following','${uid}')">Seguiti</span>
-                </div>
-                <div class="text-sm mt-2 font-bold">${esc(u.full_name||'')}</div>
+      main.innerHTML = `
+        <div class="flex flex-col items-center mb-6 border-b border-gray-800 pb-6">
+            <img src="${u.avatar_url || 'https://via.placeholder.com/100'}" class="w-24 h-24 rounded-full border-2 border-[#d4af37] mb-3 object-cover">
+            <h2 class="text-2xl text-white font-serif italic mb-1">${u.username}</h2>
+            <div class="text-gray-500 text-sm mb-4">${u.full_name||''}</div>
+            <div class="flex gap-6 mb-4 text-white text-center">
+                <div><div class="font-bold text-lg">${pc||0}</div><div class="text-xs text-gray-500">Post</div></div>
+                <div class="cursor-pointer" onclick="openList('followers','${uid}')"><div class="font-bold text-lg">${fc||0}</div><div class="text-xs text-gray-500">Follower</div></div>
+                <div class="cursor-pointer" onclick="openList('following','${uid}')"><div class="font-bold text-lg">${fing||0}</div><div class="text-xs text-gray-500">Seguiti</div></div>
             </div>
+            ${actionBtn}
         </div>
         <div class="grid grid-cols-3 gap-1">
-            ${posts.map(x=>`<div class="aspect-square bg-gray-100 cursor-pointer" onclick="openDetail('${x.id}')"><img src="${x.image_url}" class="w-full h-full object-cover"></div>`).join('')}
+            ${posts.map(p => `<div class="aspect-square bg-[#1a1a1a] cursor-pointer relative group" onclick="openPostDetail('${p.id}')"><img src="${p.image_url}" class="w-full h-full object-cover group-hover:opacity-80"></div>`).join('')}
         </div>
       `;
   }
 
-  // --- SEARCH & LISTS ---
-  function openSearchModal() { openList('search'); }
+  async function toggleFollow(uid) {
+      const {data} = await sb.from('follows').select('id').eq('follower_id',currentUser.id).eq('followed_id',uid);
+      if(data.length>0) await sb.from('follows').delete().eq('follower_id',currentUser.id).eq('followed_id',uid);
+      else await sb.from('follows').insert([{follower_id:currentUser.id, followed_id:uid}]);
+      openUserProfile(uid);
+  }
+
+  // --- LISTS & SEARCH ---
   async function openList(type, id) {
-      show('list-modal');
-      el('list-title').innerText = type.toUpperCase();
-      el('list-content').innerHTML = "...";
-      if(type==='search') { show('list-search-bar'); el('list-content').innerHTML=""; return; }
-      hide('list-search-bar');
+      document.getElementById('list-modal').classList.remove('hidden');
+      document.getElementById('list-title').innerText = type.toUpperCase();
+      const l = document.getElementById('list-content');
+      l.innerHTML = '...';
       
-      let res=[];
-      if(type==='likes') {
-          const {data} = await sb.from('likes').select('profiles:user_id(*)').eq('post_id',id);
-          res = data.map(x=>x.profiles);
-      } else if (type==='followers') {
-          const {data} = await sb.from('follows').select('profiles:follower_id(*)').eq('followed_id',id);
-          res = data.map(x=>x.profiles);
-      } else if (type==='following') {
-          const {data} = await sb.from('follows').select('profiles:followed_id(*)').eq('follower_id',id);
-          res = data.map(x=>x.profiles);
+      let q;
+      if(type==='followers') q = sb.from('follows').select('profiles!follows_follower_id_fkey(*)').eq('followed_id',id);
+      else if(type==='following') q = sb.from('follows').select('profiles!follows_followed_id_fkey(*)').eq('follower_id',id);
+      else if(type==='likes') q = sb.from('likes').select('profiles:user_id(*)').eq('post_id',id);
+      
+      const {data} = await q;
+      l.innerHTML = "";
+      if(!data || data.length===0) l.innerHTML = "<p class='text-center text-gray-500 p-4'>Vuoto.</p>";
+      data.forEach(x => {
+          const u = x.profiles;
+          l.innerHTML += `<div class="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer" onclick="closeModal('list-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url}" class="w-8 h-8 rounded-full border border-gray-600"><span class="text-white font-bold text-sm">${u.username}</span></div>`;
+      });
+  }
+
+  function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); }
+  async function performSearch() {
+      const q = document.getElementById('search-query').value;
+      if(q.length<2) return;
+      const {data} = await sb.from('profiles').select('*').ilike('username', `%${q}%`);
+      const l = document.getElementById('search-results');
+      l.innerHTML = "";
+      data.forEach(u => {
+          l.innerHTML += `<div class="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url}" class="w-8 h-8 rounded-full border border-gray-600"><span class="text-white font-bold text-sm">${u.username}</span></div>`;
+      });
+  }
+
+  // --- MESSAGES ---
+  async function openInboxModal() {
+      document.getElementById('inbox-modal').classList.remove('hidden');
+      const l = document.getElementById('inbox-list');
+      const {data:msgs} = await sb.from('messages').select('*').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`).order('created_at',{ascending:false});
+      
+      const seen = new Set();
+      l.innerHTML = "";
+      for(const m of msgs) {
+          const oid = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+          if(seen.has(oid)) continue;
+          seen.add(oid);
+          const {data:u} = await sb.from('profiles').select('*').eq('id',oid).single();
+          l.innerHTML += `<div class="flex items-center gap-3 p-3 border-b border-gray-800 cursor-pointer hover:bg-white/5" onclick="closeModal('inbox-modal'); openChat('${u.id}','${u.username}','${u.avatar_url}')"><img src="${u.avatar_url}" class="w-10 h-10 rounded-full border border-[#d4af37]"><div><div class="text-white font-bold text-sm">${u.username}</div><div class="text-gray-500 text-xs truncate w-40">${m.content}</div></div></div>`;
       }
+  }
+
+  async function openChat(uid, name, ava) {
+      activeChatId = uid;
+      document.getElementById('chat-modal').classList.remove('hidden');
+      document.getElementById('chat-head-name').innerText = name;
+      document.getElementById('chat-head-img').src = ava;
       
-      el('list-content').innerHTML = res.map(u=>`
-        <div class="flex items-center gap-3 p-2 hover:bg-gray-50 cursor-pointer" onclick="openProfile('${u.id}')">
-            <img src="${u.avatar_url}" class="w-10 h-10 rounded-full border">
-            <span>${esc(u.username)}</span>
-        </div>`).join('');
+      loadMessages();
+      if(chatSub) chatSub.unsubscribe();
+      chatSub = sb.channel('chat').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, payload => {
+          if((payload.new.sender_id===uid && payload.new.receiver_id===currentUser.id) || (payload.new.sender_id===currentUser.id && payload.new.receiver_id===uid)) loadMessages();
+      }).subscribe();
+  }
+
+  async function loadMessages() {
+      const box = document.getElementById('chat-messages');
+      const {data:msgs} = await sb.from('messages').select('*').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`).order('created_at',{ascending:true});
+      box.innerHTML = "";
+      msgs.forEach(m => {
+          let txt = escapeHtml(m.content);
+          if(txt.includes('share_post')) {
+              try { const j=JSON.parse(m.content); txt=`<div class="bg-black p-2 border border-[#d4af37] rounded cursor-pointer" onclick="openPostDetail('${j.postId}')"><img src="${j.img}" class="w-full h-24 object-cover mb-1"><div class="text-[10px] text-gray-400">Post Condiviso</div></div>`; } catch(e){}
+          }
+          box.innerHTML += `<div class="msg-bubble ${m.sender_id===currentUser.id?'msg-mine':'msg-theirs'}">${txt}</div>`;
+      });
+      box.scrollTop = box.scrollHeight;
   }
   
-  async function doSearch() {
-      const q = el('search-q').value;
-      if(q.length<2) return;
-      const {data} = await sb.from('profiles').select('*').ilike('username',`%${q}%`);
-      el('list-content').innerHTML = data.map(u=>`<div class="flex items-center gap-3 p-2 hover:bg-gray-50 cursor-pointer" onclick="openProfile('${u.id}')"><img src="${u.avatar_url}" class="w-10 h-10 rounded-full border"><span>${esc(u.username)}</span></div>`).join('');
+  async function sendMessage() {
+      const t = document.getElementById('chat-input').value;
+      if(t && activeChatId) {
+          await sb.from('messages').insert([{sender_id:currentUser.id, receiver_id:activeChatId, content:t}]);
+          document.getElementById('chat-input').value = "";
+          loadMessages();
+      }
   }
 
-  // --- EDIT PROFILE ---
-  async function upAvatar(i) {
-      const f=i.files[0]; if(!f) return;
-      const p=`${currentUser.id}/avatar_${Date.now()}`;
-      await sb.storage.from('avatars').upload(p,f);
-      const {data}=sb.storage.from('avatars').getPublicUrl(p);
-      el('edit-img').src=data.publicUrl;
-  }
-  async function saveEdit() {
-      const u=el('edit-u').value; const f=el('edit-f').value; const img=el('edit-img').src;
-      await sb.from('profiles').update({username:u, full_name:f, avatar_url:img}).eq('id',currentUser.id);
-      closeModal('edit-modal'); openProfile(currentUser.id);
-  }
-
-  // --- MESSAGES & CHAT ---
-  async function openInboxModal() {
-      show('inbox-modal');
-      const{data}=await sb.from('messages').select('*').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`).order('created_at',{ascending:false});
-      const ids=new Set();
-      el('inbox-list').innerHTML=data.filter(m=>{
-          const oid = m.sender_id===currentUser.id?m.receiver_id:m.sender_id;
-          if(ids.has(oid)) return false; ids.add(oid); return true;
-      }).map(m=>{ // Semplificato, in realtà bisognerebbe fetchare i profili
-          return `<div class="p-3 border-b cursor-pointer" onclick="startChatWithId('${m.sender_id===currentUser.id?m.receiver_id:m.sender_id}')">Conversazione recente...</div>`
-      }).join('');
-      // Nota: Per brevità ho semplificato la lista inbox, l'apertura chat funziona.
-  }
-  async function startChatWithId(uid) {
-      const{data:u}=await sb.from('profiles').select('*').eq('id',uid).single();
-      openChat(uid, u.username);
-  }
-  async function openChat(uid, name) {
-      closeModal('inbox-modal'); show('chat-modal');
-      chatUser=uid; el('chat-nm').innerText=name;
-      loadChat();
-      if(chatSub) chatSub.unsubscribe();
-      chatSub=sb.channel('chat').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},()=>{loadChat()}).subscribe();
-  }
-  async function loadChat() {
-      const{data}=await sb.from('messages').select('*').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${chatUser}),and(sender_id.eq.${chatUser},receiver_id.eq.${currentUser.id})`).order('created_at');
-      el('chat-box').innerHTML=data.map(m=>{
-          let txt=esc(m.content);
-          if(txt.includes('"type":"post"')) { const j=JSON.parse(m.content); txt=`<div class="bg-white p-2 border rounded cursor-pointer" onclick="openDetail('${j.pid}')"><img src="${j.img}" class="w-full h-24 object-cover">POST CONDIVISO</div>`; }
-          return `<div class="msg-bubble ${m.sender_id===currentUser.id?'msg-mine':'msg-theirs'}">${txt}</div>`;
-      }).join('');
-      el('chat-box').scrollTop=el('chat-box').scrollHeight;
-  }
-  async function sendMsg() {
-      const t=el('chat-in').value;
-      if(t && chatUser) { await sb.from('messages').insert([{sender_id:currentUser.id,receiver_id:chatUser,content:t}]); el('chat-in').value=""; }
-  }
-
-  // --- NOTIFS ---
+  // --- NOTIFICATIONS ---
   async function openNotificationsModal() {
-      show('notif-modal'); el('notif-gold-dot').style.display='none';
-      const{data}=await sb.from('notifications').select('*, profiles:actor_id(*)').eq('recipient_id',currentUser.id).order('created_at',{ascending:false});
-      el('notif-list').innerHTML=data.map(n=>`
-        <div class="flex items-center gap-3 p-3 border-b" onclick="handleNotif('${n.type}','${n.post_id}','${n.actor_id}')">
-            <img src="${n.profiles.avatar_url}" class="w-8 h-8 rounded-full">
-            <div class="text-sm"><b>${esc(n.profiles.username)}</b> ${n.type==='like'?'ha messo like':'ha commentato'}</div>
-        </div>`).join('');
+      document.getElementById('notifications-modal').classList.remove('hidden');
+      document.getElementById('notif-gold-dot').style.display='none';
+      const l = document.getElementById('notifications-list');
+      const {data:notifs} = await sb.from('notifications').select('*, profiles:actor_id(*)').eq('recipient_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
+      l.innerHTML = "";
+      notifs.forEach(n => {
+          let txt = n.type==='like'?'ha messo like al tuo post':(n.type==='follow'?'ti segue':'ha commentato');
+          let icon = n.type==='like'?'<i class="fa-solid fa-heart text-red-500"></i>':'<i class="fa-solid fa-user text-blue-400"></i>';
+          l.innerHTML += `<div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer" onclick="closeModal('notifications-modal'); ${n.type==='follow'?'openUserProfile(\''+n.actor_id+'\')':'openPostDetail(\''+n.post_id+'\')'}"><img src="${n.profiles.avatar_url}" class="w-8 h-8 rounded-full border border-gray-600"><div class="text-sm text-gray-300"><span class="font-bold text-white mr-1">${n.profiles.username}</span>${txt}</div><div class="ml-auto">${icon}</div></div>`;
+      });
       await sb.from('notifications').update({is_read:true}).eq('recipient_id',currentUser.id);
-  }
-  function handleNotif(type, pid, uid) {
-      closeModal('notif-modal');
-      if(type==='follow') openProfile(uid);
-      else openDetail(pid);
   }
 
   // --- SYSTEM ---
-  function enter(u) {
-      currentUser=u; 
-      hide('auth-container'); show('app-interface');
-      renderFeed();
-      // Realtime Notif
-      sb.channel('sys').on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`recipient_id=eq.${u.id}`},()=>{
-          el('notif-gold-dot').style.display='block'; toast("Nuova notifica");
+  function enterApp(u) {
+      currentUser = u;
+      document.getElementById('auth-container').style.display = 'none';
+      document.getElementById('app-interface').classList.remove('hidden');
+      renderFeedView();
+      
+      // Realtime listener per pallini notifiche
+      sb.channel('realtime').on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications', filter:`recipient_id=eq.${u.id}`}, ()=>{
+          document.getElementById('notif-gold-dot').style.display='block';
+          showToast("Nuova notifica");
+      }).on('postgres_changes', {event:'INSERT', schema:'public', table:'messages', filter:`receiver_id=eq.${u.id}`}, ()=>{
+          document.getElementById('global-gold-dot').style.display='block';
+          showToast("Nuovo messaggio");
       }).subscribe();
   }
-  
+
   async function faiLogin() {
-      const e=el('l-email').value; const p=el('l-pass').value;
-      const{data,error}=await sb.auth.signInWithPassword({email:e,password:p});
-      if(error) alert(error.message); else enter(data.user);
+      const e=document.getElementById('l-email').value, p=document.getElementById('l-pass').value;
+      const {data, error} = await sb.auth.signInWithPassword({email:e, password:p});
+      if(error) alert(error.message); else enterApp(data.user);
   }
   async function faiRegistrazione() {
-      const e=el('r-email').value; const p=el('r-pass').value; const u=el('r-username').value;
-      const{data,error}=await sb.auth.signUp({email:e,password:p});
-      if(error) alert(error.message);
-      else { await sb.from('profiles').insert([{id:data.user.id, username:u}]); enter(data.user); }
+      const e=document.getElementById('r-email').value, p=document.getElementById('r-pass').value, u=document.getElementById('r-username').value;
+      const {data, error} = await sb.auth.signUp({email:e, password:p});
+      if(error) alert(error.message); 
+      else { await sb.from('profiles').insert([{id:data.user.id, username:u}]); enterApp(data.user); }
   }
   async function logout() { await sb.auth.signOut(); location.reload(); }
-  function vaiA(t) { el('login-form').classList.toggle('hidden',t!=='login'); el('signup-form').classList.toggle('hidden',t==='login'); }
-  async function tFollow(uid) {
-    const{data}=await sb.from('follows').select('*').eq('follower_id',currentUser.id).eq('followed_id',uid);
-    if(data.length) await sb.from('follows').delete().eq('follower_id',currentUser.id).eq('followed_id',uid);
-    else await sb.from('follows').insert([{follower_id:currentUser.id,followed_id:uid}]);
-    openProfile(uid);
+  function vaiA(t) { document.getElementById('login-form').classList.toggle('hidden',t!=='login'); document.getElementById('signup-form').classList.toggle('hidden',t==='login'); }
+  async function saveProfile() {
+      const u=document.getElementById('edit-username').value, f=document.getElementById('edit-fullname').value;
+      await sb.from('profiles').update({username:u, full_name:f}).eq('id',currentUser.id);
+      closeModal('edit-profile-modal'); openUserProfile(currentUser.id);
   }
-  async function delPost(pid){ if(confirm("Eliminare?")){ await sb.from('posts').delete().eq('id',pid); closeModal('post-detail-modal'); renderFeed(); } }
+  async function uploadAvatar(i) {
+      const f=i.files[0]; if(!f)return;
+      const p=`${currentUser.id}/avatar_${Date.now()}`;
+      await sb.storage.from(BUCKET_AVATARS).upload(p,f);
+      const {data}=sb.storage.from(BUCKET_AVATARS).getPublicUrl(p);
+      await sb.from('profiles').update({avatar_url:data.publicUrl}).eq('id',currentUser.id);
+      document.getElementById('edit-avatar-preview').src=data.publicUrl;
+  }
+  async function deletePost(pid) {
+      if(confirm("Eliminare?")) { await sb.from('posts').delete().eq('id',pid); closeModal('post-detail-modal'); renderFeedView(); }
+  }
 </script>
 </body>
 </html>
