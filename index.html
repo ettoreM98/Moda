@@ -616,7 +616,7 @@
   let currentFeedMode = 'following'; 
   let uploadProductsList = [];
   let sharePostId = null; // ID post da condividere
-  
+   
   // AI VARIABLES
   let classifierModel = null;
   const FASHION_KEYWORDS = [
@@ -1452,6 +1452,21 @@
   async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
   async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
   async function logout() { await sb.auth.signOut(); location.reload(); }
+
+  // --- FUNZIONI MANCANTI AGGIUNTE PER SISTEMARE I TASTI ---
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+  }
+
+  // Aggiunte anche le funzioni per APRIRE le finestre, altrimenti i tasti X non servirebbero a nulla
+  function openUploadModal() {
+    document.getElementById('upload-modal').classList.remove('hidden');
+  }
+
+  function openSearchModal() {
+    document.getElementById('search-modal').classList.remove('hidden');
+    document.getElementById('search-query').focus();
+  }
 </script>
 </body>
 </html>
