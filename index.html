@@ -7,7 +7,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-  
+   
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
 
@@ -19,8 +19,8 @@
     :root {
       --bg-deep: #0f172a;        
       --bg-panel: rgba(15, 23, 42, 0.95); 
-      --text-main: #f8fafc;      
-      --text-muted: #94a3b8;    
+      --text-main: #f8fafc;       
+      --text-muted: #94a3b8;     
       --gold: #d4af37;           
       --gold-glow: rgba(212, 175, 55, 0.2);
       --red-like: #ef4444;
@@ -88,14 +88,14 @@
       font-size: 20px;
       position: relative;
     }
-    
+     
     .nav-item:hover, .nav-item.active { 
       background: rgba(212, 175, 55, 0.15); 
       color: var(--gold); 
       box-shadow: 0 0 15px var(--gold-glow);
       transform: scale(1.1);
     }
-    
+     
     .nav-item:hover::after {
       content: attr(title);
       position: absolute;
@@ -161,9 +161,9 @@
       box-shadow: 0 0 20px var(--gold-glow);
       transition: transform 0.3s ease;
     }
-    
+     
     .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-    
+     
     .user-badge { display: flex; align-items: center; gap: 12px; cursor: pointer; }
     .user-avatar { 
       width: 42px; height: 42px; 
@@ -230,7 +230,7 @@
       display: flex; align-items: center; gap: 8px;
     }
     .icon-btn:hover { opacity: 1; transform: translateY(-2px); color: var(--gold); }
-    
+     
     .likes-count-clickable { font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; }
     .likes-count-clickable:hover { text-decoration: underline; color: var(--gold); }
 
@@ -281,12 +281,12 @@
     /* --- MODALS --- */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0, 0.9); backdrop-filter: blur(5px); z-index: 100; display: flex; justify-content: center; align-items: center; }
     .glass-modal { background: #1e293b; border: 1px solid var(--gold); border-radius: 20px; overflow: hidden; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2); }
-    
+     
     .detail-layout { display: flex; width: 90vw; max-width: 1100px; height: 85vh; }
     .detail-img-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
     .detail-img-side img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .detail-info-side { flex: 1; display: flex; flex-direction: column; background: #1e293b; min-width: 350px; position: relative; }
-    
+     
     @media (max-width: 800px) {
       .sidebar { 
         width: 100%; height: 60px; position: fixed; bottom: 0; top: auto; left: 0; margin: 0; 
@@ -339,7 +339,7 @@
     .shop-list-container {
         max-height: 300px; overflow-y: auto; padding-right: 5px;
     }
-    
+     
     /* ANALISI AI LOADING */
     .analyzing-box {
         position: absolute; inset: 0; background: rgba(0,0,0,0.8);
@@ -428,7 +428,7 @@
       <i class="fa-solid fa-xmark cursor-pointer hover:text-white text-gray-400" onclick="closeModal('upload-modal')"></i>
     </div>
     <div class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-1 relative">
-      
+       
       <label class="h-32 border-2 border-dashed border-gray-600 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#d4af37] hover:bg-white/5 transition relative overflow-hidden">
         <i class="fa-solid fa-camera text-2xl mb-2 text-[#d4af37]"></i>
         <span class="text-xs text-gray-400">Carica Foto Outfit</span>
@@ -438,9 +438,9 @@
             <span class="text-xs text-white font-bold">L'AI sta giudicando...</span>
         </div>
       </label>
-      
+       
       <img id="upload-preview" class="hidden w-full h-32 object-cover rounded-xl shadow-lg border border-gray-600">
-      
+       
       <div id="ai-error-msg" class="hidden p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-200 text-xs text-center">
         <i class="fa-solid fa-triangle-exclamation mr-1"></i> Ops! Questa foto non sembra riguardare la moda.
       </div>
@@ -616,7 +616,7 @@
   let currentFeedMode = 'following'; 
   let uploadProductsList = [];
   let sharePostId = null; // ID post da condividere
-  
+   
   // AI VARIABLES
   let classifierModel = null;
   const FASHION_KEYWORDS = [
@@ -1449,6 +1449,10 @@
   function mess(t,e){const b=document.getElementById('msg-box');b.innerText=t;b.classList.remove('hidden');b.style.borderColor=e?'red':'green';b.style.color=e?'red':'green';}
   function vaiA(m){ document.getElementById('login-form').classList.toggle('hidden',m==='signup'); document.getElementById('signup-form').classList.toggle('hidden',m==='login'); }
   function escapeHtml(t) { return t?t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"):""; }
+  
+  // QUESTA FUNZIONE MANCAVA
+  function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+
   async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
   async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
   async function logout() { await sb.auth.signOut(); location.reload(); }
