@@ -605,6 +605,7 @@
     </div>
   </div>
 </div>
+
 <script>
   // --- CONFIGURAZIONE SUPABASE ---
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
@@ -622,6 +623,9 @@
   let currentFeedMode = 'following'; 
   let uploadProductsList = []; 
   let sharePostId = null;
+  
+  // Cache per i post (fondamentale per lo shop)
+  let allPostsCache = {};
    
   // --- AI CONFIGURATION ---
   let classifierModel = null;
@@ -797,17 +801,35 @@
     document.getElementById('btn-publish').innerText = "PUBBLICA LOOK";
   }
 
-  function openShopWindow(json, event) {
+  // --- NUOVA LOGICA APERTURA SHOP (PIU SICURA) ---
+  function openShopWindow(postId, event) {
     if(event) event.stopPropagation();
+    
+    const post = allPostsCache[postId];
+    if (!post) return;
+
+    // Recupera prodotti (vecchi e nuovi)
+    let p = [];
+    if (post.products && Array.isArray(post.products) && post.products.length > 0) p = post.products;
+    else if (post.product_link) p.push({name: post.product_name || 'Prodotto', link: post.product_link});
+
     const c = document.getElementById('shop-window-list'); c.innerHTML = '';
-    let p = []; 
-    try { p = JSON.parse(decodeURIComponent(json)); } catch(e) { console.error(e); }
     
     if(!p.length) return;
     p.forEach(x => {
         let lnk = x.link;
         if(!lnk.startsWith('http')) lnk = 'https://' + lnk;
-        c.insertAdjacentHTML('beforeend', `<div class="bg-black/30 p-3 rounded-lg border border-white/5 flex items-center justify-between"><div class="text-left overflow-hidden mr-2"><div class="font-bold text-white text-sm truncate">${escapeHtml(x.name)}</div><div class="text-[10px] text-gray-400">Clicca per acquistare</div></div><a href="${lnk}" target="_blank" class="bg-[#d4af37] text-black px-3 py-1 rounded text-xs font-bold hover:scale-105 transition flex-shrink-0">GO <i class="fa-solid fa-arrow-right ml-1"></i></a></div>`);
+        c.insertAdjacentHTML('beforeend', `
+            <div class="bg-black/30 p-3 rounded-lg border border-white/5 flex items-center justify-between">
+                <div class="text-left overflow-hidden mr-2">
+                    <div class="font-bold text-white text-sm truncate">${escapeHtml(x.name)}</div>
+                    <div class="text-[10px] text-gray-400">Clicca per acquistare</div>
+                </div>
+                <a href="${lnk}" target="_blank" class="bg-[#d4af37] text-black px-3 py-1 rounded text-xs font-bold hover:scale-105 transition flex-shrink-0 z-50 relative" style="pointer-events:auto">
+                    GO <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        `);
     });
     document.getElementById('shop-modal').classList.remove('hidden');
   }
@@ -840,6 +862,10 @@
     if (!posts || !posts.length) return main.innerHTML = `${tabsHtml}<div class="empty-feed-box"><i class="fa-solid fa-user-plus text-4xl mb-4 text-[#d4af37]"></i><h2 class="text-xl font-bold mb-2">Feed Vuoto</h2><p class="text-gray-400 mb-6">Nessun post da mostrare.</p>${currentFeedMode==='following'?'<button onclick="switchFeedMode(\'viral\')" class="btn-gold">Vai su "Per Te"</button>':''}</div>`;
 
     main.innerHTML = tabsHtml;
+    
+    // Salva i post in cache per recuperarli quando si apre lo shop
+    posts.forEach(p => allPostsCache[p.id] = p);
+
     for (const post of posts) {
       const counts = await getPostCounts(post.id);
       const likedByMe = await isLikedByMe(post.id);
@@ -851,12 +877,13 @@
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
     
-    // Logica Shop Tag Unificata
-    let prods = [];
-    if(post.products && Array.isArray(post.products) && post.products.length > 0) prods = post.products;
-    else if(post.product_link) prods.push({name: post.product_name||'Prodotto', link: post.product_link});
+    // Conta i prodotti
+    let countProds = 0;
+    if (post.products && Array.isArray(post.products)) countProds = post.products.length;
+    else if (post.product_link) countProds = 1;
     
-    const shopTag = prods.length ? `<div class="shop-tag-overlay" onclick="openShopWindow('${encodeURIComponent(JSON.stringify(prods))}', event)"><i class="fa-solid fa-bag-shopping"></i><span>SHOP (${prods.length})</span></div>` : '';
+    // Passiamo l'ID del post alla funzione openShopWindow invece del JSON
+    const shopTag = countProds > 0 ? `<div class="shop-tag-overlay" onclick="openShopWindow('${post.id}', event)"><i class="fa-solid fa-bag-shopping"></i><span>SHOP (${countProds})</span></div>` : '';
     const deleteIcon = (post.user_id === currentUser.id) ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
     return `<div class="post-card"><div class="post-header"><div class="user-badge" onclick="openUserProfile('${post.user_id}')"><img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar"><div class="user-meta"><span class="username">${user.username}</span><span class="post-date">${dateStr}</span></div></div>${deleteIcon}</div><div class="post-img-container">${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}${shopTag}</div><div class="action-bar"><div class="icon-btn"><i class="${liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart'}" onclick="toggleLike('${post.id}', this.parentNode)"></i><span class="likes-count-clickable ml-2" id="feed-likes-count-${post.id}" onclick="openLikesModal('${post.id}')">${counts.likes}</span></div><div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div><div class="icon-btn ml-auto" onclick="openShareModal('${post.id}')"><i class="fa-regular fa-paper-plane"></i></div></div><div class="caption-box"><span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>${escapeHtml(post.caption)}</div></div>`;
@@ -925,11 +952,16 @@
         `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : 
         `<div class="flex gap-2"><button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button><button onclick="openChat('${userId}', '${p.username}', '${p.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button></div>`;
 
-    // Logica Shop Icon per griglia profilo
+    // Cache posts also in profile view
+    if (posts) posts.forEach(p => allPostsCache[p.id] = p);
+
     const postsHtml = posts ? posts.map(po => {
-        let hasProd = (po.products && po.products.length > 0) || po.product_link;
-        const iconHtml = hasProd ? '<div class="absolute top-2 right-2 bg-black/50 p-1 rounded-full border border-[#d4af37]"><i class="fa-solid fa-bag-shopping text-[#d4af37] text-xs"></i></div>' : '';
-        return `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${po.id}')">${po.image_url ? `<img src="${po.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(po.caption).substring(0,40)}...</div>`}${iconHtml}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`;
+        let countProds = 0;
+        if (po.products && Array.isArray(po.products)) countProds = po.products.length;
+        else if (po.product_link) countProds = 1;
+        
+        const iconHtml = countProds > 0 ? `<div class="absolute top-2 right-2 bg-black/50 p-1 rounded-full border border-[#d4af37] z-10"><i class="fa-solid fa-bag-shopping text-[#d4af37] text-xs"></i></div>` : '';
+        return `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${po.id}')">${po.image_url ? `<img src="${po.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(po.caption).substring(0,40)}...</div>`}${iconHtml}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm z-20"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`;
     }).join('') : '';
 
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl"><img src="${p.avatar_url || 'https://via.placeholder.com/150'}" class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition" onclick="${isMe?'openEditProfile()':''}"><div class="flex-1"><div class="flex items-center gap-4 mb-4"><h2 class="text-3xl font-light text-white">${p.username}</h2>${btn}</div><div class="flex gap-8 text-gray-300 mb-4"><div class="text-center"><span class="block font-bold text-white text-lg">${pc.count||0}</span><span class="text-xs uppercase">Post</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('followers','${userId}')"><span class="block font-bold text-white text-lg" id="p-followers">${fc.count||0}</span><span class="text-xs uppercase">Follower</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('following','${userId}')"><span class="block font-bold text-white text-lg">${fing.count||0}</span><span class="text-xs uppercase">Seguiti</span></div></div><div class="text-gray-400 font-medium">${p.full_name || ''}</div></div></div><div class="grid grid-cols-3 gap-1">${postsHtml}</div>`;
