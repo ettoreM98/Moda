@@ -521,6 +521,7 @@
     <div class="detail-img-side">
       <img id="detail-img" src="">
       <div id="detail-noimg" class="hidden text-gray-500">Solo Testo</div>
+      <div id="detail-shop-btn"></div>
     </div>
     <div class="detail-info-side">
       <div class="p-4 border-b border-gray-700 flex justify-between items-center">
@@ -1013,6 +1014,22 @@
       const { data: comments } = await sb.from('comments').select(`*, profiles:user_id(*)`).eq('post_id', postId).order('created_at', { ascending: true });
       const likes = await getPostCounts(postId);
       const amILiking = await isLikedByMe(postId);
+
+      // --- LOGICA SHOP BOTTONE AGGIUNTA ---
+      const shopBtnContainer = document.getElementById('detail-shop-btn');
+      let countProds = 0;
+      if (post.products && Array.isArray(post.products)) countProds = post.products.length;
+      else if (post.product_link) countProds = 1;
+
+      // Inietta il bottone Shop se ci sono prodotti
+      if (countProds > 0) {
+        // Assicuriamoci che il post sia in cache per openShopWindow
+        allPostsCache[post.id] = post; 
+        shopBtnContainer.innerHTML = `<div class="shop-tag-overlay" style="bottom: 20px; left: 20px;" onclick="openShopWindow('${post.id}', event)"><i class="fa-solid fa-bag-shopping"></i><span>SHOP (${countProds})</span></div>`;
+      } else {
+        shopBtnContainer.innerHTML = '';
+      }
+      // ------------------------------------
 
       if(post.image_url) {
           document.getElementById('detail-img').src = post.image_url;
