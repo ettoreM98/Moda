@@ -605,19 +605,25 @@
     </div>
   </div>
 </div>
-
 <script>
+  // --- CONFIGURAZIONE SUPABASE ---
   const SB_URL = 'https://nqeuecpgvqexhpztpois.supabase.co';
   const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZXVlY3BndnFleGhwenRwb2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxNjYwMDksImV4cCI6MjA4Mzc0MjAwOX0.v7U65EtUk1tXcwS3e2Hl0wipT5NbuHO439XvO1h8Kxc';
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
+  // --- COSTANTI E VARIABILI GLOBALI ---
   const BUCKET_POSTS = 'posts';
   const BUCKET_AVATARS = 'avatars';
-  let currentUser = null, currentPostId = null, activeChatId = null, chatSub = null;
+  
+  let currentUser = null;
+  let currentPostId = null;
+  let activeChatId = null;
+  let chatSub = null;
   let currentFeedMode = 'following'; 
-  let uploadProductsList = [];
+  let uploadProductsList = []; 
   let sharePostId = null;
    
-  // AI VARIABLES
+  // --- AI CONFIGURATION ---
   let classifierModel = null;
   const FASHION_KEYWORDS = [
     'shirt', 'pants', 'jean', 'dress', 'suit', 'shoe', 'boot', 'sandal', 'hat', 
@@ -626,21 +632,77 @@
     'miniskirt', 'maillot', 'tank suit', 'bikini', 'kimono', 'abaya', 'gown',
     'cloak', 'lab coat', 'pajama', 'velvet', 'wool', 'tie', 'bow tie', 'apron',
     'stole', 'necklace', 'wardrobe', 'closet', 'fashion', 'person', 'groom', 'bride',
-    'uniform', 'vestment', 'trench coat', 'sweatshirt', 'Loafer', 'clog'
+    'uniform', 'vestment', 'trench coat', 'sweatshirt', 'Loafer', 'clog', 'bag', 'purse'
   ];
 
+  // --- INIT ---
   window.addEventListener('load', async () => {
+    // Caricamento AI
     try {
         if (typeof mobilenet !== 'undefined') classifierModel = await mobilenet.load();
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("AI Error:", e); }
 
+    // Carosello Login
     let i = 0; const imgs = document.querySelectorAll('.visual-side img');
     if (imgs.length) { setInterval(() => { imgs[i].classList.remove('active'); i = (i + 1) % imgs.length; imgs[i].classList.add('active'); }, 5000); }
+    
+    // Check Sessione
     const { data: { session }, error } = await sb.auth.getSession();
     if (session && !error) enterApp(session.user);
     else document.getElementById('auth-container').style.display = 'flex';
   });
 
+  // --- GESTIONE AUTH ---
+  function mess(t,e){const b=document.getElementById('msg-box');b.innerText=t;b.classList.remove('hidden');b.style.borderColor=e?'red':'green';b.style.color=e?'red':'green';}
+  function vaiA(m){ document.getElementById('login-form').classList.toggle('hidden',m==='signup'); document.getElementById('signup-form').classList.toggle('hidden',m==='login'); }
+  async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
+  async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
+  async function logout() { await sb.auth.signOut(); location.reload(); }
+  async function recuperoPassword() {
+    const email = document.getElementById('l-email').value;
+    if(!email) return alert("Inserisci l'email per il recupero");
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    alert(error ? error.message : "Email di recupero inviata!");
+  }
+
+  function enterApp(u) { 
+    currentUser=u; 
+    document.getElementById('auth-container').style.transform = "translateY(-100vh)"; 
+    setTimeout(async ()=>{ 
+      document.getElementById('auth-container').classList.add('hidden'); 
+      document.getElementById('app-interface').classList.remove('hidden'); 
+      
+      renderFeedView(); 
+      checkNotifications(); 
+      checkAppNotifications(); 
+
+      // Realtime Listeners
+      sb.channel('global-updates')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          if(payload.new.receiver_id === currentUser.id) checkNotifications();
+        })
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `recipient_id=eq.${currentUser.id}`
+        }, payload => {
+          if (!payload?.new) return;
+          if (payload.new.type === 'like') showToast("Someone liked your post!");
+          if (payload.new.type === 'comment') showToast("New comment on your post!");
+          if (payload.new.type === 'follow') showToast("Nuovo follower!");
+          checkAppNotifications();
+        })
+        .subscribe();
+    },600); 
+  }
+
+  // --- GESTIONE UI (MODALI) ---
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
+  function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
+
+  // --- AI CHECK ---
   async function checkImageContent(imgElement) {
     if (!classifierModel) return true; 
     try {
@@ -679,55 +741,7 @@
     } 
   }
 
-  function openShareModal(postId) {
-      sharePostId = postId;
-      document.getElementById('share-modal').classList.remove('hidden');
-      const container = document.getElementById('share-list-content');
-      container.innerHTML = '<div class="text-center mt-4"><i class="fa-solid fa-spinner fa-spin text-[#d4af37]"></i></div>';
-      
-      sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`)
-        .eq('follower_id', currentUser.id)
-        .then(({ data }) => {
-            container.innerHTML = '';
-            if(!data || data.length === 0) return container.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">Non segui nessuno a cui inviare.</p>';
-            data.forEach(x => {
-                const u = x.profiles;
-                container.insertAdjacentHTML('beforeend', `
-                    <div class="flex items-center justify-between p-3 hover:bg-white/5 rounded-lg cursor-pointer">
-                        <div class="flex items-center gap-3">
-                            <img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]">
-                            <span class="text-white font-bold">${u.username}</span>
-                        </div>
-                        <button onclick="sendPostToChat('${u.id}', this)" class="bg-[#d4af37] text-black px-4 py-1 rounded-full text-xs font-bold hover:scale-105 transition">Invia</button>
-                    </div>
-                `);
-            });
-        });
-  }
-
-  async function sendPostToChat(receiverId, btn) {
-      if(!sharePostId) return;
-      btn.innerText = "Inviato"; btn.disabled = true; btn.classList.add('opacity-50');
-      const { data: post } = await sb.from('posts').select('image_url, caption').eq('id', sharePostId).single();
-      const messageContent = JSON.stringify({ type: 'share_post', postId: sharePostId, img: post.image_url, caption: post.caption ? post.caption.substring(0, 30) + '...' : 'Post condiviso' });
-      await sb.from('messages').insert([{ sender_id: currentUser.id, receiver_id: receiverId, content: messageContent }]);
-      setTimeout(() => closeModal('share-modal'), 500);
-  }
-
-  async function recuperoPassword() {
-    const email = document.getElementById('l-email').value;
-    if(!email) return alert("Inserisci l'email per il recupero");
-    const { error } = await sb.auth.resetPasswordForEmail(email);
-    alert(error ? error.message : "Email di recupero inviata!");
-  }
-
-  async function deletePost(postId) {
-    if(!confirm("Vuoi davvero eliminare questo post?")) return;
-    const { error } = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
-    if(error) alert("Errore: " + error.message);
-    else { closeModal('post-detail-modal'); if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); else renderFeedView(); }
-  }
-
+  // --- GESTIONE PRODOTTI (SHOP) E UPLOAD ---
   function addProdToUpload() {
     const n = document.getElementById('temp-prod-name'), l = document.getElementById('temp-prod-link');
     if(!n.value.trim() || !l.value.trim()) return alert("Inserisci nome e link.");
@@ -744,30 +758,82 @@
     });
   }
 
+  async function submitPost() { 
+    const f = document.getElementById('post-file').files[0], c = document.getElementById('post-caption').value; 
+    
+    // Controlla se c'è testo pendente nei campi e lo aggiunge
+    const pn = document.getElementById('temp-prod-name').value.trim(), pl = document.getElementById('temp-prod-link').value.trim();
+    if(pn && pl) uploadProductsList.push({ name: pn, link: pl });
+
+    if(!uploadProductsList.length) return alert("Devi inserire almeno un prodotto (Nome e Link).");
+    if(!f) return alert("Foto obbligatoria.");
+    
+    document.getElementById('btn-publish').innerText = "Pubblicazione...";
+    try {
+        const n = `${currentUser.id}/${Date.now()}`; 
+        const { error: ue } = await sb.storage.from(BUCKET_POSTS).upload(n, f); if(ue) throw ue;
+        const { data: { publicUrl } } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n);
+        
+        // Salvataggio nel DB
+        const { error: ie } = await sb.from('posts').insert([{ 
+            user_id: currentUser.id, 
+            image_url: publicUrl, 
+            caption: c, 
+            products: uploadProductsList 
+        }]); 
+        if(ie) throw ie;
+        
+        // Reset Form
+        uploadProductsList = [];
+        document.getElementById('upload-products-list').innerHTML = '';
+        document.getElementById('post-caption').value = '';
+        document.getElementById('post-file').value = '';
+        document.getElementById('upload-preview').classList.add('hidden');
+        document.getElementById('upload-details-section').classList.add('hidden');
+
+        closeModal('upload-modal'); 
+        renderFeedView();
+    } catch(err) { alert("Errore: " + err.message); }
+    document.getElementById('btn-publish').innerText = "PUBBLICA LOOK";
+  }
+
   function openShopWindow(json, event) {
     if(event) event.stopPropagation();
     const c = document.getElementById('shop-window-list'); c.innerHTML = '';
-    let p = []; try { p = JSON.parse(decodeURIComponent(json)); } catch(e) {}
+    let p = []; 
+    try { p = JSON.parse(decodeURIComponent(json)); } catch(e) { console.error(e); }
+    
     if(!p.length) return;
-    p.forEach(x => c.insertAdjacentHTML('beforeend', `<div class="bg-black/30 p-3 rounded-lg border border-white/5 flex items-center justify-between"><div class="text-left"><div class="font-bold text-white text-sm">${escapeHtml(x.name)}</div><div class="text-[10px] text-gray-400">Clicca per acquistare</div></div><a href="${x.link}" target="_blank" class="bg-[#d4af37] text-black px-3 py-1 rounded text-xs font-bold hover:scale-105 transition">GO <i class="fa-solid fa-arrow-right ml-1"></i></a></div>`));
+    p.forEach(x => {
+        let lnk = x.link;
+        if(!lnk.startsWith('http')) lnk = 'https://' + lnk;
+        c.insertAdjacentHTML('beforeend', `<div class="bg-black/30 p-3 rounded-lg border border-white/5 flex items-center justify-between"><div class="text-left overflow-hidden mr-2"><div class="font-bold text-white text-sm truncate">${escapeHtml(x.name)}</div><div class="text-[10px] text-gray-400">Clicca per acquistare</div></div><a href="${lnk}" target="_blank" class="bg-[#d4af37] text-black px-3 py-1 rounded text-xs font-bold hover:scale-105 transition flex-shrink-0">GO <i class="fa-solid fa-arrow-right ml-1"></i></a></div>`);
+    });
     document.getElementById('shop-modal').classList.remove('hidden');
   }
-  
+
+  // --- FEED E POSTS ---
   function switchFeedMode(mode) { if (currentFeedMode !== mode) { currentFeedMode = mode; renderFeedView(); } }
 
   async function renderFeedView() {
     const main = document.getElementById('main-content-area');
     if(document.getElementById('view-profile-active')) document.getElementById('view-profile-active').remove();
+    
     const tabsHtml = `<div class="feed-tabs-container"><div class="feed-tab ${currentFeedMode === 'following' ? 'active' : ''}" onclick="switchFeedMode('following')">Seguiti</div><div class="feed-tab ${currentFeedMode === 'viral' ? 'active' : ''}" onclick="switchFeedMode('viral')">Per Te</div></div>`;
     main.innerHTML = `${tabsHtml}<div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
 
     let posts = [], error = null;
+    
     if (currentFeedMode === 'following') {
         const { data: follows } = await sb.from('follows').select('followed_id').eq('follower_id', currentUser.id);
         const ids = follows ? follows.map(f => f.followed_id) : [];
-        if (ids.length) { const res = await sb.from('posts').select(`*, profiles:user_id (username, avatar_url)`).in('user_id', ids).order('created_at', { ascending: false }); posts = res.data; error = res.error; }
+        if (ids.length) { 
+            const res = await sb.from('posts').select(`*, profiles:user_id (username, avatar_url)`).in('user_id', ids).order('created_at', { ascending: false }); 
+            posts = res.data; error = res.error; 
+        }
     } else {
-        const res = await sb.from('posts').select(`*, profiles:user_id (username, avatar_url)`).order('created_at', { ascending: false }).limit(50); posts = res.data; error = res.error;
+        const res = await sb.from('posts').select(`*, profiles:user_id (username, avatar_url)`).order('created_at', { ascending: false }).limit(50); 
+        posts = res.data; error = res.error;
     }
 
     if (error) return main.innerHTML = `${tabsHtml}<p class="text-center text-red-500 mt-10">Errore caricamento feed.</p>`;
@@ -784,10 +850,24 @@
   function createPostHTML(post, counts, liked) {
     const user = post.profiles || { username: 'Utente', avatar_url: null };
     const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString('it-IT') : '';
-    const shopTag = (post.products && post.products.length > 0) ? `<div class="shop-tag-overlay" onclick="openShopWindow('${encodeURIComponent(JSON.stringify(post.products))}', event)"><i class="fa-solid fa-bag-shopping"></i><span>SHOP (${post.products.length})</span></div>` : '';
+    
+    // Logica Shop Tag Unificata
+    let prods = [];
+    if(post.products && Array.isArray(post.products) && post.products.length > 0) prods = post.products;
+    else if(post.product_link) prods.push({name: post.product_name||'Prodotto', link: post.product_link});
+    
+    const shopTag = prods.length ? `<div class="shop-tag-overlay" onclick="openShopWindow('${encodeURIComponent(JSON.stringify(prods))}', event)"><i class="fa-solid fa-bag-shopping"></i><span>SHOP (${prods.length})</span></div>` : '';
     const deleteIcon = (post.user_id === currentUser.id) ? `<i class="fa-solid fa-trash text-gray-600 hover:text-red-500 cursor-pointer ml-auto transition" onclick="deletePost('${post.id}')" title="Elimina"></i>` : '';
 
     return `<div class="post-card"><div class="post-header"><div class="user-badge" onclick="openUserProfile('${post.user_id}')"><img src="${user.avatar_url || 'https://via.placeholder.com/40'}" class="user-avatar"><div class="user-meta"><span class="username">${user.username}</span><span class="post-date">${dateStr}</span></div></div>${deleteIcon}</div><div class="post-img-container">${post.image_url ? `<img src="${post.image_url}" class="post-img" onclick="openPostDetail('${post.id}')">` : ''}${shopTag}</div><div class="action-bar"><div class="icon-btn"><i class="${liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart'}" onclick="toggleLike('${post.id}', this.parentNode)"></i><span class="likes-count-clickable ml-2" id="feed-likes-count-${post.id}" onclick="openLikesModal('${post.id}')">${counts.likes}</span></div><div class="icon-btn" onclick="openPostDetail('${post.id}')"><i class="fa-regular fa-comment"></i><span class="text-sm ml-2">${counts.comments}</span></div><div class="icon-btn ml-auto" onclick="openShareModal('${post.id}')"><i class="fa-regular fa-paper-plane"></i></div></div><div class="caption-box"><span class="caption-user" onclick="openUserProfile('${post.user_id}')">${user.username}</span>${escapeHtml(post.caption)}</div></div>`;
+  }
+
+  // --- AZIONI POST ---
+  async function deletePost(postId) {
+    if(!confirm("Vuoi davvero eliminare questo post?")) return;
+    const { error } = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
+    if(error) alert("Errore: " + error.message);
+    else { closeModal('post-detail-modal'); if(document.getElementById('view-profile-active')) openUserProfile(currentUser.id); else renderFeedView(); }
   }
 
   async function openLikesModal(postId) {
@@ -819,7 +899,8 @@
   }
    
   async function isLikedByMe(id) { const { data } = await sb.from('likes').select('id').eq('post_id', id).eq('user_id', currentUser.id); return data && data.length > 0; }
-   
+  
+  // --- PROFILO & SEARCH ---
   async function openUserProfile(userId) {
     const main = document.getElementById('main-content-area');
     main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="flex justify-center mt-20"><i class="fa-solid fa-spinner fa-spin text-3xl text-[#d4af37]"></i></div>`;
@@ -839,12 +920,22 @@
 
     const { data: posts } = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     const isMe = userId === currentUser.id;
-    const btn = isMe ? `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : `<div class="flex gap-2"><button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button><button onclick="openChat('${userId}', '${p.username}', '${p.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button></div>`;
+    
+    const btn = isMe ? 
+        `<button onclick="openEditProfile()" class="px-4 py-2 border border-gray-600 rounded-lg text-sm text-white hover:bg-white/10 transition">Modifica</button>` : 
+        `<div class="flex gap-2"><button onclick="toggleFollow('${userId}')" id="follow-btn" class="px-6 py-2 rounded-lg text-sm font-bold transition ${isFollowing ? 'border border-gray-500 text-gray-300' : 'bg-[#d4af37] text-black shadow-lg hover:scale-105'}">${isFollowing ? 'Seguito' : 'Segui'}</button><button onclick="openChat('${userId}', '${p.username}', '${p.avatar_url}')" class="px-4 py-2 border border-[#d4af37] text-[#d4af37] rounded-lg hover:bg-[#d4af37]/10 transition"><i class="fa-regular fa-comment-dots"></i></button></div>`;
 
-    main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl"><img src="${p.avatar_url || 'https://via.placeholder.com/150'}" class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition" onclick="${isMe?'openEditProfile()':''}"><div class="flex-1"><div class="flex items-center gap-4 mb-4"><h2 class="text-3xl font-light text-white">${p.username}</h2>${btn}</div><div class="flex gap-8 text-gray-300 mb-4"><div class="text-center"><span class="block font-bold text-white text-lg">${pc.count||0}</span><span class="text-xs uppercase">Post</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('followers','${userId}')"><span class="block font-bold text-white text-lg" id="p-followers">${fc.count||0}</span><span class="text-xs uppercase">Follower</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('following','${userId}')"><span class="block font-bold text-white text-lg">${fing.count||0}</span><span class="text-xs uppercase">Seguiti</span></div></div><div class="text-gray-400 font-medium">${p.full_name || ''}</div></div></div><div class="grid grid-cols-3 gap-1">${posts ? posts.map(po => `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${po.id}')">${po.image_url ? `<img src="${po.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(po.caption).substring(0,40)}...</div>`}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`).join('') : ''}</div>`;
+    // Logica Shop Icon per griglia profilo
+    const postsHtml = posts ? posts.map(po => {
+        let hasProd = (po.products && po.products.length > 0) || po.product_link;
+        const iconHtml = hasProd ? '<div class="absolute top-2 right-2 bg-black/50 p-1 rounded-full border border-[#d4af37]"><i class="fa-solid fa-bag-shopping text-[#d4af37] text-xs"></i></div>' : '';
+        return `<div class="relative aspect-square group cursor-pointer overflow-hidden bg-slate-800" onclick="openPostDetail('${po.id}')">${po.image_url ? `<img src="${po.image_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">` : `<div class="w-full h-full flex items-center justify-center text-xs p-4 text-center text-gray-500 group-hover:bg-slate-700 transition">${escapeHtml(po.caption).substring(0,40)}...</div>`}${iconHtml}<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[#d4af37] font-bold backdrop-blur-sm"><i class="fa-solid fa-eye mr-2"></i> Vedi</div></div>`;
+    }).join('') : '';
+
+    main.innerHTML = `<div id="view-profile-active" class="hidden"></div><div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 mb-8 flex items-center gap-8 shadow-2xl"><img src="${p.avatar_url || 'https://via.placeholder.com/150'}" class="w-32 h-32 rounded-full object-cover border-4 border-[#d4af37] shadow-xl cursor-pointer hover:scale-105 transition" onclick="${isMe?'openEditProfile()':''}"><div class="flex-1"><div class="flex items-center gap-4 mb-4"><h2 class="text-3xl font-light text-white">${p.username}</h2>${btn}</div><div class="flex gap-8 text-gray-300 mb-4"><div class="text-center"><span class="block font-bold text-white text-lg">${pc.count||0}</span><span class="text-xs uppercase">Post</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('followers','${userId}')"><span class="block font-bold text-white text-lg" id="p-followers">${fc.count||0}</span><span class="text-xs uppercase">Follower</span></div><div class="text-center cursor-pointer hover:text-[#d4af37]" onclick="showUserList('following','${userId}')"><span class="block font-bold text-white text-lg">${fing.count||0}</span><span class="text-xs uppercase">Seguiti</span></div></div><div class="text-gray-400 font-medium">${p.full_name || ''}</div></div></div><div class="grid grid-cols-3 gap-1">${postsHtml}</div>`;
   }
 
- async function toggleFollow(targetId) {
+  async function toggleFollow(targetId) {
     const btn = document.getElementById('follow-btn'); if (!btn) return;
     const isFollow = btn.innerText === 'Seguito'; btn.innerText = "..."; btn.disabled = true;
     const op = isFollow ? sb.from('follows').delete().eq('follower_id', currentUser.id).eq('followed_id', targetId) : sb.from('follows').insert([{ follower_id: currentUser.id, followed_id: targetId }]);
@@ -853,62 +944,98 @@
     else openUserProfile(targetId);
   }
 
-  async function submitPost() { 
-    const f = document.getElementById('post-file').files[0], c = document.getElementById('post-caption').value; 
-    const pn = document.getElementById('temp-prod-name').value.trim(), pl = document.getElementById('temp-prod-link').value.trim();
-    if(pn && pl) uploadProductsList.push({ name: pn, link: pl });
-    if(!uploadProductsList.length) return alert("Prodotti obbligatori.");
-    if(!f) return alert("Foto obbligatoria.");
-    
-    document.getElementById('btn-publish').innerText = "Pubblicazione...";
-    try {
-        const n = `${currentUser.id}/${Date.now()}`; 
-        const { error: ue } = await sb.storage.from(BUCKET_POSTS).upload(n, f); if(ue) throw ue;
-        const { data: { publicUrl } } = sb.storage.from(BUCKET_POSTS).getPublicUrl(n);
-        const { error: ie } = await sb.from('posts').insert([{ user_id: currentUser.id, image_url: publicUrl, caption: c, products: uploadProductsList }]); if(ie) throw ie;
-        closeModal('upload-modal'); renderFeedView();
-    } catch(err) { alert("Errore: " + err.message); }
-    document.getElementById('btn-publish').innerText = "PUBBLICA LOOK";
+  async function performSearch() {
+      const q = document.getElementById('search-query').value.trim();
+      const r = document.getElementById('search-results');
+      if(q.length < 2) return r.innerHTML = '';
+      const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10);
+      r.innerHTML = '';
+      data?.forEach(u => r.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between p-3 hover:bg-white/5 cursor-pointer" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><div class="flex items-center gap-3"><img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><span class="text-white">${u.username}</span></div></div>`));
   }
 
-  async function loadMessages() {
-    const { data: msgs } = await sb.from('messages').select('*').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`).order('created_at', { ascending: true });
-    const box = document.getElementById('chat-messages'); box.innerHTML = '';
-    msgs?.forEach(m => {
-      let content = escapeHtml(m.content);
-      if (m.content.startsWith('{') && m.content.includes('share_post')) {
-          try { const d = JSON.parse(m.content); content = `<div class="shared-post-bubble" onclick="openPostDetail('${d.postId}')"><img src="${d.img}" class="shared-post-img"><div class="shared-post-info"><b>Post Condiviso</b><br>${escapeHtml(d.caption)}</div></div>`; } catch(e){}
+  async function showUserList(type, userId) {
+      document.getElementById('user-list-modal').classList.remove('hidden');
+      document.getElementById('ul-title').innerText = type === 'followers' ? 'Followers' : 'Seguiti';
+      const c = document.getElementById('ul-content'); c.innerHTML = '<div class="text-center mt-4"><i class="fa-solid fa-spinner fa-spin text-[#d4af37]"></i></div>';
+      
+      let res;
+      if (type === 'followers') res = await sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`).eq('followed_id', userId);
+      else res = await sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`).eq('follower_id', userId);
+      
+      c.innerHTML = '';
+      if(!res.data || !res.data.length) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Lista vuota.</p>';
+      
+      res.data.forEach(x => {
+          const u = x.profiles;
+          c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><span class="text-white font-bold">${u.username}</span></div>`);
+      });
+  }
+
+  // --- DETTAGLIO POST & COMMENTI ---
+  async function openPostDetail(postId) {
+      currentPostId = postId;
+      document.getElementById('post-detail-modal').classList.remove('hidden');
+      document.getElementById('detail-img').src = ''; 
+      
+      const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
+      const { data: comments } = await sb.from('comments').select(`*, profiles:user_id(*)`).eq('post_id', postId).order('created_at', { ascending: true });
+      const likes = await getPostCounts(postId);
+      const amILiking = await isLikedByMe(postId);
+
+      if(post.image_url) {
+          document.getElementById('detail-img').src = post.image_url;
+          document.getElementById('detail-img').classList.remove('hidden');
+          document.getElementById('detail-noimg').classList.add('hidden');
+      } else {
+          document.getElementById('detail-img').classList.add('hidden');
+          document.getElementById('detail-noimg').classList.remove('hidden');
       }
-      box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${m.sender_id === currentUser.id ? 'msg-mine' : 'msg-theirs'}">${content}</div>`);
-    });
-    box.scrollTop = box.scrollHeight;
+
+      document.getElementById('detail-avatar').src = post.profiles.avatar_url || 'https://via.placeholder.com/40';
+      document.getElementById('detail-username').innerText = post.profiles.username;
+      document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
+      
+      const delContainer = document.getElementById('detail-delete-btn-container');
+      delContainer.innerHTML = (post.user_id === currentUser.id) ? `<i class="fa-solid fa-trash text-red-500 cursor-pointer text-xl" onclick="deletePost('${post.id}')"></i>` : '';
+
+      const cBox = document.getElementById('detail-comments');
+      cBox.innerHTML = `<div class="mb-4 text-sm text-gray-300"><span class="font-bold text-[#d4af37] mr-2">${post.profiles.username}</span>${escapeHtml(post.caption)}</div>`;
+      
+      comments?.forEach(c => {
+          cBox.insertAdjacentHTML('beforeend', `<div class="mb-2 text-sm"><span class="font-bold text-white mr-2 cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${c.profiles.username}</span><span class="text-gray-300">${escapeHtml(c.content)}</span></div>`);
+      });
+
+      document.getElementById('detail-likes-count').innerText = likes.likes;
+      const likeBtn = document.getElementById('detail-like-btn');
+      likeBtn.className = amILiking ? 'fa-solid fa-heart text-red-500 cursor-pointer' : 'fa-regular fa-heart cursor-pointer text-white';
+      likeBtn.onclick = () => toggleLikeDetail(postId);
   }
 
-  function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
-  async function saveProfile() { await sb.from('profiles').update({ username:document.getElementById('edit-username').value, full_name:document.getElementById('edit-fullname').value }).eq('id', currentUser.id); closeModal('edit-profile-modal'); openUserProfile(currentUser.id); }
-  async function uploadAvatar(i) { const f=i.files[0]; if(!f)return; const n=`${currentUser.id}/avatar_${Date.now()}`; await sb.storage.from(BUCKET_AVATARS).upload(n, f); const {data}=sb.storage.from(BUCKET_AVATARS).getPublicUrl(n); document.getElementById('edit-avatar-preview').src=data.publicUrl; await sb.from('profiles').update({ avatar_url:data.publicUrl }).eq('id',currentUser.id); }
-
-  async function checkNotifications() { const { count } = await sb.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', currentUser.id).eq('is_read', false); document.getElementById('global-gold-dot').style.display = (count > 0) ? 'block' : 'none'; }
-  async function checkAppNotifications() { const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('recipient_id', currentUser.id).eq('is_read', false); document.getElementById('notif-gold-dot').style.display = (count > 0) ? 'block' : 'none'; }
-
-  async function openNotificationsModal() {
-    document.getElementById('notifications-modal').classList.remove('hidden'); document.getElementById('notif-gold-dot').style.display = 'none';
-    const c = document.getElementById('notifications-list'); c.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
-    const { data: rows } = await sb.from('notifications').select('id, created_at, type, actor_id, post_id, comment_id, is_read').eq('recipient_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
-    await sb.from('notifications').update({ is_read: true }).eq('recipient_id', currentUser.id).eq('is_read', false);
-    c.innerHTML = '';
-    if (!rows || !rows.length) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica.</p>';
-    for (const n of rows) {
-      const { data: actor } = await sb.from('profiles').select('username, avatar_url').eq('id', n.actor_id).single();
-      let clickAction = n.type === 'follow' ? `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')` : `closeModal('notifications-modal'); openPostDetail('${n.post_id}')`;
-      let txt = n.type === 'follow' ? 'ti ha seguito' : (n.type === 'like' ? 'ha messo like' : 'ha commentato');
-      c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="${clickAction}"><img src="${actor?.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><div class="flex-1"><div class="text-sm text-white"><span class="font-bold">${actor?.username || 'User'}</span> <span class="text-xs text-gray-400">${txt}</span></div></div></div>`);
-    }
-    checkAppNotifications();
+  async function toggleLikeDetail(postId) {
+      const btn = document.getElementById('detail-like-btn');
+      const isLiked = btn.classList.contains('fa-solid');
+      if(isLiked) {
+          await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+          btn.className = 'fa-regular fa-heart cursor-pointer text-white';
+          document.getElementById('detail-likes-count').innerText = parseInt(document.getElementById('detail-likes-count').innerText) - 1;
+      } else {
+          await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
+          btn.className = 'fa-solid fa-heart text-red-500 cursor-pointer';
+          document.getElementById('detail-likes-count').innerText = parseInt(document.getElementById('detail-likes-count').innerText) + 1;
+      }
+      renderFeedView();
   }
 
-  function showToast(msg) { const t = document.getElementById('toast-notif'); document.getElementById('toast-msg').innerText = msg; t.classList.add('toast-active'); setTimeout(() => t.classList.remove('toast-active'), 4000); document.getElementById('notif-gold-dot').style.display = 'block'; }
+  async function inviaCommento() {
+      const input = document.getElementById('new-comment');
+      const txt = input.value.trim();
+      if(!txt || !currentPostId) return;
+      const { error } = await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]);
+      if(error) alert("Errore commento");
+      else { input.value = ''; openPostDetail(currentPostId); }
+  }
 
+  // --- MESSAGGI & CONDIVISIONE (FULL) ---
   async function openInboxModal() {
     document.getElementById('inbox-modal').classList.remove('hidden'); const container = document.getElementById('inbox-list'); container.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
     const { data: msgs } = await sb.from('messages').select('*').or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`).order('created_at', { ascending: false });
@@ -919,7 +1046,8 @@
       if (!seen.has(other)) {
         seen.add(other);
         const { data: u } = await sb.from('profiles').select('*').eq('id', other).single();
-        container.insertAdjacentHTML('beforeend', `<div class="inbox-item" onclick="closeModal('inbox-modal'); openChat('${u.id}', '${u.username}', '${u.avatar_url}')"><img src="${u.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]"><div class="flex-1 overflow-hidden"><div class="font-bold text-white text-sm flex justify-between">${u.username}<i class="fa-solid fa-trash text-gray-500 hover:text-red-500 transition text-xs p-1" onclick="deleteChat('${u.id}', event)"></i></div><div class="text-gray-400 text-xs truncate">${escapeHtml(m.content)}</div></div></div>`);
+        const dot = (m.receiver_id === currentUser.id && !m.is_read) ? `<div class="unread-indicator"></div>` : '';
+        container.insertAdjacentHTML('beforeend', `<div class="inbox-item" onclick="closeModal('inbox-modal'); openChat('${u.id}', '${u.username}', '${u.avatar_url}')"><img src="${u.avatar_url || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full object-cover border border-[#d4af37]"><div class="flex-1 overflow-hidden"><div class="font-bold text-white text-sm flex justify-between">${u.username}<i class="fa-solid fa-trash text-gray-500 hover:text-red-500 transition text-xs p-1" onclick="deleteChat('${u.id}', event)"></i></div><div class="text-gray-400 text-xs truncate">${escapeHtml(m.content)}</div></div>${dot}</div>`);
       }
     }
   }
@@ -946,132 +1074,76 @@
     if (!error) loadMessages();
   }
 
+  async function loadMessages() {
+    const { data: msgs } = await sb.from('messages').select('*').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${activeChatId}),and(sender_id.eq.${activeChatId},receiver_id.eq.${currentUser.id})`).order('created_at', { ascending: true });
+    const box = document.getElementById('chat-messages'); box.innerHTML = '';
+    msgs?.forEach(m => {
+      let content = escapeHtml(m.content);
+      if (m.content.startsWith('{') && m.content.includes('share_post')) {
+          try { const d = JSON.parse(m.content); content = `<div class="shared-post-bubble" onclick="openPostDetail('${d.postId}')"><img src="${d.img}" class="shared-post-img"><div class="shared-post-info"><b>Post Condiviso</b><br>${escapeHtml(d.caption)}</div></div>`; } catch(e){}
+      }
+      box.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${m.sender_id === currentUser.id ? 'msg-mine' : 'msg-theirs'}">${content}</div>`);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
   async function markAsRead(senderId) { await sb.from('messages').update({ is_read: true }).eq('sender_id', senderId).eq('receiver_id', currentUser.id); checkNotifications(); }
   function closeChat() { document.getElementById('chat-modal').classList.add('hidden'); activeChatId = null; if (chatSub) chatSub.unsubscribe(); checkNotifications(); }
 
-  function enterApp(u) { 
-    currentUser=u; document.getElementById('auth-container').style.transform = "translateY(-100vh)"; 
-    setTimeout(async ()=>{ document.getElementById('auth-container').classList.add('hidden'); document.getElementById('app-interface').classList.remove('hidden'); renderFeedView(); checkNotifications(); checkAppNotifications(); 
-      sb.channel('global-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => { if(p.new.receiver_id === currentUser.id) checkNotifications(); }).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${currentUser.id}` }, p => { if (p?.new) { showToast("Nuova notifica!"); checkAppNotifications(); } }).subscribe();
-    },600); 
+  // --- SHARE MODAL ---
+  function openShareModal(postId) {
+      sharePostId = postId;
+      document.getElementById('share-modal').classList.remove('hidden');
+      const container = document.getElementById('share-list-content');
+      container.innerHTML = '<div class="text-center mt-4"><i class="fa-solid fa-spinner fa-spin text-[#d4af37]"></i></div>';
+      
+      sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`)
+        .eq('follower_id', currentUser.id)
+        .then(({ data }) => {
+            container.innerHTML = '';
+            if(!data || data.length === 0) return container.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">Non segui nessuno a cui inviare.</p>';
+            data.forEach(x => {
+                const u = x.profiles;
+                container.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between p-3 hover:bg-white/5 rounded-lg cursor-pointer"><div class="flex items-center gap-3"><img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><span class="text-white font-bold">${u.username}</span></div><button onclick="sendPostToChat('${u.id}', this)" class="bg-[#d4af37] text-black px-4 py-1 rounded-full text-xs font-bold hover:scale-105 transition">Invia</button></div>`);
+            });
+        });
   }
 
-  function mess(t,e){const b=document.getElementById('msg-box');b.innerText=t;b.classList.remove('hidden');b.style.borderColor=e?'red':'green';b.style.color=e?'red':'green';}
-  function vaiA(m){ document.getElementById('login-form').classList.toggle('hidden',m==='signup'); document.getElementById('signup-form').classList.toggle('hidden',m==='login'); }
+  async function sendPostToChat(receiverId, btn) {
+      if(!sharePostId) return;
+      btn.innerText = "Inviato"; btn.disabled = true; btn.classList.add('opacity-50');
+      const { data: post } = await sb.from('posts').select('image_url, caption').eq('id', sharePostId).single();
+      const messageContent = JSON.stringify({ type: 'share_post', postId: sharePostId, img: post.image_url, caption: post.caption ? post.caption.substring(0, 30) + '...' : 'Post condiviso' });
+      await sb.from('messages').insert([{ sender_id: currentUser.id, receiver_id: receiverId, content: messageContent }]);
+      setTimeout(() => closeModal('share-modal'), 500);
+  }
+
+  // --- NOTIFICHE (FULL) ---
+  async function openNotificationsModal() {
+    document.getElementById('notifications-modal').classList.remove('hidden'); document.getElementById('notif-gold-dot').style.display = 'none';
+    const c = document.getElementById('notifications-list'); c.innerHTML = '<div class="text-center text-gray-500 mt-4"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+    const { data: rows } = await sb.from('notifications').select('id, created_at, type, actor_id, post_id, comment_id, is_read').eq('recipient_id', currentUser.id).order('created_at', { ascending: false }).limit(50);
+    await sb.from('notifications').update({ is_read: true }).eq('recipient_id', currentUser.id).eq('is_read', false);
+    c.innerHTML = '';
+    if (!rows || !rows.length) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Nessuna notifica.</p>';
+    for (const n of rows) {
+      const { data: actor } = await sb.from('profiles').select('username, avatar_url').eq('id', n.actor_id).single();
+      let clickAction = n.type === 'follow' ? `closeModal('notifications-modal'); openUserProfile('${n.actor_id}')` : `closeModal('notifications-modal'); openPostDetail('${n.post_id}')`;
+      let txt = n.type === 'follow' ? 'ti ha seguito' : (n.type === 'like' ? 'ha messo like' : 'ha commentato');
+      c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-3 border-b border-gray-800 hover:bg-white/5 cursor-pointer transition" onclick="${clickAction}"><img src="${actor?.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><div class="flex-1"><div class="text-sm text-white"><span class="font-bold">${actor?.username || 'User'}</span> <span class="text-xs text-gray-400">${txt}</span></div></div></div>`);
+    }
+    checkAppNotifications();
+  }
+
+  async function checkNotifications() { const { count } = await sb.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', currentUser.id).eq('is_read', false); document.getElementById('global-gold-dot').style.display = (count > 0) ? 'block' : 'none'; }
+  async function checkAppNotifications() { const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('recipient_id', currentUser.id).eq('is_read', false); document.getElementById('notif-gold-dot').style.display = (count > 0) ? 'block' : 'none'; }
+  function showToast(msg) { const t = document.getElementById('toast-notif'); document.getElementById('toast-msg').innerText = msg; t.classList.add('toast-active'); setTimeout(() => t.classList.remove('toast-active'), 4000); document.getElementById('notif-gold-dot').style.display = 'block'; }
+
+  // --- SETTINGS PROFILO ---
+  function openEditProfile() { document.getElementById('edit-profile-modal').classList.remove('hidden'); sb.from('profiles').select('*').eq('id', currentUser.id).single().then(({data})=>{ document.getElementById('edit-username').value=data.username; document.getElementById('edit-fullname').value=data.full_name; document.getElementById('edit-avatar-preview').src=data.avatar_url||'https://via.placeholder.com/150'; }); }
+  async function saveProfile() { await sb.from('profiles').update({ username:document.getElementById('edit-username').value, full_name:document.getElementById('edit-fullname').value }).eq('id', currentUser.id); closeModal('edit-profile-modal'); openUserProfile(currentUser.id); }
+  async function uploadAvatar(i) { const f=i.files[0]; if(!f)return; const n=`${currentUser.id}/avatar_${Date.now()}`; await sb.storage.from(BUCKET_AVATARS).upload(n, f); const {data}=sb.storage.from(BUCKET_AVATARS).getPublicUrl(n); document.getElementById('edit-avatar-preview').src=data.publicUrl; await sb.from('profiles').update({ avatar_url:data.publicUrl }).eq('id',currentUser.id); }
   function escapeHtml(t) { return t?t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"):""; }
-  async function faiLogin() { const {data,error}=await sb.auth.signInWithPassword({ email:document.getElementById('l-email').value, password:document.getElementById('l-pass').value }); if(error)mess(error.message,true); else enterApp(data.user); }
-  async function faiRegistrazione() { const {data,error}=await sb.auth.signUp({ email:document.getElementById('r-email').value, password:document.getElementById('r-pass').value }); if(error)return mess(error.message,true); if(data.user) await sb.from('profiles').insert([{ id:data.user.id, username:document.getElementById('r-username').value }]); mess("Registrazione OK!"); }
-  async function logout() { await sb.auth.signOut(); location.reload(); }
-
-  /* --- FUNZIONI AGGIUNTE PER FIX TOTALE --- */
-  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-  function openUploadModal() { document.getElementById('upload-modal').classList.remove('hidden'); }
-  function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); }
-  
-  // FIX: RICERCA UTENTI
-  async function performSearch() {
-      const q = document.getElementById('search-query').value.trim();
-      const r = document.getElementById('search-results');
-      if(q.length < 2) return r.innerHTML = '';
-      const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(10);
-      r.innerHTML = '';
-      data?.forEach(u => r.insertAdjacentHTML('beforeend', `<div class="flex items-center justify-between p-3 hover:bg-white/5 cursor-pointer" onclick="closeModal('search-modal'); openUserProfile('${u.id}')"><div class="flex items-center gap-3"><img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><span class="text-white">${u.username}</span></div></div>`));
-  }
-
-  // FIX: LISTA FOLLOWER/FOLLOWING
-  async function showUserList(type, userId) {
-      document.getElementById('user-list-modal').classList.remove('hidden');
-      document.getElementById('ul-title').innerText = type === 'followers' ? 'Followers' : 'Seguiti';
-      const c = document.getElementById('ul-content'); c.innerHTML = '<div class="text-center mt-4"><i class="fa-solid fa-spinner fa-spin text-[#d4af37]"></i></div>';
-      
-      let res;
-      if (type === 'followers') {
-        res = await sb.from('follows').select(`profiles!follows_follower_id_fkey(*)`).eq('followed_id', userId);
-      } else {
-        res = await sb.from('follows').select(`profiles!follows_followed_id_fkey(*)`).eq('follower_id', userId);
-      }
-      
-      c.innerHTML = '';
-      if(!res.data || !res.data.length) return c.innerHTML = '<p class="text-center text-gray-500 mt-4">Lista vuota.</p>';
-      
-      res.data.forEach(x => {
-          const u = x.profiles;
-          c.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer" onclick="closeModal('user-list-modal'); openUserProfile('${u.id}')"><img src="${u.avatar_url || 'https://via.placeholder.com/30'}" class="w-10 h-10 rounded-full border border-[#d4af37]"><span class="text-white font-bold">${u.username}</span></div>`);
-      });
-  }
-
-  // FIX: APERTURA DETTAGLIO POST (E COMMENTI)
-  async function openPostDetail(postId) {
-      currentPostId = postId;
-      document.getElementById('post-detail-modal').classList.remove('hidden');
-      document.getElementById('detail-img').src = ''; 
-      
-      const { data: post } = await sb.from('posts').select(`*, profiles:user_id(*)`).eq('id', postId).single();
-      const { data: comments } = await sb.from('comments').select(`*, profiles:user_id(*)`).eq('post_id', postId).order('created_at', { ascending: true });
-      const likes = await getPostCounts(postId);
-      const amILiking = await isLikedByMe(postId);
-
-      // Setup Image
-      if(post.image_url) {
-          document.getElementById('detail-img').src = post.image_url;
-          document.getElementById('detail-img').classList.remove('hidden');
-          document.getElementById('detail-noimg').classList.add('hidden');
-      } else {
-          document.getElementById('detail-img').classList.add('hidden');
-          document.getElementById('detail-noimg').classList.remove('hidden');
-      }
-
-      // Setup Header
-      document.getElementById('detail-avatar').src = post.profiles.avatar_url || 'https://via.placeholder.com/40';
-      document.getElementById('detail-username').innerText = post.profiles.username;
-      document.getElementById('detail-user-link').onclick = () => { closeModal('post-detail-modal'); openUserProfile(post.user_id); };
-      
-      const delContainer = document.getElementById('detail-delete-btn-container');
-      delContainer.innerHTML = (post.user_id === currentUser.id) ? `<i class="fa-solid fa-trash text-red-500 cursor-pointer text-xl" onclick="deletePost('${post.id}')"></i>` : '';
-
-      // Comments List
-      const cBox = document.getElementById('detail-comments');
-      cBox.innerHTML = `<div class="mb-4 text-sm text-gray-300"><span class="font-bold text-[#d4af37] mr-2">${post.profiles.username}</span>${escapeHtml(post.caption)}</div>`;
-      
-      comments?.forEach(c => {
-          cBox.insertAdjacentHTML('beforeend', `<div class="mb-2 text-sm"><span class="font-bold text-white mr-2 cursor-pointer hover:underline" onclick="closeModal('post-detail-modal'); openUserProfile('${c.user_id}')">${c.profiles.username}</span><span class="text-gray-300">${escapeHtml(c.content)}</span></div>`);
-      });
-
-      // Likes Footer
-      document.getElementById('detail-likes-count').innerText = likes.likes;
-      const likeBtn = document.getElementById('detail-like-btn');
-      likeBtn.className = amILiking ? 'fa-solid fa-heart text-red-500 cursor-pointer' : 'fa-regular fa-heart cursor-pointer text-white';
-      likeBtn.onclick = () => toggleLikeDetail(postId);
-  }
-
-  async function toggleLikeDetail(postId) {
-      const btn = document.getElementById('detail-like-btn');
-      const isLiked = btn.classList.contains('fa-solid');
-      if(isLiked) {
-          await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
-          btn.className = 'fa-regular fa-heart cursor-pointer text-white';
-          document.getElementById('detail-likes-count').innerText = parseInt(document.getElementById('detail-likes-count').innerText) - 1;
-      } else {
-          await sb.from('likes').insert([{ post_id: postId, user_id: currentUser.id }]);
-          btn.className = 'fa-solid fa-heart text-red-500 cursor-pointer';
-          document.getElementById('detail-likes-count').innerText = parseInt(document.getElementById('detail-likes-count').innerText) + 1;
-      }
-      renderFeedView(); // refresh background feed
-  }
-
-  // FIX: INVIO COMMENTO
-  async function inviaCommento() {
-      const input = document.getElementById('new-comment');
-      const txt = input.value.trim();
-      if(!txt || !currentPostId) return;
-      
-      const { error } = await sb.from('comments').insert([{ post_id: currentPostId, user_id: currentUser.id, content: txt }]);
-      if(error) alert("Errore commento");
-      else {
-          input.value = '';
-          openPostDetail(currentPostId); // Reload details to show new comment
-      }
-  }
 </script>
 </body>
 </html>
